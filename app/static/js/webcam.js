@@ -314,8 +314,9 @@ function drawOverlay(hands) {
     const lm = hand.landmarks ?? [];
     if (lm.length < 21) continue;
 
-    // Mirror x to match video-canvas (which is drawn mirrored)
-    const px = (lm) => (1 - lm.x) * w;
+    // Coordinates already match the mirrored video-canvas because we send the
+    // mirrored frame to the backend — no need to flip x again.
+    const px = (lm) => lm.x * w;
     const py = (lm) => lm.y * h;
 
     // Draw connections
