@@ -6,6 +6,9 @@ services:
       - "9876:8000"
     volumes:
       - ./app:/app/app
+      - ./tests:/app/tests
+      - ./pytest.ini:/app/pytest.ini
+      - ./requirements-dev.txt:/app/requirements-dev.txt
       # models/ is baked into the image at build time — no need to mount it
     environment:
       - MOODLE_URL=${MOODLE_URL:-http://localhost}

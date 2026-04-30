@@ -17,7 +17,7 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 
 | ID | Título | Tipo | Prioridad | Estado | Módulo relacionado |
 |----|--------|------|-----------|--------|--------------------|
-| [REQ-001](./REQ-001-unit-tests.md) | Suite de Tests Unitarios e Integración | Tech-Debt | Alta | 📋 Pendiente | Global / Backend |
+| [REQ-001](./REQ-001-unit-tests.md) | Suite de Tests Unitarios e Integración | Tech-Debt | Alta | ✅ Hecho | Global / Backend |
 | [REQ-002](./REQ-002-audio-feedback.md) | Feedback de Audio en GestiEdu y MotivaSign | Mejora | Media | 📋 Pendiente | GestiEdu, MotivaSign |
 | [REQ-003](./REQ-003-pdf-export-attendeye.md) | Exportación PDF del Reporte de Asistencia | Mejora | Media | 📋 Pendiente | AttendEye |
 | [REQ-004](./REQ-004-undo-virtualpainter.md) | Deshacer / Rehacer en VirtualPainter | Mejora | Media | 📋 Pendiente | VirtualPainter |
@@ -38,6 +38,7 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 | **Tipo** | `Feature` — nueva funcionalidad · `Mejora` — mejora sobre algo existente · `Tech-Debt` — deuda técnica a saldar |
 | **Prioridad** | `Alta` — bloquea producción o seguridad · `Media` — importante pero no urgente · `Baja` — nice-to-have |
 | **Estado** | 📋 Pendiente · 🔄 En progreso · ✅ Hecho |
+| **Última actualización** | 2026-04-30 |
 
 ---
 

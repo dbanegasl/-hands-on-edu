@@ -7,7 +7,7 @@
 | **ID** | REQ-001 |
 | **Tipo** | Tech-Debt |
 | **Prioridad** | Alta |
-| **Estado** | 📋 Pendiente |
+| **Estado** | ✅ Hecho |
 | **Módulo** | Global / Backend |
 | **Esfuerzo estimado** | M (2–4 horas) |
 

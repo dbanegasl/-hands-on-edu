@@ -11,7 +11,6 @@
 
 ### Añadido
 
-- **REQ-001** — Suite completa de tests unitarios e integración (`pytest`, `pytest-asyncio`, `httpx`), con objetivo de cobertura ≥ 80% en `app/core/` y `app/main.py`.
 - **REQ-002** — Feedback de audio en GestiEdu y MotivaSign usando Web Audio API (sin dependencias externas): tonos de acierto, error, cuenta regresiva, confirmación de gesto; control de mute global.
 - **REQ-003** — Exportación PDF del reporte de asistencia en AttendEye con `jsPDF` + `jsPDF-AutoTable`: encabezado institucional UNAE, tabla de asistencia, resumen y campo de firma del docente.
 - **REQ-004** — Deshacer/Rehacer (Ctrl+Z / Ctrl+Y) en VirtualPainter: stack de historial de hasta 30 snapshots `ImageData`, botones en toolbar con estado disabled dinámico, gesto alternativo (palma 2s).
@@ -22,6 +21,28 @@
 - **REQ-009** — Integración real con Moodle LMS: implementación de `MoodleClient` con Moodle REST API, sincronización automática de notas y asistencia, variables de entorno `MOODLE_URL` / `MOODLE_TOKEN`.
 - **REQ-010** — Clasificador ML de gestos personalizado: pipeline de recolección de datos, entrenamiento con `MLPClassifier` (scikit-learn), exportación `.pkl`, integración en `HandTracker` con fallback a heurísticas.
 - **REQ-011** — Pipeline CI/CD con GitHub Actions: workflow `ci.yml` (tests + lint + docker build en cada push/PR), workflow `cd.yml` (deploy automático en tags `v*.*.*`), badge de CI en README.
+
+---
+
+## [0.2.0] — 2026-04-30
+
+### Añadido
+
+- **Suite de tests unitarios e integración** (`REQ-001`) — 41 tests, todos pasando en < 0.25 s:
+  - `tests/conftest.py`: fixtures compartidas (`tracker`, `client`, `black_frame_b64`), clase `Lm` mock de landmark, 6 helpers de landmarks por gesto (`fist`, `thumbs_up`, `pointing`, `peace`, `shaka`, `open_hand`).
+  - `tests/test_hand_tracker.py` (20 tests): cobertura completa de `count_raised_fingers()`, `detect_gesture()` (7 gestos + fallthrough cases) y `get_finger_tip()`.
+  - `tests/test_main.py` (21 tests): endpoint `/health`, 6 rutas HTML, WebSocket `/ws/analyze` (sin manos, una mano con estructura completa, dos manos, frame inválido, múltiples frames en una conexión).
+  - Cobertura final: **93% en `app/core/hand_tracker.py`** y **93% en `app/main.py`** (objetivo era ≥ 80%).
+  - Sin cámara, sin modelo MediaPipe real, sin red — `HandLandmarker` mockeado en `conftest.py`.
+- `requirements-dev.txt`: dependencias de desarrollo (`pytest>=8.0`, `pytest-asyncio>=0.23`, `pytest-cov>=5.0`).
+- `pytest.ini`: configuración mínima (`testpaths = tests`).
+- `docker-compose.yml`: volúmenes `./tests:/app/tests` y `./pytest.ini:/app/pytest.ini` para desarrollo en caliente sin rebuild.
+
+### Cambiado
+
+- Versión de la API actualizada a `0.2.0` (`app/main.py`, endpoint `/health`).
+- `docs/requirements/INDEX.md`: REQ-001 marcado como ✅ Hecho.
+- `docs/requirements/REQ-001-unit-tests.md`: estado actualizado a ✅ Hecho.
 
 ---
 
@@ -58,5 +79,6 @@
 
 ---
 
-[Sin publicar]: https://github.com/OWNER/handsonedu/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/OWNER/handsonedu/releases/tag/v0.1.0
+[Sin publicar]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/dbanegasl/-hands-on-edu/releases/tag/v0.1.0
