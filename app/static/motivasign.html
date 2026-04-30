@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MotivaSign | HandsOnEdu</title>
+  <link rel="stylesheet" href="/static/css/motivasign.css">
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="ms-nav">
+    <a href="/" class="ms-logo">🖐️ HandsOnEdu</a>
+    <span class="ms-module-name">🤟 MotivaSign</span>
+    <a href="/" class="ms-back">← Inicio</a>
+  </nav>
+
+  <!-- SCREEN: IDLE (shown on load) -->
+  <div id="screen-idle" class="ms-screen active">
+    <div class="ms-hero">
+      <div class="ms-hero-emoji">🤟</div>
+      <h1>MotivaSign</h1>
+      <p>Aprende señas con tus manos. ¡Diviértete mientras aprendes!</p>
+      <div class="ms-mode-cards">
+        <div class="ms-mode-card" id="btn-aprender">
+          <div class="ms-mode-icon">📖</div>
+          <div class="ms-mode-title">Aprender</div>
+          <div class="ms-mode-desc">Aprende las señas a tu ritmo</div>
+        </div>
+        <div class="ms-mode-card" id="btn-desafio">
+          <div class="ms-mode-icon">⚡</div>
+          <div class="ms-mode-title">Desafío</div>
+          <div class="ms-mode-desc">10 señas — ¿cuántas conoces?</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: GAME (shared by both modes) -->
+  <div id="screen-game" class="ms-screen">
+    <div class="ms-game-layout">
+
+      <!-- LEFT: webcam panel -->
+      <div class="ms-cam-panel">
+        <div class="ms-cam-wrapper">
+          <video id="ms-video" autoplay playsinline muted></video>
+          <canvas id="ms-canvas"></canvas>
+
+          <!-- gesture status badge -->
+          <div class="ms-gesture-badge" id="ms-gesture-badge">Sin mano detectada</div>
+
+          <!-- hold progress ring (SVG) -->
+          <svg class="ms-hold-ring" id="ms-hold-ring" viewBox="0 0 120 120">
+            <circle class="ms-ring-bg"   cx="60" cy="60" r="50"/>
+            <circle class="ms-ring-fill" id="ms-ring-fill" cx="60" cy="60" r="50"
+                    stroke-dasharray="314" stroke-dashoffset="314"/>
+          </svg>
+
+          <!-- feedback overlay -->
+          <div class="ms-feedback" id="ms-feedback"></div>
+        </div>
+
+        <!-- progress bar (challenge mode) -->
+        <div class="ms-progress-bar" id="ms-progress-bar" style="display:none">
+          <div class="ms-progress-fill" id="ms-progress-fill"></div>
+          <span class="ms-progress-text" id="ms-progress-text">1 / 10</span>
+        </div>
+      </div>
+
+      <!-- RIGHT: sign panel -->
+      <div class="ms-sign-panel">
+        <!-- mode badge -->
+        <span class="ms-mode-badge" id="ms-mode-badge">APRENDER</span>
+
+        <!-- sign display -->
+        <div class="ms-sign-display">
+          <div class="ms-sign-emoji" id="ms-sign-emoji">🤟</div>
+          <div class="ms-sign-label" id="ms-sign-label">TE AMO</div>
+          <div class="ms-sign-hint"  id="ms-sign-hint">Pulgar y meñique arriba</div>
+        </div>
+
+        <!-- status message -->
+        <div class="ms-status-msg" id="ms-status-msg">Muestra la seña con tu mano</div>
+
+        <!-- navigation buttons (learn mode only) -->
+        <div class="ms-nav-btns" id="ms-nav-btns">
+          <button class="ms-btn ms-btn-outline" id="ms-btn-prev">← Anterior</button>
+          <button class="ms-btn ms-btn-primary" id="ms-btn-next">Siguiente →</button>
+        </div>
+
+        <!-- score (challenge mode only) -->
+        <div class="ms-score-display" id="ms-score-display" style="display:none">
+          <span class="ms-score-val" id="ms-score-val">0</span>
+          <span class="ms-score-label">/ 10 correctas</span>
+        </div>
+
+        <!-- exit button -->
+        <button class="ms-btn ms-btn-ghost" id="ms-btn-exit">✕ Salir</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SCREEN: RESULTS (challenge mode) -->
+  <div id="screen-results" class="ms-screen">
+    <div class="ms-results-card">
+      <div class="ms-results-trophy" id="ms-results-trophy">🏆</div>
+      <h2 class="ms-results-title" id="ms-results-title">¡Excelente!</h2>
+      <div class="ms-grade-badge" id="ms-grade-badge">A</div>
+      <div class="ms-results-score" id="ms-results-score">10 / 10</div>
+      <div class="ms-dots-grid" id="ms-dots-grid"></div>
+      <div class="ms-results-actions">
+        <button class="ms-btn ms-btn-primary" id="ms-btn-replay">🔄 Jugar de nuevo</button>
+        <button class="ms-btn ms-btn-outline" id="ms-btn-home">🏠 Inicio</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/motivasign.js"></script>
+</body>
+</html>

@@ -34,6 +34,11 @@ async def gestiedu():
     return FileResponse("app/static/gestiedu.html")
 
 
+@app.get("/motivasign")
+async def motivasign():
+    return FileResponse("app/static/motivasign.html")
+
+
 @app.get("/testing")
 async def testing():
     return FileResponse("app/static/testing.html")
