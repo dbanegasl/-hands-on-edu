@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GestiEdu — HandsOnEdu</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet" href="/static/css/gestiedu.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- NAV (minimal) -->
+  <nav class="ge-nav">
+    <a href="/" class="logo">🖐️ HandsOnEdu</a>
+    <span class="ge-nav-title">🖐️ GestiEdu</span>
+    <a href="/testing" class="ge-nav-link">Testing Lab</a>
+  </nav>
+
+  <!-- STATE: IDLE (welcome screen) -->
+  <div id="state-idle" class="game-state active">
+    <div class="welcome-logo">🖐️</div>
+    <h1 class="welcome-title">GestiEdu</h1>
+    <p class="welcome-subtitle">Responde preguntas con tu mano.<br>¡Sin tocar el teclado!</p>
+    <div class="info-chips">
+      <span>📋 10 preguntas</span>
+      <span>⏱️ ~3 min</span>
+      <span>✋ Solo tu mano</span>
+    </div>
+    <button id="btn-start">¡Comenzar! 🎯</button>
+    <p class="welcome-note">Necesitas una cámara web</p>
+
+    <!-- Gesture guide -->
+    <div class="gesture-guide">
+      <h3>¿Cómo responder?</h3>
+      <div class="guide-grid">
+        <div class="guide-item"><span>✋</span><small>Conteo: muestra los dedos</small></div>
+        <div class="guide-item"><span>👍</span><small>Verdadero</small></div>
+        <div class="guide-item"><span>✊</span><small>Falso</small></div>
+        <div class="guide-item"><span>☝️✌️🤟</span><small>Opciones 1, 2, 3</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE: GAME -->
+  <div id="state-game" class="game-state">
+    <div class="webcam-col">
+      <div class="video-wrapper">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="video-canvas"></canvas>
+        <canvas id="overlay-canvas"></canvas>
+      </div>
+      <!-- Gesture live indicator (bottom of webcam) -->
+      <div class="gesture-live">
+        <div class="gesture-emoji-big" id="gesture-emoji">🤔</div>
+        <div class="gesture-info">
+          <div class="gesture-label">Gesto detectado</div>
+          <div class="gesture-name" id="gesture-name">Esperando...</div>
+        </div>
+        <div class="hold-ring-wrapper">
+          <svg id="hold-arc" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="44" class="arc-bg"/>
+            <circle cx="50" cy="50" r="44" class="arc-fill" id="arc-fill"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="question-col">
+      <!-- Progress -->
+      <div class="progress-section">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <span class="progress-text">Pregunta <span id="q-num">1</span>/<span id="q-total">10</span></span>
+        <span class="score-badge">⭐ <span id="score-display">0</span></span>
+      </div>
+
+      <!-- Question card -->
+      <div class="question-card" id="question-card">
+        <div class="q-subject-tag" id="q-subject">📚 Matemáticas</div>
+        <div class="q-visual" id="q-visual"></div>
+        <div class="q-text" id="q-text">Cargando pregunta...</div>
+        <div id="q-options"></div>
+        <div class="q-hint" id="q-hint">Muestra los dedos correctos</div>
+      </div>
+
+      <!-- Feedback overlay (absolute, inside question-col) -->
+      <div class="feedback-overlay" id="feedback-overlay">
+        <div class="feedback-icon" id="feedback-icon">✅</div>
+        <div class="feedback-text" id="feedback-text">¡Correcto!</div>
+        <div class="feedback-correct-answer" id="feedback-detail"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE: RESULTS -->
+  <div id="state-results" class="game-state">
+    <div class="results-container">
+      <span class="results-trophy" id="results-trophy">🏆</span>
+      <h2 class="results-title">¡Evaluación completada!</h2>
+      <div class="results-score" id="results-score">0 / 10</div>
+      <div class="grade-badge" id="grade-badge">A</div>
+      <div class="answers-grid" id="answers-grid"></div>
+      <div class="results-buttons">
+        <button id="btn-restart" class="btn-restart">🔄 Intentar de nuevo</button>
+        <button id="btn-moodle" class="btn-moodle">📤 Enviar a Moodle</button>
+      </div>
+      <a href="/" class="results-back">← Volver al inicio</a>
+    </div>
+  </div>
+
+</div>
+<script src="/static/js/gestiedu.js" defer></script>
+</body>
+</html>

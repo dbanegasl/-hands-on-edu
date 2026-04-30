@@ -29,6 +29,11 @@ async def landing():
     return FileResponse("app/static/index.html")
 
 
+@app.get("/gestiedu")
+async def gestiedu():
+    return FileResponse("app/static/gestiedu.html")
+
+
 @app.get("/testing")
 async def testing():
     return FileResponse("app/static/testing.html")

@@ -1,0 +1,781 @@
+/* ============================================================
+   GestiEdu — Styles
+   Child-friendly, colorful, playful CSS for gesture-based
+   educational quiz game.
+   ============================================================ */
+
+/* ── Variables ───────────────────────────────────────────── */
+:root {
+  --ge-primary:   #6366f1;
+  --ge-secondary: #ec4899;
+  --ge-success:   #10b981;
+  --ge-error:     #ef4444;
+  --ge-warning:   #f59e0b;
+  --ge-bg:        linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --ge-card:      #ffffff;
+  --ge-text:      #1e293b;
+  --ge-muted:     #64748b;
+}
+
+/* ── Base overrides ──────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* GestiEdu page body — gradient background */
+body {
+  background: var(--ge-bg);
+  min-height: 100vh;
+}
+
+/* ── App container ───────────────────────────────────────── */
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Nav override (GestiEdu) ─────────────────────────────── */
+nav.ge-nav {
+  background: rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 12px 24px;
+  position: relative;
+  z-index: 200;
+  flex-shrink: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+nav.ge-nav .logo {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.ge-nav-title {
+  color: white;
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: 0.01em;
+}
+
+.ge-nav-link {
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.ge-nav-link:hover {
+  color: white;
+}
+
+/* ── Game states ─────────────────────────────────────────── */
+.game-state {
+  display: none;
+}
+
+.game-state.active {
+  display: flex;
+}
+
+/* ── Idle / Results: centered column ─────────────────────── */
+#state-idle.active,
+#state-results.active {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 56px);
+  text-align: center;
+  color: white;
+  padding: 40px 20px;
+  overflow-y: auto;
+}
+
+/* ── Game: side-by-side row ──────────────────────────────── */
+#state-game.active {
+  flex-direction: row;
+  height: calc(100vh - 56px);
+  overflow: hidden;
+}
+
+/* ============================================================
+   IDLE / WELCOME SCREEN
+   ============================================================ */
+
+.welcome-logo {
+  font-size: 5rem;
+  animation: bounce 2s infinite;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+h1.welcome-title {
+  font-size: 3rem;
+  font-weight: 900;
+  color: white;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  margin-bottom: 12px;
+}
+
+.welcome-subtitle {
+  font-size: 1.3rem;
+  opacity: 0.9;
+  color: white;
+  line-height: 1.6;
+  margin-bottom: 4px;
+}
+
+.info-chips {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  margin: 24px 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.info-chips span {
+  background: white;
+  color: var(--ge-primary);
+  padding: 8px 20px;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+#btn-start {
+  background: white;
+  color: var(--ge-primary);
+  font-size: 1.5rem;
+  font-weight: 800;
+  padding: 18px 48px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-bottom: 12px;
+}
+
+#btn-start:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+#btn-start:active {
+  transform: scale(0.98);
+}
+
+.welcome-note {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.85rem;
+  margin-bottom: 24px;
+}
+
+/* Gesture guide */
+.gesture-guide {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 24px;
+  margin-top: 16px;
+  max-width: 520px;
+  width: 100%;
+}
+
+.gesture-guide h3 {
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+.guide-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.guide-item {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.guide-item span {
+  font-size: 1.5rem;
+}
+
+.guide-item small {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* ============================================================
+   GAME LAYOUT — 2 COLUMNS
+   ============================================================ */
+
+.webcam-col {
+  width: 55%;
+  position: relative;
+  background: #000;
+  flex-shrink: 0;
+}
+
+.question-col {
+  flex: 1;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Video wrapper fills the webcam column */
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Video element hidden — we render to canvas */
+#video {
+  display: none;
+}
+
+#video-canvas,
+#overlay-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#overlay-canvas {
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ── Gesture live display (bottom of webcam) ─────────────── */
+.gesture-live {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 20;
+}
+
+.gesture-emoji-big {
+  font-size: 2.5rem;
+  width: 60px;
+  text-align: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.gesture-info {
+  flex: 1;
+}
+
+.gesture-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+
+.gesture-live .gesture-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+}
+
+/* Hold ring */
+.hold-ring-wrapper {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+
+#hold-arc {
+  width: 64px;
+  height: 64px;
+  transform: rotate(-90deg);
+}
+
+.arc-bg {
+  stroke: rgba(255, 255, 255, 0.13);
+  fill: none;
+  stroke-width: 6;
+}
+
+.arc-fill {
+  stroke: #00ff88;
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.1s linear;
+}
+
+/* ============================================================
+   QUESTION COLUMN
+   ============================================================ */
+
+/* Progress section */
+.progress-section {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-shrink: 0;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ge-primary), var(--ge-secondary));
+  border-radius: 5px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+.progress-text {
+  font-size: 0.9rem;
+  color: var(--ge-muted);
+  white-space: nowrap;
+}
+
+.score-badge {
+  background: var(--ge-primary);
+  color: white;
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* Question card */
+.question-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+.q-subject-tag {
+  display: inline-block;
+  background: #eef2ff;
+  color: var(--ge-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+
+.q-visual {
+  font-size: 4rem;
+  letter-spacing: 4px;
+  margin: 20px 0;
+  line-height: 1.3;
+  animation: appear 0.4s ease;
+}
+
+.q-text {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--ge-text);
+  margin-bottom: 16px;
+  line-height: 1.3;
+}
+
+.q-hint {
+  font-size: 1rem;
+  color: var(--ge-muted);
+  background: #f8fafc;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 2px dashed #e2e8f0;
+  margin-top: 8px;
+}
+
+/* Choice options */
+.choice-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0;
+  width: 100%;
+  max-width: 400px;
+}
+
+.choice-option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  color: var(--ge-text);
+  border: 2px solid transparent;
+  transition: border-color 0.2s, background 0.2s;
+  text-align: left;
+}
+
+.choice-option .finger-num {
+  font-weight: 700;
+  color: var(--ge-primary);
+  background: #eef2ff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.95rem;
+}
+
+/* Feedback overlay — absolute, covers question-col */
+.feedback-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.feedback-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.feedback-overlay.correct {
+  background: rgba(16, 185, 129, 0.95);
+}
+
+.feedback-overlay.incorrect {
+  background: rgba(239, 68, 68, 0.95);
+}
+
+.feedback-icon {
+  font-size: 5rem;
+  animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  line-height: 1;
+}
+
+.feedback-text {
+  font-size: 2rem;
+  font-weight: 900;
+  color: white;
+  margin-top: 16px;
+}
+
+.feedback-correct-answer {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 8px;
+}
+
+/* ============================================================
+   RESULTS SCREEN
+   ============================================================ */
+
+.results-container {
+  background: white;
+  border-radius: 24px;
+  padding: 40px;
+  max-width: 560px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
+}
+
+.results-trophy {
+  font-size: 5rem;
+  animation: bounce 1s infinite;
+  line-height: 1;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.results-title {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--ge-text);
+  margin-bottom: 4px;
+}
+
+.results-score {
+  font-size: 4rem;
+  font-weight: 900;
+  color: var(--ge-primary);
+  margin: 16px 0;
+  line-height: 1;
+}
+
+.grade-badge {
+  display: inline-block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  padding: 8px 24px;
+  border-radius: 50px;
+  color: white;
+  margin-bottom: 8px;
+}
+
+.grade-a { background: var(--ge-success); }
+.grade-b { background: var(--ge-primary); }
+.grade-c { background: var(--ge-warning); }
+.grade-d { background: var(--ge-error); }
+
+.answers-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin: 24px 0;
+  justify-items: center;
+}
+
+.answer-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.answer-dot.ok {
+  background: #dcfce7;
+  color: var(--ge-success);
+}
+
+.answer-dot.fail {
+  background: #fee2e2;
+  color: var(--ge-error);
+}
+
+.results-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+.btn-restart {
+  background: transparent;
+  border: 2px solid var(--ge-primary);
+  color: var(--ge-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 12px 28px;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.btn-restart:hover {
+  background: #eef2ff;
+  transform: translateY(-2px);
+}
+
+.btn-moodle {
+  background: var(--ge-primary);
+  border: 2px solid #f98012;
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 12px 28px;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.btn-moodle:hover {
+  opacity: 0.88;
+  transform: translateY(-2px);
+}
+
+.results-back {
+  display: inline-block;
+  margin-top: 20px;
+  color: var(--ge-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.results-back:hover {
+  color: var(--ge-primary);
+}
+
+/* ============================================================
+   CAMERA PERMISSION OVERLAY
+   ============================================================ */
+
+.camera-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.camera-card {
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+}
+
+.camera-card .camera-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.camera-card h3 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--ge-text);
+  margin-bottom: 8px;
+}
+
+.camera-card p {
+  color: var(--ge-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.camera-card .btn-cam-ok {
+  background: var(--ge-primary);
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.camera-card .btn-cam-ok:hover {
+  opacity: 0.88;
+}
+
+/* ============================================================
+   KEYFRAME ANIMATIONS
+   ============================================================ */
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-20px); }
+}
+
+@keyframes pop {
+  0%   { transform: scale(0); }
+  80%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes appear {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-8px); }
+  75%       { transform: translateX(8px); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 900px) {
+  #state-game.active {
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100vh - 56px);
+  }
+
+  .webcam-col {
+    width: 100%;
+    height: 50vw;
+    min-height: 220px;
+  }
+
+  .question-col {
+    padding: 20px;
+  }
+
+  .q-text {
+    font-size: 1.4rem;
+  }
+
+  h1.welcome-title {
+    font-size: 2.2rem;
+  }
+
+  .answers-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
