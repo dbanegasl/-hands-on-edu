@@ -214,7 +214,8 @@ function stopCamera() {
 
 function connectWS() {
   try {
-    const ws = new WebSocket('ws://localhost:9876/ws/analyze');
+    const wsUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/analyze`;
+    const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
       STATE.connected = true;

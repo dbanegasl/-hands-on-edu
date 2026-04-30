@@ -14,7 +14,7 @@
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const WS_URL            = 'ws://localhost:9876/ws/analyze';
+const WS_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/analyze`;
 const HOLD_TIME         = 1500;   // ms holding correct gesture → confirm
 const READING_DELAY     = 2500;   // ms to display sign before detection starts
 const CHALLENGE_TIMEOUT = 6000;   // ms of detecting phase before auto-fail (challenge)

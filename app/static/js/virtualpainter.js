@@ -14,7 +14,7 @@
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const WS_URL = 'ws://localhost:9876/ws/analyze';
+const WS_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/analyze`;
 
 const HAND_CONNECTIONS = [
   [0,1],[1,2],[2,3],[3,4],

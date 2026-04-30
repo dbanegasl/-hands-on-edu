@@ -10,7 +10,7 @@
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const WS_URL               = 'ws://localhost:9876/ws/analyze';
+const WS_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/analyze`;
 const HOLD_TIME            = 2000;  // ms hold to confirm present
 const READING_DELAY        = 1500;  // ms before detection starts for each student
 const RAISE_ALERT_DURATION = 1500;  // ms to show hand-raise alert in participation mode

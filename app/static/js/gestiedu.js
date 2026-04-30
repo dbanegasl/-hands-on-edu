@@ -6,7 +6,7 @@
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const WS_URL          = 'ws://localhost:9876/ws/analyze';
+const WS_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/analyze`;
 const HOLD_DURATION   = 1800;  // ms to hold gesture to confirm answer
 const READING_DELAY   = 2000;  // ms before gesture detection activates on new question
 const FEEDBACK_DURATION = 1500; // ms to show correct/incorrect feedback

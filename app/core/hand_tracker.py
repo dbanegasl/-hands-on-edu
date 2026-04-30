@@ -81,11 +81,7 @@ class HandTracker:
             return "peace"
         if count == 1 and pinky_up and thumb_out:
             return "shaka"
-        if count == 4 or (count == 4 and thumb_out):
-            return "open_hand"
-        if thumb_out and count == 4:
-            return "open_hand"
-        if count == 5 or (count == 4 and thumb_out):
+        if count == 4:  # all 4 fingers raised (thumb handled separately)
             return "open_hand"
         return f"{count}_fingers"
 
