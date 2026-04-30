@@ -39,6 +39,11 @@ async def motivasign():
     return FileResponse("app/static/motivasign.html")
 
 
+@app.get("/attendeye")
+async def attendeye():
+    return FileResponse("app/static/attendeye.html")
+
+
 @app.get("/testing")
 async def testing():
     return FileResponse("app/static/testing.html")

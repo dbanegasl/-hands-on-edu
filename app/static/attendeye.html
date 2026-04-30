@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AttendEye | HandsOnEdu</title>
+  <link rel="stylesheet" href="/static/css/attendeye.css"/>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="ae-nav">
+  <a href="/" class="ae-logo">🖐️ HandsOnEdu</a>
+  <span class="ae-module-name">👁️ AttendEye</span>
+  <a href="/" class="ae-back">← Inicio</a>
+</nav>
+
+<!-- SCREEN: SETUP (shown on load) -->
+<div id="screen-setup" class="ae-screen active">
+  <div class="ae-setup-card">
+    <div class="ae-setup-icon">👁️</div>
+    <h1>AttendEye</h1>
+    <p class="ae-setup-subtitle">Control de asistencia y participación con gestos</p>
+
+    <!-- Class name -->
+    <div class="ae-field">
+      <label>Nombre de la clase</label>
+      <input type="text" id="ae-class-name" placeholder="Ej: 3ro Básica A — Matemáticas" value="Mi Clase"/>
+    </div>
+
+    <!-- Student roster editor -->
+    <div class="ae-field">
+      <label>Lista de estudiantes <span class="ae-muted">(uno por línea)</span></label>
+      <textarea id="ae-roster-input" rows="8" placeholder="Ana García&#10;Carlos López&#10;María Torres&#10;...">Ana García
+Carlos López
+María Torres
+Pedro Jiménez
+Lucía Rodríguez
+José Martínez
+Sofía Herrera
+David Morales
+Isabella Flores
+Miguel Ángel Reyes</textarea>
+    </div>
+
+    <!-- Mode selection -->
+    <div class="ae-mode-cards">
+      <div class="ae-mode-card" id="btn-roll-call">
+        <div class="ae-mode-icon">📋</div>
+        <div class="ae-mode-title">Lista de Asistencia</div>
+        <div class="ae-mode-desc">Llama a cada estudiante, confirma con gesto</div>
+      </div>
+      <div class="ae-mode-card" id="btn-participation">
+        <div class="ae-mode-icon">🙋</div>
+        <div class="ae-mode-title">Participación</div>
+        <div class="ae-mode-desc">Monitorea quién levanta la mano en clase</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: ROLL CALL -->
+<div id="screen-rollcall" class="ae-screen">
+  <div class="ae-rc-layout">
+
+    <!-- LEFT: webcam -->
+    <div class="ae-cam-col">
+      <div class="ae-cam-wrapper">
+        <video id="ae-video" autoplay playsinline muted></video>
+        <canvas id="ae-canvas"></canvas>
+        <!-- hold ring -->
+        <svg class="ae-hold-ring" id="ae-hold-ring" viewBox="0 0 120 120">
+          <circle class="ae-ring-bg" cx="60" cy="60" r="50"/>
+          <circle class="ae-ring-fill" id="ae-ring-fill" cx="60" cy="60" r="50"
+                  stroke-dasharray="314" stroke-dashoffset="314"/>
+        </svg>
+        <!-- gesture badge -->
+        <div class="ae-gesture-badge" id="ae-gesture-badge">Sin mano detectada</div>
+        <!-- feedback overlay -->
+        <div class="ae-feedback" id="ae-feedback"></div>
+      </div>
+      <!-- instruction -->
+      <div class="ae-cam-instruction" id="ae-cam-instruction">
+        Esperando estudiante…
+      </div>
+    </div>
+
+    <!-- CENTER: current student spotlight -->
+    <div class="ae-spotlight-col">
+      <div class="ae-class-header" id="ae-class-header">Mi Clase</div>
+      <div class="ae-progress-bar">
+        <div class="ae-progress-fill" id="ae-rc-progress-fill"></div>
+      </div>
+      <div class="ae-progress-text" id="ae-rc-progress-text">1 / 10</div>
+
+      <div class="ae-student-spotlight">
+        <div class="ae-student-avatar" id="ae-student-avatar">AG</div>
+        <div class="ae-student-name" id="ae-student-name">Ana García</div>
+        <div class="ae-student-status-msg" id="ae-student-status-msg">¿Estás presente? Levanta la mano 🖐️</div>
+      </div>
+
+      <!-- Manual override buttons -->
+      <div class="ae-override-btns">
+        <button class="ae-btn ae-btn-success" id="ae-btn-present">✅ Presente</button>
+        <button class="ae-btn ae-btn-danger" id="ae-btn-absent">❌ Ausente</button>
+        <button class="ae-btn ae-btn-ghost" id="ae-btn-skip">⏭ Omitir</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: roster sidebar -->
+    <div class="ae-roster-col">
+      <div class="ae-roster-header">📋 Asistencia</div>
+      <div class="ae-roster-list" id="ae-roster-list">
+        <!-- populated by JS -->
+      </div>
+      <button class="ae-btn ae-btn-ghost ae-btn-sm" id="ae-btn-exit-rc">✕ Terminar</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- SCREEN: PARTICIPATION -->
+<div id="screen-participation" class="ae-screen">
+  <div class="ae-part-layout">
+
+    <!-- LEFT: webcam -->
+    <div class="ae-cam-col">
+      <div class="ae-cam-wrapper">
+        <video id="ae-video-p" autoplay playsinline muted></video>
+        <canvas id="ae-canvas-p"></canvas>
+        <div class="ae-gesture-badge" id="ae-gesture-badge-p">Sin mano detectada</div>
+        <!-- hand-raise alert -->
+        <div class="ae-raise-alert" id="ae-raise-alert">🙋 ¡Mano levantada!</div>
+      </div>
+      <div class="ae-cam-instruction">
+        Cuando un estudiante levante la mano, haz clic en su nombre
+      </div>
+      <div class="ae-class-header" id="ae-part-class-header">Mi Clase</div>
+      <!-- session timer -->
+      <div class="ae-timer" id="ae-timer">00:00</div>
+      <button class="ae-btn ae-btn-ghost ae-btn-sm" id="ae-btn-exit-part">✕ Terminar</button>
+    </div>
+
+    <!-- RIGHT: participation board -->
+    <div class="ae-part-board">
+      <div class="ae-part-header">🙋 Tablero de Participación</div>
+      <div class="ae-part-list" id="ae-part-list">
+        <!-- populated by JS: each student row with name + count + bar + +1 button -->
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SCREEN: RESULTS (roll call summary) -->
+<div id="screen-results" class="ae-screen">
+  <div class="ae-results-card">
+    <div class="ae-results-icon">📊</div>
+    <h2 id="ae-results-title">Asistencia Completada</h2>
+    <div class="ae-results-class" id="ae-results-class">Mi Clase</div>
+    <div class="ae-results-stats">
+      <div class="ae-stat ae-stat-present">
+        <div class="ae-stat-val" id="ae-stat-present">8</div>
+        <div class="ae-stat-label">Presentes</div>
+      </div>
+      <div class="ae-stat ae-stat-absent">
+        <div class="ae-stat-val" id="ae-stat-absent">2</div>
+        <div class="ae-stat-label">Ausentes</div>
+      </div>
+      <div class="ae-stat ae-stat-rate">
+        <div class="ae-stat-val" id="ae-stat-rate">80%</div>
+        <div class="ae-stat-label">Asistencia</div>
+      </div>
+    </div>
+
+    <!-- Full attendance list -->
+    <div class="ae-results-list" id="ae-results-list"></div>
+
+    <!-- Export box -->
+    <div class="ae-export-box">
+      <div class="ae-export-label">📄 Reporte de texto</div>
+      <textarea id="ae-export-text" readonly rows="5"></textarea>
+      <button class="ae-btn ae-btn-primary" id="ae-btn-copy">📋 Copiar reporte</button>
+    </div>
+
+    <div class="ae-results-actions">
+      <button class="ae-btn ae-btn-outline" id="ae-btn-new-session">🔄 Nueva sesión</button>
+      <button class="ae-btn ae-btn-ghost" id="ae-btn-home">🏠 Inicio</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/attendeye.js"></script>
+</body>
+</html>
