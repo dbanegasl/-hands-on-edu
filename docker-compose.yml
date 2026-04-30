@@ -3,16 +3,17 @@ services:
     build: .
     container_name: hands_on_edu
     ports:
-      - "8000:8000"
+      - "9876:8000"
     volumes:
       - ./app:/app/app
-      - ./models:/app/models
-    devices:
-      # Webcam passthrough (Linux). Adjust if your webcam is /dev/video1, etc.
-      - /dev/video0:/dev/video0
+      # models/ is baked into the image at build time — no need to mount it
     environment:
       - MOODLE_URL=${MOODLE_URL:-http://localhost}
       - MOODLE_TOKEN=${MOODLE_TOKEN:-}
       - MOODLE_COURSE_ID=${MOODLE_COURSE_ID:-}
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
+    # Note: webcam is captured by the browser via getUserMedia — no device passthrough needed.
+    # Only add the devices section below if running OpenCV headless demos (non-web mode):
+    # devices:
+    #   - /dev/video0:/dev/video0

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HandsOnEdu — Aprendizaje con Inteligencia Gestual</title>
+  <meta name="description" content="Plataforma educativa de código abierto para UNAE que usa MediaPipe y visión por computadora para crear experiencias interactivas e inclusivas.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖐️</text></svg>">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+
+  <!-- ── Navigation ─────────────────────────────────────── -->
+  <nav>
+    <a href="/" class="logo">🖐️ HandsOnEdu</a>
+    <div class="nav-links">
+      <a href="/">Inicio</a>
+      <a href="/testing" class="btn btn-primary" style="padding:8px 18px;font-size:0.85rem;">🧪 Testing Lab</a>
+      <a href="/docs">API Docs</a>
+      <a href="https://github.com/dbanegasl/-hands-on-edu" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </nav>
+
+  <!-- ── Hero ───────────────────────────────────────────── -->
+  <section style="padding:0;background:linear-gradient(135deg,#f0f9ff 0%,#faf5ff 50%,#f0fdf4 100%);">
+    <div class="hero">
+      <!-- Left: content -->
+      <div class="hero-content">
+        <div class="hero-badge">🎓 UNAE · Entornos Virtuales</div>
+        <h1>
+          Aprendizaje con<br>
+          <span class="gradient-text">Inteligencia Gestual</span>
+        </h1>
+        <p class="hero-subtitle">
+          Plataforma educativa de código abierto que usa visión por computadora
+          e IA para crear experiencias interactivas e inclusivas.
+        </p>
+        <div class="hero-cta">
+          <a href="/testing" class="btn btn-primary btn-large">🧪 Testing Lab</a>
+          <a href="/docs" class="btn btn-outline btn-large">📖 API Docs</a>
+        </div>
+        <div class="hero-tech">
+          <span class="tech-chip">🤖 MediaPipe</span>
+          <span class="tech-chip">🐍 Python 3.11</span>
+          <span class="tech-chip">⚡ FastAPI</span>
+          <span class="tech-chip">🐳 Docker</span>
+        </div>
+      </div>
+
+      <!-- Right: animated hand SVG -->
+      <div class="hero-visual">
+        <div class="hand-svg-wrapper">
+          <svg width="280" height="320" viewBox="0 0 280 320" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Hand landmark skeleton">
+            <!-- Skeleton connections -->
+            <!-- Thumb: 0→1→2→3→4 -->
+            <line x1="140" y1="270" x2="100" y2="230" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="100" y1="230" x2="80"  y2="200" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="80"  y1="200" x2="65"  y2="170" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="65"  y1="170" x2="50"  y2="145" stroke="#93c5fd" stroke-width="2.5"/>
+            <!-- Index: 0→5→6→7→8 -->
+            <line x1="140" y1="270" x2="110" y2="195" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="110" y1="195" x2="105" y2="150" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="105" y1="150" x2="102" y2="110" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="102" y1="110" x2="100" y2="75"  stroke="#93c5fd" stroke-width="2.5"/>
+            <!-- Middle: 0→9→10→11→12 -->
+            <line x1="140" y1="270" x2="140" y2="192" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="140" y1="192" x2="140" y2="148" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="140" y1="148" x2="140" y2="108" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="140" y1="108" x2="140" y2="68"  stroke="#93c5fd" stroke-width="2.5"/>
+            <!-- Ring: 0→13→14→15→16 -->
+            <line x1="140" y1="270" x2="168" y2="193" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="168" y1="193" x2="174" y2="150" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="174" y1="150" x2="176" y2="110" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="176" y1="110" x2="178" y2="75"  stroke="#93c5fd" stroke-width="2.5"/>
+            <!-- Pinky: 0→17→18→19→20 -->
+            <line x1="140" y1="270" x2="196" y2="200" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="196" y1="200" x2="210" y2="162" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="210" y1="162" x2="218" y2="128" stroke="#93c5fd" stroke-width="2.5"/>
+            <line x1="218" y1="128" x2="224" y2="100" stroke="#93c5fd" stroke-width="2.5"/>
+            <!-- Palm cross: 5-9, 9-13, 13-17 -->
+            <line x1="110" y1="195" x2="140" y2="192" stroke="#93c5fd" stroke-width="2"/>
+            <line x1="140" y1="192" x2="168" y2="193" stroke="#93c5fd" stroke-width="2"/>
+            <line x1="168" y1="193" x2="196" y2="200" stroke="#93c5fd" stroke-width="2"/>
+
+            <!-- Landmark dots — regular (blue) -->
+            <!-- Wrist: 0 -->
+            <circle cx="140" cy="270" r="6" fill="#3b82f6"/>
+            <!-- Thumb CMC:1, MCP:2, IP:3 -->
+            <circle cx="100" cy="230" r="5" fill="#6366f1"/>
+            <circle cx="80"  cy="200" r="5" fill="#6366f1"/>
+            <circle cx="65"  cy="170" r="5" fill="#6366f1"/>
+            <!-- Index MCP:5, PIP:6, DIP:7 -->
+            <circle cx="110" cy="195" r="5" fill="#6366f1"/>
+            <circle cx="105" cy="150" r="5" fill="#6366f1"/>
+            <circle cx="102" cy="110" r="5" fill="#6366f1"/>
+            <!-- Middle MCP:9, PIP:10, DIP:11 -->
+            <circle cx="140" cy="192" r="5" fill="#6366f1"/>
+            <circle cx="140" cy="148" r="5" fill="#6366f1"/>
+            <circle cx="140" cy="108" r="5" fill="#6366f1"/>
+            <!-- Ring MCP:13, PIP:14, DIP:15 -->
+            <circle cx="168" cy="193" r="5" fill="#6366f1"/>
+            <circle cx="174" cy="150" r="5" fill="#6366f1"/>
+            <circle cx="176" cy="110" r="5" fill="#6366f1"/>
+            <!-- Pinky MCP:17, PIP:18, DIP:19 -->
+            <circle cx="196" cy="200" r="5" fill="#6366f1"/>
+            <circle cx="210" cy="162" r="5" fill="#6366f1"/>
+            <circle cx="218" cy="128" r="5" fill="#6366f1"/>
+
+            <!-- Fingertips — neon/prominent (4,8,12,16,20) -->
+            <circle cx="50"  cy="145" r="8" fill="#ec4899" opacity="0.9"/>
+            <circle cx="100" cy="75"  r="8" fill="#ec4899" opacity="0.9"/>
+            <circle cx="140" cy="68"  r="8" fill="#ec4899" opacity="0.9"/>
+            <circle cx="178" cy="75"  r="8" fill="#ec4899" opacity="0.9"/>
+            <circle cx="224" cy="100" r="8" fill="#ec4899" opacity="0.9"/>
+
+            <!-- Landmark number labels (sample) -->
+            <text x="148" y="274" font-size="9" fill="#64748b">0</text>
+            <text x="105" y="74"  font-size="9" fill="#64748b">8</text>
+            <text x="145" y="67"  font-size="9" fill="#64748b">12</text>
+            <text x="183" y="74"  font-size="9" fill="#64748b">16</text>
+            <text x="229" y="99"  font-size="9" fill="#64748b">20</text>
+            <text x="33"  cy="145" font-size="9" fill="#64748b">4</text>
+          </svg>
+          <p style="text-align:center;font-size:0.75rem;color:#6366f1;margin-top:8px;font-weight:600;">
+            21 landmarks · MediaPipe Hand Landmarker
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Modules section ────────────────────────────────── -->
+  <section>
+    <div class="section-header">
+      <h2>Módulos del Proyecto</h2>
+      <p>Cuatro módulos educativos impulsados por reconocimiento de gestos en tiempo real</p>
+    </div>
+    <div class="modules-grid">
+
+      <!-- GestiEdu -->
+      <div class="module-card in-dev">
+        <div class="module-icon">🖐️</div>
+        <div class="module-title">GestiEdu</div>
+        <span class="module-badge badge-amber">🚧 En desarrollo</span>
+        <p class="module-desc">
+          Evaluaciones interactivas donde los niños responden con gestos.
+          Integración directa con Moodle para registrar calificaciones.
+        </p>
+        <div class="module-tags">
+          <span class="tag">Evaluación</span>
+          <span class="tag">Moodle</span>
+          <span class="tag">Inicial-Primaria</span>
+        </div>
+      </div>
+
+      <!-- MotivaSign -->
+      <div class="module-card planned">
+        <div class="module-icon">🤟</div>
+        <div class="module-title">MotivaSign</div>
+        <span class="module-badge badge-gray">📋 Próximamente</span>
+        <p class="module-desc">
+          Aprende lengua de señas básica con reconocimiento por IA.
+          Diseñado para educación inclusiva.
+        </p>
+        <div class="module-tags">
+          <span class="tag">Inclusión</span>
+          <span class="tag">IA</span>
+          <span class="tag">Lenguaje de señas</span>
+        </div>
+      </div>
+
+      <!-- AttendEye -->
+      <div class="module-card planned">
+        <div class="module-icon">👁️</div>
+        <div class="module-title">AttendEye</div>
+        <span class="module-badge badge-gray">📋 Próximamente</span>
+        <p class="module-desc">
+          Monitoreo de atención durante clases virtuales.
+          Reportes automáticos al docente en Moodle.
+        </p>
+        <div class="module-tags">
+          <span class="tag">Clases virtuales</span>
+          <span class="tag">Atención</span>
+          <span class="tag">Reportes</span>
+        </div>
+      </div>
+
+      <!-- VirtualPainter -->
+      <div class="module-card planned">
+        <div class="module-icon">✏️</div>
+        <div class="module-title">VirtualPainter</div>
+        <span class="module-badge badge-gray">📋 Próximamente</span>
+        <p class="module-desc">
+          Escribe y dibuja en el aire con el dedo índice.
+          Ejercicios de motricidad para educación inicial.
+        </p>
+        <div class="module-tags">
+          <span class="tag">Motricidad</span>
+          <span class="tag">Arte</span>
+          <span class="tag">Inicial</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Testing Lab CTA ────────────────────────────────── -->
+  <div class="lab-cta">
+    <div class="lab-icon">🧪</div>
+    <h2>Testing Lab</h2>
+    <p>
+      Antes de cada módulo, verifica que MediaPipe funciona correctamente en tu sistema.
+      Prueba detección de manos, conteo de dedos, reconocimiento de gestos y más en tiempo real.
+    </p>
+    <a href="/testing" class="btn btn-large" style="background:var(--neon-green,#00ff88);color:#0f172a;font-weight:800;border:none;">
+      Abrir Testing Lab →
+    </a>
+  </div>
+
+  <!-- ── Stack section ──────────────────────────────────── -->
+  <section class="stack-section">
+    <div class="section-header">
+      <h2>Stack Tecnológico</h2>
+      <p>Tecnologías de código abierto para una educación de vanguardia</p>
+    </div>
+    <div class="stack-grid">
+      <div class="stack-card">
+        <div class="stack-icon">🤖</div>
+        <div class="stack-name">MediaPipe</div>
+        <div class="stack-desc">Hand Landmarker<br>21 landmarks</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-icon">🐍</div>
+        <div class="stack-name">Python 3.11</div>
+        <div class="stack-desc">OpenCV<br>NumPy · FastAPI</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-icon">⚡</div>
+        <div class="stack-name">FastAPI</div>
+        <div class="stack-desc">REST API<br>WebSockets</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-icon">🐳</div>
+        <div class="stack-name">Docker</div>
+        <div class="stack-desc">Contenedorizado<br>Reproducible</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-icon">🎓</div>
+        <div class="stack-name">Moodle API</div>
+        <div class="stack-desc">Calificaciones<br>Completitud</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ─────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-brand">🖐️ HandsOnEdu</div>
+    <div class="footer-meta">Área de Entornos Virtuales · UNAE · Ecuador 🇪🇨</div>
+    <a href="https://github.com/dbanegasl/-hands-on-edu" target="_blank" rel="noopener" class="footer-link">
+      GitHub →
+    </a>
+  </footer>
+
+</body>
+</html>

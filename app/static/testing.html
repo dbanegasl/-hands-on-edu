@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Testing Lab — HandsOnEdu</title>
+  <meta name="description" content="Verifica las capacidades de MediaPipe Hand Landmarker en tiempo real.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <style>
+    /* Extra dark-only tweaks scoped to this page */
+    body.dark {
+      min-height: 100vh;
+    }
+
+    body.dark .btn-outline {
+      border-color: var(--neon-blue);
+      color: var(--neon-blue);
+    }
+
+    body.dark .btn-outline:hover {
+      background-color: rgba(0, 207, 255, 0.1);
+    }
+
+    /* Neon glow on active mode tab icon */
+    .mode-tab.active .tab-icon {
+      filter: drop-shadow(0 0 4px var(--neon-green));
+    }
+
+    /* Smooth canvas fade-in */
+    #video-canvas {
+      transition: opacity 0.3s;
+    }
+
+    /* Results panel section titles */
+    .results-section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--dark-muted);
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body class="dark">
+
+  <!-- ── Navigation ─────────────────────────────────────── -->
+  <nav>
+    <a href="/" class="logo">🖐️ HandsOnEdu</a>
+    <div class="nav-links">
+      <a href="/">← Inicio</a>
+      <a href="/docs">API Docs</a>
+      <a href="https://github.com/dbanegasl/-hands-on-edu" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </nav>
+
+  <!-- ── Page header ────────────────────────────────────── -->
+  <div class="lab-header">
+    <h1>🧪 Testing Lab</h1>
+    <p>Verifica las capacidades de MediaPipe Hand Landmarker en tiempo real antes de desarrollar cada módulo</p>
+  </div>
+
+  <!-- ── Main layout ────────────────────────────────────── -->
+  <main class="lab-layout">
+
+    <!-- ═══════════════════════════════════════════════════
+         LEFT — Video panel
+    ════════════════════════════════════════════════════ -->
+    <div class="video-panel">
+
+      <!-- Video + canvas wrapper -->
+      <div class="video-wrapper">
+        <!-- Hidden video element used only to capture frames -->
+        <video id="video" autoplay playsinline style="display:none;"></video>
+
+        <!-- Visible canvas: mirrored video feed -->
+        <canvas id="video-canvas"></canvas>
+
+        <!-- Overlay canvas: landmark drawing (pointer-events:none) -->
+        <canvas id="overlay-canvas"></canvas>
+
+        <!-- Placeholder shown before camera starts -->
+        <div class="video-placeholder" id="video-placeholder">
+          <span>📷</span>
+          <span>Cámara desactivada</span>
+        </div>
+      </div>
+
+      <!-- Status bar -->
+      <div class="status-bar">
+        <div class="status-left">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Desconectado</span>
+        </div>
+        <div class="status-center">
+          <span id="fps-display">-- fps</span>
+        </div>
+        <div class="status-right">
+          <span id="hands-count">0 manos</span>
+        </div>
+      </div>
+
+      <!-- Camera control buttons -->
+      <div class="camera-controls">
+        <button id="btn-camera" class="btn-camera">📷 Iniciar Cámara</button>
+        <button id="btn-clear" class="btn btn-outline" style="display:none;">🗑️ Limpiar trail</button>
+      </div>
+
+    </div><!-- /video-panel -->
+
+    <!-- ═══════════════════════════════════════════════════
+         RIGHT — Controls panel
+    ════════════════════════════════════════════════════ -->
+    <div class="controls-panel">
+
+      <!-- Mode selector -->
+      <div>
+        <h3>Modo de prueba</h3>
+        <div class="mode-tabs" id="mode-tabs">
+          <button class="mode-tab active" data-mode="detection">
+            <span class="tab-icon">🔍</span><br>Detección
+          </button>
+          <button class="mode-tab" data-mode="landmarks">
+            <span class="tab-icon">📍</span><br>Landmarks
+          </button>
+          <button class="mode-tab" data-mode="counter">
+            <span class="tab-icon">✋</span><br>Contador
+          </button>
+          <button class="mode-tab" data-mode="gestures">
+            <span class="tab-icon">🤟</span><br>Gestos
+          </button>
+          <button class="mode-tab" data-mode="tracker">
+            <span class="tab-icon">✏️</span><br>Rastreador
+          </button>
+          <button class="mode-tab" data-mode="twohands">
+            <span class="tab-icon">👐</span><br>Dos Manos
+          </button>
+        </div>
+      </div>
+
+      <!-- Results output -->
+      <div>
+        <h3>Resultados</h3>
+        <div class="results-panel" id="results-panel">
+          <div class="results-placeholder">
+            <span>📷</span>
+            <span>Inicia la cámara para comenzar</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode info box -->
+      <div class="info-box">
+        <h4>ℹ️ Sobre este test</h4>
+        <p id="mode-description">
+          Detecta si hay manos presentes en la imagen y muestra su posición general y lateralidad (izquierda/derecha).
+        </p>
+        <p class="info-tech">
+          MediaPipe Hand Landmarker · 21 puntos por mano · Tiempo real vía WebSocket
+        </p>
+      </div>
+
+    </div><!-- /controls-panel -->
+
+  </main>
+
+  <!-- ── Error toast ─────────────────────────────────────── -->
+  <div id="error-toast" class="error-toast" style="display:none;"></div>
+
+  <script src="/static/js/webcam.js" defer></script>
+</body>
+</html>

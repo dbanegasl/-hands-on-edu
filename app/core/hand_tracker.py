@@ -11,11 +11,11 @@ MODEL_PATH = "/app/models/hand_landmarker.task"
 
 # 21 landmark indices reference (MediaPipe Hand)
 WRIST = 0
-THUMB_TIP = 4
-INDEX_TIP = 8
-MIDDLE_TIP = 12
-RING_TIP = 16
-PINKY_TIP = 20
+THUMB_CMC, THUMB_MCP, THUMB_IP, THUMB_TIP = 1, 2, 3, 4
+INDEX_MCP, INDEX_PIP, INDEX_DIP, INDEX_TIP = 5, 6, 7, 8
+MIDDLE_MCP, MIDDLE_PIP, MIDDLE_DIP, MIDDLE_TIP = 9, 10, 11, 12
+RING_MCP, RING_PIP, RING_DIP, RING_TIP = 13, 14, 15, 16
+PINKY_MCP, PINKY_PIP, PINKY_DIP, PINKY_TIP = 17, 18, 19, 20
 
 
 class HandTracker:
@@ -48,17 +48,46 @@ class HandTracker:
         return int(tip.x * width), int(tip.y * height)
 
     def count_raised_fingers(self, landmarks) -> int:
-        """Count how many fingers are raised (simple heuristic based on y position)."""
-        tips = [INDEX_TIP, MIDDLE_TIP, RING_TIP, PINKY_TIP]
-        pip_joints = [6, 10, 14, 18]  # PIP joints (one below each tip)
+        """Count how many fingers are raised using PIP/TIP y-axis comparison."""
+        tips =       [INDEX_TIP,  MIDDLE_TIP,  RING_TIP,  PINKY_TIP]
+        pip_joints = [INDEX_PIP,  MIDDLE_PIP,  RING_PIP,  PINKY_PIP]
         count = sum(
             1 for tip, pip in zip(tips, pip_joints)
             if landmarks[tip].y < landmarks[pip].y
         )
-        # Thumb: compare x axis
-        if landmarks[THUMB_TIP].x > landmarks[2].x:
+        # Thumb: extended when tip is far from MCP in x axis
+        if abs(landmarks[THUMB_TIP].x - landmarks[THUMB_MCP].x) > 0.08:
             count += 1
         return count
+
+    def detect_gesture(self, landmarks) -> str:
+        """Classify hand into a named gesture based on which fingers are raised."""
+        index_up  = landmarks[INDEX_TIP].y  < landmarks[INDEX_PIP].y
+        middle_up = landmarks[MIDDLE_TIP].y < landmarks[MIDDLE_PIP].y
+        ring_up   = landmarks[RING_TIP].y   < landmarks[RING_PIP].y
+        pinky_up  = landmarks[PINKY_TIP].y  < landmarks[PINKY_PIP].y
+        thumb_out = abs(landmarks[THUMB_TIP].x - landmarks[THUMB_MCP].x) > 0.08
+
+        fingers = [index_up, middle_up, ring_up, pinky_up]
+        count = sum(fingers)
+
+        if count == 0 and not thumb_out:
+            return "fist"
+        if count == 0 and thumb_out:
+            return "thumbs_up"
+        if count == 1 and index_up and not thumb_out:
+            return "pointing"
+        if count == 2 and index_up and middle_up and not ring_up and not pinky_up:
+            return "peace"
+        if count == 1 and pinky_up and thumb_out:
+            return "shaka"
+        if count == 4 or (count == 4 and thumb_out):
+            return "open_hand"
+        if thumb_out and count == 4:
+            return "open_hand"
+        if count == 5 or (count == 4 and thumb_out):
+            return "open_hand"
+        return f"{count}_fingers"
 
     def close(self):
         self._landmarker.close()
