@@ -50,6 +50,10 @@ const SIGNS = [
   { id: 'bravo',  label: 'BRAVO 🤙',   emoji: '🤙',  gesture: 'shaka',      hint: 'Pulgar y meñique' },
 ];
 
+// ── Audio ─────────────────────────────────────────────────────────────────────
+
+const audio = new AudioFeedback();
+
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let ws           = null;
@@ -116,6 +120,16 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('ms-btn-exit').addEventListener('click',  exitGame);
   document.getElementById('ms-btn-replay').addEventListener('click', () => startGame('challenge'));
   document.getElementById('ms-btn-home').addEventListener('click',  goHome);
+
+  // Mute button
+  const btnMute = document.getElementById('btn-mute-audio');
+  if (btnMute) {
+    btnMute.textContent = audio.isMuted() ? '🔇' : '🔊';
+    btnMute.addEventListener('click', () => {
+      if (audio.isMuted()) { audio.unmute(); btnMute.textContent = '🔊'; }
+      else                 { audio.mute();   btnMute.textContent = '🔇'; }
+    });
+  }
 });
 
 // ── Screen helpers ────────────────────────────────────────────────────────────
@@ -285,6 +299,7 @@ function showFeedback(correct) {
   elHoldRing.style.display = 'none';
 
   if (correct) {
+    audio.play('pop');
     elFeedback.innerHTML = '<span class="ms-fb-emoji">✅</span><span class="ms-fb-text">¡Correcto!</span>';
     elFeedback.className = 'ms-feedback ms-feedback-correct ms-feedback-visible';
     if (mode === 'challenge') {
@@ -292,6 +307,7 @@ function showFeedback(correct) {
       elScoreVal.textContent = score;
     }
   } else {
+    audio.play('beep');
     elFeedback.innerHTML = '<span class="ms-fb-emoji">❌</span><span class="ms-fb-text">¡Inténtalo de nuevo!</span>';
     elFeedback.className = 'ms-feedback ms-feedback-wrong ms-feedback-visible';
   }
@@ -346,6 +362,7 @@ function nextSign() {
 
 function showResults() {
   stopWebcam();
+  audio.play('chime');
   showScreen('screen-results');
 
   const GRADES = [

@@ -18,7 +18,7 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 | ID | Título | Tipo | Prioridad | Estado | Módulo relacionado |
 |----|--------|------|-----------|--------|--------------------|
 | [REQ-001](./REQ-001-unit-tests.md) | Suite de Tests Unitarios e Integración | Tech-Debt | Alta | ✅ Hecho | Global / Backend |
-| [REQ-002](./REQ-002-audio-feedback.md) | Feedback de Audio en GestiEdu y MotivaSign | Mejora | Media | 📋 Pendiente | GestiEdu, MotivaSign |
+| [REQ-002](./REQ-002-audio-feedback.md) | Feedback de Audio en GestiEdu y MotivaSign | Mejora | Media | ✅ Hecho | GestiEdu, MotivaSign |
 | [REQ-003](./REQ-003-pdf-export-attendeye.md) | Exportación PDF del Reporte de Asistencia | Mejora | Media | 📋 Pendiente | AttendEye |
 | [REQ-004](./REQ-004-undo-virtualpainter.md) | Deshacer / Rehacer en VirtualPainter | Mejora | Media | 📋 Pendiente | VirtualPainter |
 | [REQ-005](./REQ-005-sqlite-persistence.md) | Persistencia de Sesiones con SQLite | Feature | Alta | 📋 Pendiente | Global / Backend |

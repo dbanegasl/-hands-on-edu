@@ -95,7 +95,12 @@ const GAME = {
   currentAnswer: null,
   readingTimer: null,
   feedbackTimer: null,
+  lastTickSec: -1,      // tracks tick milestones during hold-arc confirmation
 };
+
+// ── Audio ─────────────────────────────────────────────────────────────────────
+
+const audio = new AudioFeedback();
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 
@@ -150,6 +155,16 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-start').addEventListener('click', startGame);
   document.getElementById('btn-restart').addEventListener('click', restartGame);
   document.getElementById('btn-moodle').addEventListener('click', showMoodleModal);
+
+  // Mute button
+  const btnMute = document.getElementById('btn-mute-audio');
+  if (btnMute) {
+    btnMute.textContent = audio.isMuted() ? '🔇' : '🔊';
+    btnMute.addEventListener('click', () => {
+      if (audio.isMuted()) { audio.unmute(); btnMute.textContent = '🔊'; }
+      else                 { audio.mute();   btnMute.textContent = '🔇'; }
+    });
+  }
 });
 
 // ── State management ──────────────────────────────────────────────────────────
@@ -373,6 +388,13 @@ function handleWSMessage(event) {
   const progress = Math.min(elapsed / HOLD_DURATION, 1);
   updateHoldArc(progress);
 
+  // Play a tick every ~600 ms during hold to signal progress
+  const tickStep = Math.floor(elapsed / 600);
+  if (tickStep > GAME.lastTickSec) {
+    GAME.lastTickSec = tickStep;
+    audio.play('tick');
+  }
+
   if (progress >= 1) {
     submitAnswer(answer);
   }
@@ -512,6 +534,7 @@ function submitAnswer(answer) {
   // Update live score
   scoreDisplay.textContent = GAME.score;
 
+  audio.play(correct ? 'ding' : 'buzz');
   showFeedback(correct, answer, q);
 
   if (GAME.feedbackTimer) clearTimeout(GAME.feedbackTimer);
@@ -558,6 +581,7 @@ function nextQuestion() {
 
 function showResults() {
   stopCamera();
+  audio.play('fanfare');
   showState('results');
 
   const total   = QUESTIONS.length;
@@ -615,6 +639,7 @@ function updateHoldArc(progress) {
 function resetHold() {
   GAME.holdStart     = null;
   GAME.currentAnswer = null;
+  GAME.lastTickSec   = -1;
   updateHoldArc(0);
 }
 

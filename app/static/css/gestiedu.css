@@ -76,6 +76,23 @@ nav.ge-nav .logo {
   color: white;
 }
 
+.ge-btn-mute {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 4px 8px;
+  transition: background 0.2s;
+  margin-left: auto;
+}
+
+.ge-btn-mute:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
 /* ── Game states ─────────────────────────────────────────── */
 .game-state {
   display: none;

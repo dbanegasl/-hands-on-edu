@@ -11,7 +11,6 @@
 
 ### Añadido
 
-- **REQ-002** — Feedback de audio en GestiEdu y MotivaSign usando Web Audio API (sin dependencias externas): tonos de acierto, error, cuenta regresiva, confirmación de gesto; control de mute global.
 - **REQ-003** — Exportación PDF del reporte de asistencia en AttendEye con `jsPDF` + `jsPDF-AutoTable`: encabezado institucional UNAE, tabla de asistencia, resumen y campo de firma del docente.
 - **REQ-004** — Deshacer/Rehacer (Ctrl+Z / Ctrl+Y) en VirtualPainter: stack de historial de hasta 30 snapshots `ImageData`, botones en toolbar con estado disabled dinámico, gesto alternativo (palma 2s).
 - **REQ-005** — Persistencia de sesiones con SQLite + SQLAlchemy async: tablas `sessions`, `gestiedu_results`, `attendeye_records`, `motivasign_progress`; volumen Docker `./data:/app/data`.
@@ -24,7 +23,23 @@
 
 ---
 
-## [0.2.0] — 2026-04-30
+## [0.3.0] — 2026-04-30
+
+### Añadido
+
+- **Feedback de audio en GestiEdu y MotivaSign** (`REQ-002`) — sonidos programáticos con Web Audio API (0 assets externos, funciona offline):
+  - `app/static/js/audio.js`: clase `AudioFeedback` con 7 sonidos nombrados (`ding`, `buzz`, `tick`, `fanfare`, `pop`, `chime`, `beep`), lazy `AudioContext` (cumple autoplay policy), soporte `prefers-reduced-motion` (volumen 20% por defecto).
+  - **GestiEdu**: `ding` (respuesta correcta), `buzz` (incorrecta), `tick` cada 600 ms durante el hold-arc de confirmación, `fanfare` (Do-Mi-Sol) al mostrar resultados finales.
+  - **MotivaSign**: `pop` (gesto confirmado), `beep` suave (gesto incorrecto), `chime` al terminar el desafío.
+  - Botón 🔊/🔇 en el header de GestiEdu y MotivaSign; estado persiste en `localStorage['handsonedu_audio_muted']`.
+  - Estilos `.ge-btn-mute` / `.ms-btn-mute` añadidos a `gestiedu.css` y `motivasign.css`.
+
+### Cambiado
+
+- `docs/requirements/INDEX.md`: REQ-002 → ✅ Hecho.
+- `docs/requirements/REQ-002-audio-feedback.md`: estado → ✅ Hecho.
+
+---
 
 ### Añadido
 
@@ -79,6 +94,7 @@
 
 ---
 
-[Sin publicar]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.2.0...HEAD
+[Sin publicar]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/dbanegasl/-hands-on-edu/releases/tag/v0.1.0

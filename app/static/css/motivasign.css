@@ -114,6 +114,23 @@ body {
 }
 .ms-back:hover { color: var(--ms-text); }
 
+.ms-btn-mute {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  color: var(--ms-text);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 4px 8px;
+  transition: background 0.2s;
+  margin-left: auto;
+}
+
+.ms-btn-mute:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
 /* ── Screens ───────────────────────────────────────────────────────────────── */
 
 .ms-screen {

@@ -7,7 +7,7 @@
 | **ID** | REQ-002 |
 | **Tipo** | Mejora |
 | **Prioridad** | Media |
-| **Estado** | 📋 Pendiente |
+| **Estado** | ✅ Hecho |
 | **Módulo** | GestiEdu, MotivaSign |
 | **Esfuerzo estimado** | S (1–2 horas) |
 
