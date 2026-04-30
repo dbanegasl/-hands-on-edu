@@ -512,6 +512,10 @@ function finishRollCall() {
 
   document.getElementById('ae-export-text').value = report;
 
+  // Enable PDF export button when there are registered students
+  const btnPDF = document.getElementById('ae-btn-export-pdf');
+  if (btnPDF) btnPDF.disabled = (totalCount === 0);
+
   showScreen('results');
 }
 
@@ -741,6 +745,197 @@ function resetToSetup() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+//  PDF EXPORT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function openPDFModal() {
+  const modal = document.getElementById('ae-pdf-modal');
+  if (!modal) return;
+  modal.classList.add('ae-modal-visible');
+  modal.setAttribute('aria-hidden', 'false');
+  const input = document.getElementById('ae-modal-teacher-input');
+  if (input) { input.value = ''; setTimeout(() => input.focus(), 50); }
+}
+
+function closePDFModal() {
+  const modal = document.getElementById('ae-pdf-modal');
+  if (!modal) return;
+  modal.classList.remove('ae-modal-visible');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+/**
+ * Genera y descarga el reporte de asistencia como PDF.
+ * @param {string} teacherName - Nombre del docente para el encabezado
+ * @param {Array<{name:string, status:string, time:string|null}>} records
+ */
+function exportToPDF(teacherName, records) {
+  if (!window.jspdf) {
+    alert('La librería PDF no está disponible. Verifica tu conexión a internet.');
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const now        = new Date();
+  const dateLabel  = now.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const timeLabel  = now.toLocaleTimeString('es-ES');
+  const presentCount  = records.filter(r => r.status === 'present').length;
+  const absentCount   = records.filter(r => r.status !== 'present').length;
+  const pct           = records.length > 0 ? Math.round((presentCount / records.length) * 100) : 0;
+
+  const ACCENT  = [0, 122, 204];    // blue
+  const SUCCESS = [34, 197, 94];    // green
+  const DANGER  = [239, 68, 68];    // red
+  const GREY    = [100, 116, 139];
+  const LIGHT   = [241, 245, 249];
+  const WHITE   = [255, 255, 255];
+  const DARK    = [15, 23, 42];
+
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  let y = 0;
+
+  // ── Header bar ────────────────────────────────────────────────────────────
+  doc.setFillColor(...ACCENT);
+  doc.rect(0, 0, pageW, 28, 'F');
+
+  doc.setTextColor(...WHITE);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text('Universidad Nacional de Educación — UNAE', margin, 11);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Registro de Asistencia — AttendEye', margin, 19);
+  doc.setFontSize(9);
+  doc.text('HandsOnEdu · Plataforma educativa de gestos', margin, 25.5);
+
+  y = 36;
+
+  // ── Session metadata box ──────────────────────────────────────────────────
+  doc.setFillColor(...LIGHT);
+  doc.roundedRect(margin, y, pageW - margin * 2, 28, 2, 2, 'F');
+
+  doc.setTextColor(...DARK);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.text('Docente:',    margin + 4, y + 7);
+  doc.text('Clase:',      margin + 4, y + 14);
+  doc.text('Fecha:',      margin + 4, y + 21);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text(teacherName || '—',     margin + 26, y + 7);
+  doc.text(className   || '—',     margin + 26, y + 14);
+  doc.text(`${dateLabel}  ·  ${timeLabel}`, margin + 26, y + 21);
+
+  y += 34;
+
+  // ── Summary stats ─────────────────────────────────────────────────────────
+  const boxW  = (pageW - margin * 2 - 8) / 3;
+  const stats = [
+    { label: 'Presentes',  value: presentCount, color: SUCCESS },
+    { label: 'Ausentes',   value: absentCount,  color: DANGER  },
+    { label: 'Asistencia', value: `${pct}%`,    color: ACCENT  },
+  ];
+
+  stats.forEach((stat, i) => {
+    const x = margin + i * (boxW + 4);
+    doc.setFillColor(...stat.color);
+    doc.roundedRect(x, y, boxW, 16, 2, 2, 'F');
+    doc.setTextColor(...WHITE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text(String(stat.value), x + boxW / 2, y + 8.5, { align: 'center' });
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text(stat.label, x + boxW / 2, y + 13.5, { align: 'center' });
+  });
+
+  y += 22;
+
+  // ── Attendance table ──────────────────────────────────────────────────────
+  doc.setTextColor(...DARK);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('Detalle de asistencia', margin, y);
+  y += 4;
+
+  const statusLabel = s => {
+    if (s === 'present') return 'Presente';
+    if (s === 'absent')  return 'Ausente';
+    return 'Omitido';
+  };
+
+  const tableBody = records.map((r, i) => [
+    i + 1,
+    r.name,
+    statusLabel(r.status),
+    r.time || '—',
+  ]);
+
+  doc.autoTable({
+    startY: y,
+    head: [['#', 'Nombre del estudiante', 'Estado', 'Hora de registro']],
+    body: tableBody,
+    margin: { left: margin, right: margin },
+    headStyles: {
+      fillColor: ACCENT,
+      textColor: WHITE,
+      fontStyle: 'bold',
+      fontSize: 9,
+    },
+    bodyStyles: { fontSize: 8.5, textColor: DARK },
+    alternateRowStyles: { fillColor: LIGHT },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center' },
+      2: { cellWidth: 26, halign: 'center' },
+      3: { cellWidth: 32, halign: 'center' },
+    },
+    didDrawCell(data) {
+      if (data.section === 'body' && data.column.index === 2) {
+        const status = records[data.row.index]?.status;
+        if (status === 'present') {
+          doc.setTextColor(...SUCCESS);
+        } else {
+          doc.setTextColor(...DANGER);
+        }
+        doc.setFontSize(8.5);
+        doc.text(
+          statusLabel(status),
+          data.cell.x + data.cell.width / 2,
+          data.cell.y + data.cell.height / 2 + 1,
+          { align: 'center' }
+        );
+        // Reset color for next cell
+        doc.setTextColor(...DARK);
+        // Prevent default text draw for this cell
+        data.cell.text = [];
+      }
+    },
+  });
+
+  y = doc.lastAutoTable.finalY + 10;
+
+  // ── Signature field ───────────────────────────────────────────────────────
+  if (y > 240) { doc.addPage(); y = 20; }
+
+  doc.setDrawColor(...GREY);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y + 14, margin + 80, y + 14);
+
+  doc.setTextColor(...GREY);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.text('Nombre y firma del docente', margin, y + 19);
+  doc.text(`Generado por AttendEye — HandsOnEdu · ${now.toISOString()}`, margin, y + 26);
+
+  // ── Save ──────────────────────────────────────────────────────────────────
+  const filename = `asistencia-${now.toISOString().split('T')[0]}.pdf`;
+  doc.save(filename);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 //  EVENT WIRING
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -787,5 +982,29 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('ae-btn-new-session').addEventListener('click', resetToSetup);
   document.getElementById('ae-btn-home').addEventListener('click', () => {
     window.location.href = '/';
+  });
+
+  // ── PDF export ────────────────────────────────────────────────────────────
+  document.getElementById('ae-btn-export-pdf').addEventListener('click', openPDFModal);
+
+  document.getElementById('ae-modal-cancel').addEventListener('click', closePDFModal);
+
+  document.getElementById('ae-pdf-modal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closePDFModal();
+  });
+
+  document.getElementById('ae-modal-generate').addEventListener('click', () => {
+    const name = document.getElementById('ae-modal-teacher-input').value.trim();
+    if (!name) {
+      document.getElementById('ae-modal-teacher-input').focus();
+      return;
+    }
+    closePDFModal();
+    exportToPDF(name, students);
+  });
+
+  document.getElementById('ae-modal-teacher-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('ae-modal-generate').click();
+    if (e.key === 'Escape') closePDFModal();
   });
 });

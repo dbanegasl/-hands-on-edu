@@ -834,3 +834,82 @@ html, body {
     padding: 24px 20px;
   }
 }
+
+/* ── PDF Modal ──────────────────────────────────────────────────────────────── */
+
+.ae-modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 15, 31, 0.72);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.ae-modal-backdrop.ae-modal-visible {
+  display: flex;
+}
+
+.ae-modal-card {
+  background: var(--ae-surface);
+  border: 1px solid var(--ae-border);
+  border-radius: 12px;
+  padding: 28px 28px 24px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.ae-modal-card h3 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  color: var(--ae-text);
+}
+
+.ae-modal-desc {
+  margin: 0 0 18px;
+  font-size: 0.88rem;
+  color: var(--ae-muted);
+  line-height: 1.5;
+}
+
+.ae-modal-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ae-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.ae-modal-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  background: var(--ae-surface2);
+  border: 1px solid var(--ae-border);
+  border-radius: 8px;
+  color: var(--ae-text);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ae-modal-input:focus {
+  border-color: var(--ae-accent);
+}
+
+.ae-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* Export button spacing */
+#ae-btn-export-pdf {
+  margin-top: 8px;
+}

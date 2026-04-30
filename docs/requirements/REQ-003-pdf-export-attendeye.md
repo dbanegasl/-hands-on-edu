@@ -7,7 +7,7 @@
 | **ID** | REQ-003 |
 | **Tipo** | Mejora |
 | **Prioridad** | Media |
-| **Estado** | 📋 Pendiente |
+| **Estado** | ✅ Hecho |
 | **Módulo** | AttendEye |
 | **Esfuerzo estimado** | S (1–3 horas) |
 

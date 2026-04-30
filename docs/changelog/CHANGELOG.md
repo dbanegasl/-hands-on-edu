@@ -11,7 +11,6 @@
 
 ### Añadido
 
-- **REQ-003** — Exportación PDF del reporte de asistencia en AttendEye con `jsPDF` + `jsPDF-AutoTable`: encabezado institucional UNAE, tabla de asistencia, resumen y campo de firma del docente.
 - **REQ-004** — Deshacer/Rehacer (Ctrl+Z / Ctrl+Y) en VirtualPainter: stack de historial de hasta 30 snapshots `ImageData`, botones en toolbar con estado disabled dinámico, gesto alternativo (palma 2s).
 - **REQ-005** — Persistencia de sesiones con SQLite + SQLAlchemy async: tablas `sessions`, `gestiedu_results`, `attendeye_records`, `motivasign_progress`; volumen Docker `./data:/app/data`.
 - **REQ-006** — Editor de preguntas para docentes en GestiEdu: ruta `/gestiedu/editor` protegida con PIN, CRUD completo de preguntas, carga dinámica vía `GET /api/gestiedu/questions`.
@@ -20,6 +19,30 @@
 - **REQ-009** — Integración real con Moodle LMS: implementación de `MoodleClient` con Moodle REST API, sincronización automática de notas y asistencia, variables de entorno `MOODLE_URL` / `MOODLE_TOKEN`.
 - **REQ-010** — Clasificador ML de gestos personalizado: pipeline de recolección de datos, entrenamiento con `MLPClassifier` (scikit-learn), exportación `.pkl`, integración en `HandTracker` con fallback a heurísticas.
 - **REQ-011** — Pipeline CI/CD con GitHub Actions: workflow `ci.yml` (tests + lint + docker build en cada push/PR), workflow `cd.yml` (deploy automático en tags `v*.*.*`), badge de CI en README.
+
+---
+
+## [0.4.0] — 2026-04-30
+
+### Añadido
+
+- **Exportación PDF del reporte de asistencia** (`REQ-003`) — generación 100% frontend, sin peticiones al backend:
+  - **jsPDF 2.5.1** + **jsPDF-AutoTable 3.8.2** cargados desde CDN de Cloudflare.
+  - Botón **"📄 Exportar PDF"** en la pantalla de resultados de AttendEye (habilitado solo cuando hay ≥ 1 estudiante registrado).
+  - **Modal** con campo de nombre del docente: validación de campo requerido, soporte Enter/Escape, cierre al hacer click fuera del card.
+  - Contenido del PDF generado:
+    1. Encabezado institucional UNAE con franja azul.
+    2. Box de metadatos: docente, nombre de clase, fecha y hora completa.
+    3. Cards de resumen: Presentes (verde) / Ausentes (rojo) / % Asistencia (azul).
+    4. Tabla de asistencia con colores por estado (`Presente` verde / `Ausente` rojo / `Omitido`), filas alternadas, encabezado azul.
+    5. Campo de firma del docente + timestamp de generación.
+  - Nombre del archivo: `asistencia-YYYY-MM-DD.pdf`.
+  - Estilos `.ae-modal-*` añadidos a `attendeye.css`.
+
+### Cambiado
+
+- `docs/requirements/INDEX.md`: REQ-003 → ✅ Hecho.
+- `docs/requirements/REQ-003-pdf-export-attendeye.md`: estado → ✅ Hecho.
 
 ---
 
@@ -94,7 +117,8 @@
 
 ---
 
-[Sin publicar]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.3.0...HEAD
+[Sin publicar]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/dbanegasl/-hands-on-edu/releases/tag/v0.1.0

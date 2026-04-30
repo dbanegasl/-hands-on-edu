@@ -181,6 +181,7 @@ Miguel Ángel Reyes</textarea>
       <div class="ae-export-label">📄 Reporte de texto</div>
       <textarea id="ae-export-text" readonly rows="5"></textarea>
       <button class="ae-btn ae-btn-primary" id="ae-btn-copy">📋 Copiar reporte</button>
+      <button class="ae-btn ae-btn-success" id="ae-btn-export-pdf" disabled>📄 Exportar PDF</button>
     </div>
 
     <div class="ae-results-actions">
@@ -190,6 +191,23 @@ Miguel Ángel Reyes</textarea>
   </div>
 </div>
 
+<!-- PDF teacher-name modal -->
+<div id="ae-pdf-modal" class="ae-modal-backdrop" aria-hidden="true">
+  <div class="ae-modal-card" role="dialog" aria-labelledby="ae-modal-title">
+    <h3 id="ae-modal-title">📄 Generar reporte PDF</h3>
+    <p class="ae-modal-desc">Ingresa tu nombre para incluirlo en el encabezado del reporte.</p>
+    <label for="ae-modal-teacher-input" class="ae-modal-label">Nombre del docente</label>
+    <input id="ae-modal-teacher-input" class="ae-modal-input" type="text"
+           placeholder="Ej: Lcda. María García" autocomplete="name" />
+    <div class="ae-modal-actions">
+      <button class="ae-btn ae-btn-ghost"    id="ae-modal-cancel">Cancelar</button>
+      <button class="ae-btn ae-btn-success"  id="ae-modal-generate">📥 Generar PDF</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="/static/js/attendeye.js"></script>
 </body>
 </html>
