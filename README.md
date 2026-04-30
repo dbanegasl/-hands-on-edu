@@ -16,14 +16,14 @@
 
 ---
 
-## 🧩 Módulos
+## 🧩 Módulos Disponibles
 
-| Módulo | Estado | Descripción |
-|--------|--------|-------------|
-| 🖐️ **GestiEdu** | 🚧 En desarrollo | Evaluaciones interactivas respondidas con gestos de la mano |
-| 🤟 **MotivaSign** | 📋 Planificado | Aprendizaje de lengua de señas con reconocimiento por IA |
-| 👁️ **AttendEye** | 📋 Planificado | Monitoreo de atención en clases virtuales |
-| ✏️ **VirtualPainter** | 📋 Planificado | Escritura y dibujo en el aire con el dedo índice |
+| Módulo | URL | Descripción | Estado |
+|--------|-----|-------------|--------|
+| 🖐️ **GestiEdu** | `/gestiedu` | Quiz interactivo donde los estudiantes responden preguntas mostrando gestos de mano (conteo de dedos, Verdadero/Falso, opciones A/B/C). Integración con Moodle para registrar calificaciones. | ✅ Disponible |
+| 🤟 **MotivaSign** | `/motivasign` | Aprendizaje de señas básicas con reconocimiento por IA. Catálogo de 15 señas con modo Aprender (libre) y modo Desafío (10 señas aleatorias con puntuación). | ✅ Disponible |
+| 👁️ **AttendEye** | `/attendeye` | Herramienta docente para tomar asistencia gestual (mano levantada = presente) y monitorear participación en tiempo real con reporte exportable. | ✅ Disponible |
+| ✏️ **VirtualPainter** | `/virtualpainter` | Dibujo AR en el aire: el usuario dibuja sobre la imagen de la cámara con el dedo índice. Soporta borrador, selección de color por gesto y modo pizarrón. | ✅ Disponible |
 
 ---
 
@@ -32,17 +32,27 @@
 ```
 -hands-on-edu/
 ├── app/
+│   ├── main.py                # FastAPI: rutas HTTP + WebSocket /ws/analyze
 │   ├── core/                  # Motor de detección (MediaPipe wrapper)
 │   │   └── hand_tracker.py
-│   ├── modules/               # Módulos educativos independientes
+│   ├── modules/               # Lógica Python por módulo (stubs extensibles)
 │   │   ├── gestiedu/
 │   │   ├── motivasign/
 │   │   ├── attendeye/
 │   │   └── virtual_painter/
 │   ├── integrations/
-│   │   └── moodle/            # Integración con Moodle REST API
-│   └── static/                # Frontend web (HTML + JS)
-├── models/                    # Modelos de MediaPipe (.task)
+│   │   └── moodle/            # Cliente REST Moodle
+│   │       └── rest_api.py
+│   └── static/                # Frontend web (HTML + CSS + JS, sin build step)
+│       ├── index.html
+│       ├── testing.html
+│       ├── gestiedu.html
+│       ├── motivasign.html
+│       ├── attendeye.html
+│       ├── virtualpainter.html
+│       ├── css/
+│       └── js/
+├── models/                    # hand_landmarker.task (descargado al hacer build)
 ├── docs/                      # Documentación técnica
 ├── tests/
 ├── Dockerfile
@@ -56,8 +66,10 @@
 
 ### Prerrequisitos
 - Docker + Docker Compose
-- Webcam conectada al sistema
+- Navegador moderno con acceso a cámara (Chrome, Firefox, Edge)
 - (Opcional) Instancia de Moodle para integración
+
+> **Webcam**: la cámara es capturada por el navegador via `getUserMedia()` — no se necesita pasar dispositivos al contenedor Docker.
 
 ### Levantar con Docker
 
@@ -74,15 +86,13 @@ cp .env.example .env
 docker compose up --build
 ```
 
-La plataforma estará disponible en: **http://localhost:8000**
-Documentación interactiva de la API: **http://localhost:8000/docs**
+| URL | Descripción |
+|-----|-------------|
+| **http://localhost:9876** | Landing page + módulos |
+| **http://localhost:9876/docs** | Documentación interactiva de la API (Swagger) |
+| **http://localhost:9876/testing** | Testing Lab (prueba MediaPipe antes de usar los módulos) |
 
-### Permisos de webcam en Linux
-
-```bash
-sudo usermod -aG video $USER
-# Cerrar sesión y volver a iniciarla para aplicar el cambio
-```
+> **Primer build**: descarga el modelo `hand_landmarker.task` (~7.8 MB) de Google Storage. Requiere conexión a internet. Builds posteriores usan la imagen en caché.
 
 ---
 
@@ -90,14 +100,14 @@ sudo usermod -aG video $USER
 
 | Tecnología | Versión | Uso |
 |-----------|---------|-----|
-| Python | 3.11 | Lenguaje principal |
-| MediaPipe | ≥ 0.10 | Detección de manos (21 landmarks por mano) |
-| OpenCV Headless | ≥ 4.8 | Procesamiento de video en contenedor |
-| FastAPI | ≥ 0.104 | API REST + streaming WebSockets |
+| Python | 3.11 | Lenguaje principal del backend |
+| MediaPipe | ≥ 0.10 | Detección de manos (21 landmarks por mano, hasta 2 manos) |
+| OpenCV Headless | ≥ 4.8 | Decodificación de frames JPEG en contenedor (sin display) |
+| FastAPI | ≥ 0.104 | API REST + WebSocket `/ws/analyze` |
 | NumPy | ≥ 1.24 | Cálculos matemáticos de gestos |
-| HTTPX | ≥ 0.25 | Cliente HTTP para Moodle REST API |
+| HTTPX | ≥ 0.25 | Cliente HTTP async para Moodle REST API |
 | python-dotenv | ≥ 1.0 | Gestión de variables de entorno |
-| Docker | — | Contenedorización y despliegue |
+| Docker | — | Contenedorización y despliegue reproducible |
 
 ---
 
@@ -108,7 +118,6 @@ HandsOnEdu se conecta con Moodle mediante su **REST API** para:
 - ✅ Registrar resultados de evaluaciones gestuales como calificaciones
 - ✅ Marcar actividades como completadas automáticamente
 - ✅ Obtener información de cursos y estudiantes
-- ✅ Enviar reportes de atención al docente
 
 **Configuración requerida en Moodle:**
 
@@ -121,16 +130,24 @@ HandsOnEdu se conecta con Moodle mediante su **REST API** para:
    MOODLE_TOKEN=tu_token_aqui
    ```
 
+Ver [docs/moodle-integration.md](docs/moodle-integration.md) para instrucciones detalladas.
+
 ---
 
 ## 📚 Documentación
 
-- [Arquitectura del Sistema](docs/architecture.md)
-- [Integración con Moodle](docs/moodle-integration.md)
-- [Módulo GestiEdu](docs/modules/gestiedu.md)
-- [Módulo MotivaSign](docs/modules/motivasign.md)
-- [Módulo AttendEye](docs/modules/attendeye.md)
-- [API Reference](http://localhost:8000/docs) *(requiere servidor activo)*
+| Documento | Descripción |
+|-----------|-------------|
+| [Arquitectura del Sistema](docs/architecture.md) | Diagrama de capas, flujo WebSocket, decisiones de diseño |
+| [Protocolo WebSocket](docs/websocket-protocol.md) | Referencia completa del endpoint `/ws/analyze` |
+| [Integración con Moodle](docs/moodle-integration.md) | Configuración y funciones REST usadas |
+| [GestiEdu](docs/modules/gestiedu.md) | Evaluaciones gestuales: flujo, tipos de pregunta, hold-to-confirm |
+| [MotivaSign](docs/modules/motivasign.md) | Aprendizaje de señas: catálogo, modos, máquina de estados |
+| [AttendEye](docs/modules/attendeye.md) | Asistencia y participación: roll call, reporte, doble WebSocket |
+| [VirtualPainter](docs/modules/virtualpainter.md) | Dibujo AR: capas canvas, modos de gesto, algoritmo de trazo |
+| [Guía de Desarrollo](docs/development-guide.md) | Cómo crear módulos, convenciones, hot-reload |
+| [Guía de Despliegue](docs/deployment.md) | Local, producción, Nginx, HTTPS/WSS |
+| [API Reference](http://localhost:9876/docs) | Swagger UI *(requiere servidor activo)* |
 
 ---
 
