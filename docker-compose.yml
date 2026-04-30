@@ -1,0 +1,18 @@
+services:
+  hands-on-edu:
+    build: .
+    container_name: hands_on_edu
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ./models:/app/models
+    devices:
+      # Webcam passthrough (Linux). Adjust if your webcam is /dev/video1, etc.
+      - /dev/video0:/dev/video0
+    environment:
+      - MOODLE_URL=${MOODLE_URL:-http://localhost}
+      - MOODLE_TOKEN=${MOODLE_TOKEN:-}
+      - MOODLE_COURSE_ID=${MOODLE_COURSE_ID:-}
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
