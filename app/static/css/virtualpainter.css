@@ -1,0 +1,552 @@
+/* ── VirtualPainter — Dark AR Drawing Studio ───────────────────────────────── */
+
+:root {
+  --vp-bg:           #0a0a0f;
+  --vp-surface:      #13131a;
+  --vp-surface2:     #1c1c28;
+  --vp-toolbar-bg:   rgba(10, 10, 20, 0.92);
+  --vp-border:       #1e2030;
+  --vp-accent:       #6366f1;
+  --vp-accent-hover: #818cf8;
+  --vp-text:         #e2e8f0;
+  --vp-muted:        #475569;
+  --vp-success:      #22c55e;
+  --vp-warning:      #f97316;
+  --vp-danger:       #ef4444;
+  --vp-canvas-glow:  #6366f180;
+  --vp-nav-h:        48px;
+  --vp-toolbar-h:    52px;
+}
+
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--vp-bg);
+  color: var(--vp-text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ── Navigation ───────────────────────────────────────────────────────────── */
+
+.vp-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--vp-nav-h);
+  background: var(--vp-toolbar-bg);
+  border-bottom: 1px solid var(--vp-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  z-index: 100;
+}
+
+.vp-logo {
+  color: var(--vp-text);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+.vp-logo:hover { opacity: 1; }
+
+.vp-module-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--vp-accent-hover);
+  flex: 1;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.vp-back {
+  color: var(--vp-muted);
+  text-decoration: none;
+  font-size: 0.82rem;
+  transition: color 0.15s;
+}
+.vp-back:hover { color: var(--vp-text); }
+
+/* ── Toolbar ──────────────────────────────────────────────────────────────── */
+
+#vp-toolbar {
+  position: fixed;
+  top: var(--vp-nav-h);
+  left: 0;
+  right: 0;
+  height: var(--vp-toolbar-h);
+  background: var(--vp-toolbar-bg);
+  border-bottom: 1px solid var(--vp-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 6px;
+  z-index: 90;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+#vp-toolbar::-webkit-scrollbar { display: none; }
+
+.vp-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.vp-toolbar-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--vp-border);
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+
+/* Color swatch buttons */
+.vp-color-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  flex-shrink: 0;
+  outline: none;
+}
+.vp-color-btn:hover {
+  transform: scale(1.15);
+}
+.vp-color-btn.active {
+  border-color: #ffffff;
+  transform: scale(1.2);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.25);
+}
+.vp-color-btn.vp-color-hover {
+  transform: scale(1.3);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.6);
+  animation: vpColorPulse 0.6s ease-in-out infinite;
+}
+
+/* Brush size buttons */
+.vp-size-btn {
+  width: 32px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--vp-border);
+  background: transparent;
+  color: var(--vp-muted);
+  font-family: monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.vp-size-btn:hover {
+  background: var(--vp-surface2);
+  color: var(--vp-text);
+}
+.vp-size-btn.active {
+  background: var(--vp-accent);
+  border-color: var(--vp-accent);
+  color: #fff;
+}
+
+/* Tool buttons (emoji) */
+.vp-tool-btn {
+  width: 36px;
+  height: 32px;
+  border-radius: 7px;
+  border: 1px solid var(--vp-border);
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.vp-tool-btn:hover {
+  background: var(--vp-surface2);
+  border-color: var(--vp-muted);
+}
+.vp-tool-btn.active {
+  background: #78350f;
+  border-color: #f59e0b;
+}
+
+/* Connection badge */
+.vp-conn-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+.vp-conn-disconnected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.vp-conn-connecting {
+  background: rgba(234, 179, 8, 0.15);
+  color: #fde68a;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+.vp-conn-connected {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+/* ── Canvas Area ──────────────────────────────────────────────────────────── */
+
+#vp-canvas-area {
+  position: fixed;
+  top: calc(var(--vp-nav-h) + var(--vp-toolbar-h));
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+#vp-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  visibility: hidden; /* Only canvases are shown */
+}
+
+#vp-cam-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+#vp-draw-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  background: transparent;
+  pointer-events: none;
+}
+
+/* ── Cursor Dot ───────────────────────────────────────────────────────────── */
+
+#vp-cursor {
+  position: fixed;
+  pointer-events: none;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 200;
+  transition: width 0.1s, height 0.1s, background 0.15s;
+  will-change: left, top;
+}
+
+#vp-cursor.vp-cursor-draw {
+  /* Solid dot — color set by JS */
+}
+
+#vp-cursor.vp-cursor-erase {
+  /* Eraser circle — transparent with white border */
+}
+
+#vp-cursor.vp-cursor-select {
+  animation: vpCursorPulse 0.8s ease-in-out infinite;
+}
+
+/* ── Mode Badge ───────────────────────────────────────────────────────────── */
+
+.vp-mode-badge {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10;
+  pointer-events: none;
+  border: 1px solid rgba(255,255,255,0.1);
+  animation: vpFadeIn 0.2s ease;
+}
+
+.vp-badge-draw {
+  background: rgba(34, 197, 94, 0.25);
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.vp-badge-erase {
+  background: rgba(249, 115, 22, 0.25);
+  color: #fdba74;
+  border-color: rgba(249, 115, 22, 0.35);
+}
+
+.vp-badge-pause {
+  background: rgba(30, 30, 50, 0.7);
+  color: var(--vp-muted);
+  border-color: var(--vp-border);
+}
+
+.vp-badge-select {
+  background: rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.45);
+  animation: vpFadeIn 0.2s ease, vpSelectPulse 1.2s ease-in-out infinite;
+}
+
+/* ── Gesture Guide Overlay ────────────────────────────────────────────────── */
+
+#vp-guide {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 5, 12, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  animation: vpFadeIn 0.3s ease;
+}
+
+.vp-guide-card {
+  background: var(--vp-surface);
+  border: 1px solid var(--vp-border);
+  border-radius: 20px;
+  padding: 32px 36px;
+  max-width: 460px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,102,241,0.2);
+}
+
+.vp-guide-card h3 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--vp-text);
+  margin-bottom: 6px;
+}
+
+.vp-guide-subtitle {
+  color: var(--vp-muted);
+  font-size: 0.85rem;
+  margin-bottom: 28px;
+}
+
+.vp-guide-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.vp-guide-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: var(--vp-surface2);
+  border: 1px solid var(--vp-border);
+  border-radius: 12px;
+  padding: 14px 10px;
+  transition: border-color 0.15s;
+}
+.vp-guide-item:hover { border-color: var(--vp-accent); }
+
+.vp-guide-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.vp-guide-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--vp-text);
+}
+
+.vp-guide-desc {
+  font-size: 0.72rem;
+  color: var(--vp-muted);
+}
+
+.vp-start-btn {
+  width: 100%;
+  padding: 14px 24px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: opacity 0.15s, transform 0.1s;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+}
+.vp-start-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+.vp-start-btn:active { transform: translateY(0); }
+
+/* ── Clear Confirm Modal ──────────────────────────────────────────────────── */
+
+.vp-modal {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 5, 12, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  animation: vpFadeIn 0.2s ease;
+}
+.vp-modal.hidden { display: none; }
+
+.vp-modal-card {
+  background: var(--vp-surface);
+  border: 1px solid var(--vp-border);
+  border-radius: 16px;
+  padding: 28px 32px;
+  max-width: 340px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 16px 60px rgba(0,0,0,0.5);
+}
+
+.vp-modal-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.vp-modal-card p {
+  color: var(--vp-text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.vp-modal-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.vp-btn {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.vp-btn:hover { opacity: 0.85; }
+.vp-btn:active { transform: scale(0.97); }
+
+.vp-btn-danger {
+  background: var(--vp-danger);
+  color: #fff;
+}
+
+.vp-btn-ghost {
+  background: var(--vp-surface2);
+  color: var(--vp-muted);
+  border: 1px solid var(--vp-border);
+}
+.vp-btn-ghost:hover { color: var(--vp-text); }
+
+/* ── Help Button ──────────────────────────────────────────────────────────── */
+
+#vp-help-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--vp-accent);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  z-index: 300;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.5);
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#vp-help-btn:hover {
+  background: var(--vp-accent-hover);
+  transform: scale(1.08);
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.65);
+}
+#vp-help-btn:active { transform: scale(0.96); }
+
+/* ── Animations ───────────────────────────────────────────────────────────── */
+
+@keyframes vpFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes vpColorPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.15); }
+}
+
+@keyframes vpCursorPulse {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(99, 102, 241, 0.6); }
+  50%       { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);   }
+}
+
+@keyframes vpSelectPulse {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(99, 102, 241, 0); }
+  50%       { box-shadow: 0 2px 16px rgba(99, 102, 241, 0.5); }
+}
+
+/* ── Scrollbar (toolbar overflow) ─────────────────────────────────────────── */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--vp-border) transparent;
+}
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--vp-border); border-radius: 2px; }

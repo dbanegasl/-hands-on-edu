@@ -44,6 +44,11 @@ async def attendeye():
     return FileResponse("app/static/attendeye.html")
 
 
+@app.get("/virtualpainter")
+async def virtualpainter():
+    return FileResponse("app/static/virtualpainter.html")
+
+
 @app.get("/testing")
 async def testing():
     return FileResponse("app/static/testing.html")

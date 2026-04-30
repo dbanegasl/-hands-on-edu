@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VirtualPainter | HandsOnEdu</title>
+  <link rel="stylesheet" href="/static/css/virtualpainter.css"/>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="vp-nav">
+  <a href="/" class="vp-logo">🖐️ HandsOnEdu</a>
+  <span class="vp-module-name">✏️ VirtualPainter</span>
+  <a href="/" class="vp-back">← Inicio</a>
+</nav>
+
+<!-- TOOLBAR -->
+<div id="vp-toolbar">
+  <!-- Color swatches -->
+  <div class="vp-toolbar-group" id="vp-colors">
+    <!-- Populated by buildColorSwatches() in JS -->
+  </div>
+  <!-- Divider -->
+  <div class="vp-toolbar-divider"></div>
+  <!-- Brush sizes -->
+  <div class="vp-toolbar-group" id="vp-sizes">
+    <button class="vp-size-btn" data-size="3"  title="Fino">S</button>
+    <button class="vp-size-btn active" data-size="6"  title="Medio">M</button>
+    <button class="vp-size-btn" data-size="12" title="Grueso">L</button>
+    <button class="vp-size-btn" data-size="24" title="Marcador">XL</button>
+  </div>
+  <!-- Divider -->
+  <div class="vp-toolbar-divider"></div>
+  <!-- Actions -->
+  <div class="vp-toolbar-group">
+    <button class="vp-tool-btn" id="vp-btn-eraser" title="Borrador (activa/desactiva modo borrar)">🧹</button>
+    <button class="vp-tool-btn" id="vp-btn-bg" title="Cambiar fondo: AR / Pizarra blanca">🖼️</button>
+    <button class="vp-tool-btn" id="vp-btn-clear" title="Limpiar lienzo">🗑️</button>
+    <button class="vp-tool-btn" id="vp-btn-save" title="Guardar imagen">💾</button>
+  </div>
+  <!-- Connection status -->
+  <div class="vp-toolbar-divider"></div>
+  <div id="vp-connection" class="vp-conn-badge vp-conn-disconnected">⚫ Desconectado</div>
+</div>
+
+<!-- CANVAS AREA -->
+<div id="vp-canvas-area">
+  <video id="vp-video" autoplay playsinline muted></video>
+  <canvas id="vp-cam-canvas"></canvas>
+  <canvas id="vp-draw-canvas"></canvas>
+
+  <!-- Cursor dot (index finger tip indicator) -->
+  <div id="vp-cursor"></div>
+
+  <!-- Mode badge -->
+  <div id="vp-mode-badge" class="vp-mode-badge vp-badge-pause">✋ En pausa</div>
+
+  <!-- Gesture guide (shown on first load, dismissable) -->
+  <div id="vp-guide">
+    <div class="vp-guide-card">
+      <h3>✏️ Cómo usar VirtualPainter</h3>
+      <p class="vp-guide-subtitle">Dibuja en el aire con tu dedo índice sobre la cámara</p>
+      <div class="vp-guide-grid">
+        <div class="vp-guide-item">
+          <span class="vp-guide-icon">☝️</span>
+          <span class="vp-guide-label">Dibujar</span>
+          <span class="vp-guide-desc">Solo índice</span>
+        </div>
+        <div class="vp-guide-item">
+          <span class="vp-guide-icon">✌️</span>
+          <span class="vp-guide-label">Borrar</span>
+          <span class="vp-guide-desc">Índice + medio</span>
+        </div>
+        <div class="vp-guide-item">
+          <span class="vp-guide-icon">✊</span>
+          <span class="vp-guide-label">Pausar</span>
+          <span class="vp-guide-desc">Puño cerrado</span>
+        </div>
+        <div class="vp-guide-item">
+          <span class="vp-guide-icon">🖐️</span>
+          <span class="vp-guide-label">Elegir color</span>
+          <span class="vp-guide-desc">Mano abierta</span>
+        </div>
+      </div>
+      <button id="vp-btn-start" class="vp-start-btn">🎨 ¡Comenzar a dibujar!</button>
+    </div>
+  </div>
+
+  <!-- Clear confirm modal -->
+  <div id="vp-clear-modal" class="vp-modal hidden">
+    <div class="vp-modal-card">
+      <div class="vp-modal-icon">🗑️</div>
+      <p>¿Limpiar el lienzo? Esta acción no se puede deshacer.</p>
+      <div class="vp-modal-btns">
+        <button id="vp-btn-clear-confirm" class="vp-btn vp-btn-danger">Sí, limpiar</button>
+        <button id="vp-btn-clear-cancel" class="vp-btn vp-btn-ghost">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Gesture help toggle (bottom right) -->
+<button id="vp-help-btn" title="Mostrar guía de gestos">❓</button>
+
+<script src="/static/js/virtualpainter.js"></script>
+</body>
+</html>
