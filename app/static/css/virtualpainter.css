@@ -550,3 +550,67 @@ body {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--vp-border); border-radius: 2px; }
+
+/* ── Undo / Redo buttons ───────────────────────────────────────────────────── */
+
+#btn-undo,
+#btn-redo {
+  font-size: 0.7rem;
+  padding: 0 10px;
+  min-width: 72px;
+  letter-spacing: 0.01em;
+}
+
+#btn-undo:disabled,
+#btn-redo:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Palm undo progress ring ─────────────────────────────────────────────── */
+
+#vp-palm-ring {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 100;
+}
+
+#vp-palm-ring.hidden { display: none; }
+
+.vp-palm-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.vp-palm-ring-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-width: 4;
+}
+
+.vp-palm-ring-progress {
+  fill: none;
+  stroke: #6366f1;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.05s linear;
+}
+
+.vp-palm-icon {
+  position: relative;
+  font-size: 1.4rem;
+  z-index: 1;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6));
+}

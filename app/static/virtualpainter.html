@@ -34,6 +34,8 @@
   <div class="vp-toolbar-divider"></div>
   <!-- Actions -->
   <div class="vp-toolbar-group">
+    <button class="vp-tool-btn" id="btn-undo" disabled title="Deshacer (Ctrl+Z)">↩ Deshacer</button>
+    <button class="vp-tool-btn" id="btn-redo" disabled title="Rehacer (Ctrl+Y)">↪ Rehacer</button>
     <button class="vp-tool-btn" id="vp-btn-eraser" title="Borrador (activa/desactiva modo borrar)">🧹</button>
     <button class="vp-tool-btn" id="vp-btn-bg" title="Cambiar fondo: AR / Pizarra blanca">🖼️</button>
     <button class="vp-tool-btn" id="vp-btn-clear" title="Limpiar lienzo">🗑️</button>
@@ -52,6 +54,16 @@
 
   <!-- Cursor dot (index finger tip indicator) -->
   <div id="vp-cursor"></div>
+
+  <!-- Palm undo progress ring -->
+  <div id="vp-palm-ring" class="hidden" aria-hidden="true">
+    <svg viewBox="0 0 44 44" class="vp-palm-svg">
+      <circle class="vp-palm-ring-bg" cx="22" cy="22" r="18"/>
+      <circle class="vp-palm-ring-progress" id="vp-palm-progress" cx="22" cy="22" r="18"
+              stroke-dasharray="113.1" stroke-dashoffset="113.1"/>
+    </svg>
+    <span class="vp-palm-icon">↩</span>
+  </div>
 
   <!-- Mode badge -->
   <div id="vp-mode-badge" class="vp-mode-badge vp-badge-pause">✋ En pausa</div>
@@ -82,6 +94,11 @@
           <span class="vp-guide-label">Elegir color</span>
           <span class="vp-guide-desc">Mano abierta</span>
         </div>
+        <div class="vp-guide-item">
+          <span class="vp-guide-icon">🖐️⏱️</span>
+          <span class="vp-guide-label">Deshacer</span>
+          <span class="vp-guide-desc">Palma 2 seg (sin color)</span>
+        </div>
       </div>
       <button id="vp-btn-start" class="vp-start-btn">🎨 ¡Comenzar a dibujar!</button>
     </div>
@@ -91,7 +108,7 @@
   <div id="vp-clear-modal" class="vp-modal hidden">
     <div class="vp-modal-card">
       <div class="vp-modal-icon">🗑️</div>
-      <p>¿Limpiar el lienzo? Esta acción no se puede deshacer.</p>
+      <p>¿Limpiar el lienzo? Podrás deshacer con Ctrl+Z.</p>
       <div class="vp-modal-btns">
         <button id="vp-btn-clear-confirm" class="vp-btn vp-btn-danger">Sí, limpiar</button>
         <button id="vp-btn-clear-cancel" class="vp-btn vp-btn-ghost">Cancelar</button>

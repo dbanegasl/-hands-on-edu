@@ -11,7 +11,6 @@
 
 ### Añadido
 
-- **REQ-004** — Deshacer/Rehacer (Ctrl+Z / Ctrl+Y) en VirtualPainter: stack de historial de hasta 30 snapshots `ImageData`, botones en toolbar con estado disabled dinámico, gesto alternativo (palma 2s).
 - **REQ-005** — Persistencia de sesiones con SQLite + SQLAlchemy async: tablas `sessions`, `gestiedu_results`, `attendeye_records`, `motivasign_progress`; volumen Docker `./data:/app/data`.
 - **REQ-006** — Editor de preguntas para docentes en GestiEdu: ruta `/gestiedu/editor` protegida con PIN, CRUD completo de preguntas, carga dinámica vía `GET /api/gestiedu/questions`.
 - **REQ-007** — Dashboard del docente en `/dashboard`: cards de resumen por módulo, historial de sesiones con filtros, gráfica de progreso semanal con Chart.js, exportación CSV.
@@ -19,6 +18,22 @@
 - **REQ-009** — Integración real con Moodle LMS: implementación de `MoodleClient` con Moodle REST API, sincronización automática de notas y asistencia, variables de entorno `MOODLE_URL` / `MOODLE_TOKEN`.
 - **REQ-010** — Clasificador ML de gestos personalizado: pipeline de recolección de datos, entrenamiento con `MLPClassifier` (scikit-learn), exportación `.pkl`, integración en `HandTracker` con fallback a heurísticas.
 - **REQ-011** — Pipeline CI/CD con GitHub Actions: workflow `ci.yml` (tests + lint + docker build en cada push/PR), workflow `cd.yml` (deploy automático en tags `v*.*.*`), badge de CI en README.
+
+---
+
+## [0.5.0] — 2026-04-30
+
+### Añadido
+
+- **Deshacer / Rehacer en VirtualPainter** (`REQ-004`) — historial completo de trazos con Ctrl+Z / Ctrl+Y:
+  - **Botones ↩ Deshacer / ↪ Rehacer** en la barra de herramientas; se deshabilitan automáticamente cuando el stack correspondiente está vacío (`disabled` + `opacity: 0.35`).
+  - **Atajos de teclado**: `Ctrl+Z` (deshacer), `Ctrl+Y` y `Ctrl+Shift+Z` (rehacer).
+  - **Stack de historial con límite de 30 snapshots** (`ImageData` del canvas completo, ~1.2 MB c/u → máx ~36 MB): usa `undoStack[]` y `redoStack[]`; el stack redo se vacía automáticamente al iniciar un nuevo trazo.
+  - **Captura de snapshot al inicio del trazo** (transición de modo `pause`/`select` → `draw`/`erase`), garantizando que cada undo revierte exactamente un trazo completo.
+  - **Estado inicial guardado**: al arrancar la sesión se empuja el canvas en blanco a `undoStack`, permitiendo deshacer hasta canvas vacío.
+  - **Gesto de palma alternativo** (para tabletas sin teclado): palma abierta sostenida 2 segundos sin hover sobre color → ejecuta undo; anillo de progreso SVG animado (`#vp-palm-ring`) con cuenta regresiva visual centrado en la parte inferior del canvas.
+  - **`clearCanvas()` guarda snapshot** antes de borrar, permitiendo deshacer una limpieza accidental con Ctrl+Z.
+  - Guía de gestos actualizada con el nuevo gesto de deshacer.
 
 ---
 
@@ -117,7 +132,8 @@
 
 ---
 
-[Sin publicar]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.4.0...HEAD
+[Sin publicar]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/dbanegasl/-hands-on-edu/compare/v0.1.0...v0.2.0

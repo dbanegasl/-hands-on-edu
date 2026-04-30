@@ -68,6 +68,15 @@ let ws, animFrame, stream;
 let processing = false;
 let started    = false;
 
+// Undo / redo history
+let undoStack = [];
+let redoStack = [];
+const MAX_HISTORY = 30;
+
+// Palm-gesture undo state
+let palmUndoStart  = null;
+const PALM_UNDO_HOLD = 2000; // ms
+
 // ── DOM helpers ───────────────────────────────────────────────────────────────
 
 function buildColorSwatches() {
@@ -158,6 +167,12 @@ async function start() {
   drawCtx.lineJoin  = 'round';
   drawCtx.lineWidth = brushSize;
 
+  // Initialize undo history with blank canvas state
+  undoStack = [];
+  redoStack = [];
+  undoStack.push(drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height));
+  updateUndoRedoButtons();
+
   connectWS();
   renderLoop();
 }
@@ -220,9 +235,11 @@ function renderLoop() {
 
 function handleWSMessage(data) {
   if (!data.hands || data.hands.length === 0) {
-    drawMode   = 'pause';
-    prevPoint  = null;
-    smoothInit = false;
+    drawMode      = 'pause';
+    prevPoint     = null;
+    smoothInit    = false;
+    palmUndoStart = null;
+    hidePalmUndoRing();
     updateModeBadge();
     moveCursor(-9999, -9999); // move off-screen to hide
     return;
@@ -266,6 +283,11 @@ function handleWSMessage(data) {
   else                                       newMode = 'pause';
 
   if (newMode !== drawMode) {
+    // Save snapshot before starting a new draw/erase stroke
+    const wasIdle   = drawMode === 'pause' || drawMode === 'select';
+    const nowActive = newMode  === 'draw'  || newMode  === 'erase';
+    if (wasIdle && nowActive) saveSnapshot();
+
     // Lift pen when transitioning to non-drawing mode
     if (newMode === 'pause' || newMode === 'select') prevPoint = null;
     drawMode = newMode;
@@ -283,10 +305,26 @@ function handleWSMessage(data) {
     prevPoint = null;
   } else if (drawMode === 'select') {
     checkColorDwell(x, y);
+    // Palm-gesture undo: open hand held 2s without hovering a color swatch
+    if (dwellColor === null) {
+      if (!palmUndoStart) palmUndoStart = Date.now();
+      const progress = (Date.now() - palmUndoStart) / PALM_UNDO_HOLD;
+      showPalmUndoRing(progress);
+      if (progress >= 1) {
+        palmUndoStart = null;
+        hidePalmUndoRing();
+        undo();
+      }
+    } else {
+      palmUndoStart = null;
+      hidePalmUndoRing();
+    }
   } else {
-    prevPoint  = null;
-    dwellColor = null;
-    dwellStart = null;
+    prevPoint     = null;
+    dwellColor    = null;
+    dwellStart    = null;
+    palmUndoStart = null;
+    hidePalmUndoRing();
   }
 }
 
@@ -469,11 +507,64 @@ function updateConnBadge(state) {
 // ── Clear & Save ──────────────────────────────────────────────────────────────
 
 function clearCanvas() {
+  saveSnapshot();
   drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
   if (bgMode === 'whiteboard') {
     drawCtx.fillStyle = '#ffffff';
     drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
   }
+}
+
+// ── Undo / Redo ───────────────────────────────────────────────────────────────
+
+function saveSnapshot() {
+  if (!drawCtx) return;
+  const snapshot = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+  undoStack.push(snapshot);
+  if (undoStack.length > MAX_HISTORY) undoStack.shift();
+  redoStack = [];
+  updateUndoRedoButtons();
+}
+
+function undo() {
+  if (!drawCtx || undoStack.length === 0) return;
+  const current = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+  redoStack.push(current);
+  const prev = undoStack.pop();
+  drawCtx.putImageData(prev, 0, 0);
+  updateUndoRedoButtons();
+}
+
+function redo() {
+  if (!drawCtx || redoStack.length === 0) return;
+  const current = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+  undoStack.push(current);
+  if (undoStack.length > MAX_HISTORY) undoStack.shift();
+  const next = redoStack.pop();
+  drawCtx.putImageData(next, 0, 0);
+  updateUndoRedoButtons();
+}
+
+function updateUndoRedoButtons() {
+  const btnUndo = document.getElementById('btn-undo');
+  const btnRedo = document.getElementById('btn-redo');
+  if (btnUndo) btnUndo.disabled = undoStack.length === 0;
+  if (btnRedo) btnRedo.disabled = redoStack.length === 0;
+}
+
+function showPalmUndoRing(progress) {
+  const ring = document.getElementById('vp-palm-ring');
+  if (!ring) return;
+  ring.classList.remove('hidden');
+  const circumference = 2 * Math.PI * 18;
+  const offset = circumference * (1 - Math.min(progress, 1));
+  const circle = document.getElementById('vp-palm-progress');
+  if (circle) circle.style.strokeDashoffset = offset;
+}
+
+function hidePalmUndoRing() {
+  const ring = document.getElementById('vp-palm-ring');
+  if (ring) ring.classList.add('hidden');
 }
 
 function saveImage() {
@@ -508,6 +599,23 @@ window.addEventListener('beforeunload', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
   buildColorSwatches();
+
+  // Undo / Redo buttons
+  document.getElementById('btn-undo').addEventListener('click', () => {
+    if (!started) return;
+    undo();
+  });
+  document.getElementById('btn-redo').addEventListener('click', () => {
+    if (!started) return;
+    redo();
+  });
+
+  // Keyboard shortcuts: Ctrl+Z = undo, Ctrl+Y / Ctrl+Shift+Z = redo
+  document.addEventListener('keydown', (e) => {
+    if (!started) return;
+    if (e.ctrlKey && !e.shiftKey && e.key === 'z') { e.preventDefault(); undo(); }
+    if (e.ctrlKey && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); }
+  });
 
   // Brush size buttons
   document.querySelectorAll('.vp-size-btn').forEach(btn => {

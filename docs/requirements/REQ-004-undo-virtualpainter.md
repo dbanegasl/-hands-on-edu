@@ -7,7 +7,7 @@
 | **ID** | REQ-004 |
 | **Tipo** | Mejora |
 | **Prioridad** | Media |
-| **Estado** | 📋 Pendiente |
+| **Estado** | ✅ Hecho |
 | **Módulo** | VirtualPainter |
 | **Esfuerzo estimado** | S (2–3 horas) |
 
