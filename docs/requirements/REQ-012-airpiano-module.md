@@ -1,13 +1,14 @@
 # REQ-012 — Módulo AirPiano (Piano virtual gestual)
 
 > **Última actualización:** 2026-04-30
+> **Estado:** ✅ Hecho
 
 | Campo | Valor |
 |-------|-------|
 | **ID** | REQ-012 |
 | **Tipo** | Feature |
 | **Prioridad** | Media |
-| **Estado** | 📋 Pendiente |
+| **Estado** | ✅ Hecho |
 | **Módulo** | AirPiano (nuevo) |
 | **Esfuerzo estimado** | L (10–14 horas) |
 

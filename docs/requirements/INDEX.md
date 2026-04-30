@@ -28,7 +28,7 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 | [REQ-009](./REQ-009-moodle-integration.md) | Integración Real con Moodle LMS | Feature | Baja | 📋 Pendiente | Global / Backend |
 | [REQ-010](./REQ-010-custom-ml-classifier.md) | Clasificador ML de Gestos Personalizado | Feature | Baja | 📋 Pendiente | Global / Backend |
 | [REQ-011](./REQ-011-cicd-github-actions.md) | Pipeline CI/CD con GitHub Actions | Tech-Debt | Alta | 📋 Pendiente | Global / DevOps |
-| [REQ-012](./REQ-012-airpiano-module.md) | Módulo AirPiano (Piano virtual gestual) | Feature | Media | 📋 Pendiente | AirPiano (nuevo) |
+| [REQ-012](./REQ-012-airpiano-module.md) | Módulo AirPiano (Piano virtual gestual) | Feature | Media | ✅ Hecho | AirPiano (nuevo) |
 
 ---
 

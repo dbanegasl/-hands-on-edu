@@ -11,6 +11,8 @@
 
 ### Añadido
 
+- **REQ-012** — Módulo **AirPiano** (piano virtual gestual): nueva ruta `/airpiano`, frontend completo con `airpiano.html`, `css/airpiano.css` y `js/airpiano.js`; sintetizador polifónico `js/audio-synth.js` (4 timbres: piano, marimba, synth, cuerdas) con envelopes ADSR por instrumento y vibrato LFO en cuerdas; detección de 5 dedos × 2 manos como controladores independientes con histéresis Y (0.65 entrar / 0.55 salir) anti-jitter; 4 escalas (Do mayor, La menor, pentatónica, blues) y 4 modos (libre, asignado, tutorial, canción) con scoring; wheels laterales con dwell de 1.5s para selección gestual de escala (mano izq.) e instrumento (mano der.); oscilograma en vivo vía `AnalyserNode`, etiquetas de notas flotantes, highlight de tecla presionada; mute compartido con `audio.js`; liberación limpia de notas activas en `beforeunload`/`pagehide`; nueva card en la landing y tests de la ruta `/airpiano` añadidos a `test_main.py`.
+
 - **REQ-005** — Persistencia de sesiones con SQLite + SQLAlchemy async: tablas `sessions`, `gestiedu_results`, `attendeye_records`, `motivasign_progress`; volumen Docker `./data:/app/data`.
 - **REQ-006** — Editor de preguntas para docentes en GestiEdu: ruta `/gestiedu/editor` protegida con PIN, CRUD completo de preguntas, carga dinámica vía `GET /api/gestiedu/questions`.
 - **REQ-007** — Dashboard del docente en `/dashboard`: cards de resumen por módulo, historial de sesiones con filtros, gráfica de progreso semanal con Chart.js, exportación CSV.

@@ -40,13 +40,13 @@ class TestHealthEndpoint:
 
 class TestHtmlRoutes:
     @pytest.mark.parametrize("path", [
-        "/", "/gestiedu", "/motivasign", "/attendeye", "/virtualpainter", "/testing",
+        "/", "/gestiedu", "/motivasign", "/attendeye", "/virtualpainter", "/airpiano", "/testing",
     ])
     def test_returns_200(self, client, path):
         assert client.get(path).status_code == 200
 
     @pytest.mark.parametrize("path", [
-        "/", "/gestiedu", "/motivasign", "/attendeye", "/virtualpainter", "/testing",
+        "/", "/gestiedu", "/motivasign", "/attendeye", "/virtualpainter", "/airpiano", "/testing",
     ])
     def test_content_type_html(self, client, path):
         r = client.get(path)

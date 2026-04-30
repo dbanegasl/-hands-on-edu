@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AirPiano | HandsOnEdu</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎹</text></svg>"/>
+  <link rel="stylesheet" href="/static/css/airpiano.css"/>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="ap-nav">
+  <a href="/" class="ap-logo">🖐️ HandsOnEdu</a>
+  <span class="ap-module-name">🎹 AirPiano</span>
+  <button id="ap-btn-mute" title="Silenciar / activar audio">🔊</button>
+  <a href="/" class="ap-back">← Inicio</a>
+</nav>
+
+<!-- TOOLBAR -->
+<div id="ap-toolbar">
+  <div class="ap-toolbar-group">
+    <label class="ap-toolbar-label" for="ap-mode-select">Modo:</label>
+    <select id="ap-mode-select" class="ap-select">
+      <option value="libre">🎹 Libre</option>
+      <option value="asignado">👆 Asignado</option>
+      <option value="tutorial">🎯 Tutorial</option>
+      <option value="cancion">🎵 Canción</option>
+    </select>
+  </div>
+
+  <div class="ap-toolbar-divider"></div>
+
+  <!-- Mode-specific extras -->
+  <div class="ap-toolbar-group" id="ap-cancion-group" style="display:none;">
+    <label class="ap-toolbar-label" for="ap-song-select">Canción:</label>
+    <select id="ap-song-select" class="ap-select">
+      <option value="twinkle">Estrellita / Twinkle</option>
+      <option value="cumple">Cumpleaños feliz</option>
+      <option value="estrellita">Brillarás (variante)</option>
+    </select>
+    <button id="ap-btn-song-play" class="ap-tool-btn" title="Reproducir demo">▶</button>
+  </div>
+
+  <div class="ap-toolbar-group" id="ap-score-group">
+    <span class="ap-score-label">Puntos:</span>
+    <span class="ap-score-value" id="ap-score">0</span>
+  </div>
+
+  <div class="ap-toolbar-divider"></div>
+
+  <div id="ap-connection" class="ap-conn-badge ap-conn-disconnected">⚫ Desconectado</div>
+</div>
+
+<!-- CANVAS AREA -->
+<div id="ap-canvas-area">
+  <video id="ap-video" autoplay playsinline muted></video>
+  <canvas id="ap-cam-canvas"></canvas>
+  <canvas id="ap-keys-canvas"></canvas>
+  <canvas id="ap-wave-canvas"></canvas>
+
+  <!-- Scale wheel (left) -->
+  <div id="ap-wheel-scales" class="ap-wheel ap-wheel-left">
+    <div class="ap-wheel-title">Escalas</div>
+    <div class="ap-wheel-item active" data-scale="do_mayor">
+      <span class="ap-wheel-icon">🌞</span><span>Do mayor</span>
+      <div class="ap-dwell-fill"></div>
+    </div>
+    <div class="ap-wheel-item" data-scale="la_menor">
+      <span class="ap-wheel-icon">🌙</span><span>La menor</span>
+      <div class="ap-dwell-fill"></div>
+    </div>
+    <div class="ap-wheel-item" data-scale="pentatonica">
+      <span class="ap-wheel-icon">🎋</span><span>Pentatónica</span>
+      <div class="ap-dwell-fill"></div>
+    </div>
+    <div class="ap-wheel-item" data-scale="blues">
+      <span class="ap-wheel-icon">🎺</span><span>Blues</span>
+      <div class="ap-dwell-fill"></div>
+    </div>
+  </div>
+
+  <!-- Instrument wheel (right) -->
+  <div id="ap-wheel-instr" class="ap-wheel ap-wheel-right">
+    <div class="ap-wheel-title">Instrumentos</div>
+    <div class="ap-wheel-item active" data-instr="piano">
+      <span class="ap-wheel-icon">🎹</span><span>Piano</span>
+      <div class="ap-dwell-fill"></div>
+    </div>
+    <div class="ap-wheel-item" data-instr="marimba">
+      <span class="ap-wheel-icon">🪵</span><span>Marimba</span>
+      <div class="ap-dwell-fill"></div>
+    </div>
+    <div class="ap-wheel-item" data-instr="synth">
+      <span class="ap-wheel-icon">🎛️</span><span>Synth</span>
+      <div class="ap-dwell-fill"></div>
+    </div>
+    <div class="ap-wheel-item" data-instr="strings">
+      <span class="ap-wheel-icon">🎻</span><span>Cuerdas</span>
+      <div class="ap-dwell-fill"></div>
+    </div>
+  </div>
+
+  <!-- Floating note labels container -->
+  <div id="ap-note-labels"></div>
+
+  <!-- Initial guide -->
+  <div id="ap-guide">
+    <div class="ap-guide-card">
+      <h3>🎹 Cómo usar AirPiano</h3>
+      <p class="ap-guide-subtitle">Mueve tus dedos sobre las teclas virtuales para tocar notas.</p>
+      <div class="ap-guide-grid">
+        <div class="ap-guide-item">
+          <span class="ap-guide-icon">👇</span>
+          <span class="ap-guide-label">Tocar tecla</span>
+          <span class="ap-guide-desc">Baja un dedo a la zona inferior</span>
+        </div>
+        <div class="ap-guide-item">
+          <span class="ap-guide-icon">⬅️</span>
+          <span class="ap-guide-label">Cambiar escala</span>
+          <span class="ap-guide-desc">Mano izq. en el panel de escalas</span>
+        </div>
+        <div class="ap-guide-item">
+          <span class="ap-guide-icon">➡️</span>
+          <span class="ap-guide-label">Cambiar instrumento</span>
+          <span class="ap-guide-desc">Mano der. en el panel derecho</span>
+        </div>
+        <div class="ap-guide-item">
+          <span class="ap-guide-icon">🎯</span>
+          <span class="ap-guide-label">Modo tutorial</span>
+          <span class="ap-guide-desc">Toca la tecla iluminada</span>
+        </div>
+      </div>
+      <button id="ap-btn-start" class="ap-start-btn">▶ Comenzar a tocar</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/audio.js"></script>
+<script src="/static/js/audio-synth.js"></script>
+<script src="/static/js/airpiano.js"></script>
+</body>
+</html>

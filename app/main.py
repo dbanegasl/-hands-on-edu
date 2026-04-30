@@ -49,6 +49,11 @@ async def virtualpainter():
     return FileResponse("app/static/virtualpainter.html")
 
 
+@app.get("/airpiano")
+async def airpiano():
+    return FileResponse("app/static/airpiano.html")
+
+
 @app.get("/testing")
 async def testing():
     return FileResponse("app/static/testing.html")
