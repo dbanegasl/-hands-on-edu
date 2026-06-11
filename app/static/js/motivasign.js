@@ -14,40 +14,34 @@
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const WS_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/analyze`;
 const HOLD_TIME         = 1500;   // ms holding correct gesture → confirm
 const READING_DELAY     = 2500;   // ms to display sign before detection starts
 const CHALLENGE_TIMEOUT = 6000;   // ms of detecting phase before auto-fail (challenge)
 const FEEDBACK_DURATION = 1200;   // ms to show feedback overlay
 const RING_CIRC         = 314;    // stroke-dasharray ≈ 2π×50
+const MIN_CONFIDENCE    = 0.6;    // ignore low-confidence hands
 
-const HAND_CONNECTIONS = [
-  [0, 1],  [1, 2],   [2, 3],   [3, 4],    // thumb
-  [0, 5],  [5, 6],   [6, 7],   [7, 8],    // index
-  [0, 9],  [9, 10],  [10, 11], [11, 12],  // middle
-  [0, 13], [13, 14], [14, 15], [15, 16],  // ring
-  [0, 17], [17, 18], [18, 19], [19, 20],  // pinky
-  [5, 9],  [9, 13],  [13, 17],            // palm cross
-];
-
-const FINGERTIPS = [4, 8, 12, 16, 20];
+// Waving detection (distinguishes HOLA/ADIÓS from a static open hand).
+const WAVE_WINDOW_MS    = 1000;   // wrist-x history kept for this long
+const WAVE_MIN_REVERSALS = 2;     // ≥ 2 direction reversals = a wave
+const WAVE_MIN_AMPLITUDE = 0.04;  // normalized horizontal travel per swing
 
 const SIGNS = [
-  { id: 'uno',    label: '1',           emoji: '☝️',  gesture: 'pointing',   hint: 'Levanta el dedo índice' },
-  { id: 'dos',    label: '2',           emoji: '✌️',  gesture: 'peace',      hint: 'Índice y medio arriba' },
-  { id: 'tres',   label: '3',           emoji: '🤟',  gesture: '3_fingers',  hint: 'Tres dedos arriba' },
-  { id: 'cuatro', label: '4',           emoji: '🖖',  gesture: '4_fingers',  hint: 'Cuatro dedos arriba' },
-  { id: 'cinco',  label: '5',           emoji: '🖐️', gesture: 'open_hand',  hint: 'Toda la mano abierta' },
-  { id: 'stop',   label: 'STOP',        emoji: '✋',  gesture: 'open_hand',  hint: 'Mano abierta frente a ti' },
-  { id: 'bien',   label: 'BIEN 👍',     emoji: '👍',  gesture: 'thumbs_up',  hint: 'Pulgar arriba' },
-  { id: 'no',     label: 'NO ✊',       emoji: '✊',  gesture: 'fist',       hint: 'Cierra el puño' },
-  { id: 'hola',   label: 'HOLA 👋',    emoji: '👋',  gesture: 'open_hand',  hint: 'Mano abierta y agita' },
-  { id: 'amor',   label: 'TE AMO 🤟',  emoji: '🤟',  gesture: 'shaka',      hint: 'Pulgar y meñique arriba' },
-  { id: 'paz',    label: 'PAZ ✌️',     emoji: '✌️',  gesture: 'peace',      hint: 'Índice y medio en V' },
-  { id: 'apunta', label: 'APUNTA ☝️',  emoji: '☝️',  gesture: 'pointing',   hint: 'Señala con el índice' },
-  { id: 'ok',     label: 'OK 👌',      emoji: '✊',  gesture: 'fist',       hint: 'Puño cerrado (OK)' },
-  { id: 'adios',  label: 'ADIÓS 👋',   emoji: '👋',  gesture: 'open_hand',  hint: 'Abre la mano para despedirte' },
-  { id: 'bravo',  label: 'BRAVO 🤙',   emoji: '🤙',  gesture: 'shaka',      hint: 'Pulgar y meñique' },
+  { id: 'uno',    label: '1',           emoji: '☝️',  gesture: 'pointing',    hint: 'Levanta el dedo índice' },
+  { id: 'dos',    label: '2',           emoji: '✌️',  gesture: 'peace',       hint: 'Índice y medio arriba' },
+  { id: 'tres',   label: '3',           emoji: '3️⃣',  gesture: '3_fingers',   hint: 'Índice, medio y anular arriba' },
+  { id: 'cuatro', label: '4',           emoji: '4️⃣',  gesture: '4_fingers',   hint: 'Cuatro dedos arriba, pulgar recogido' },
+  { id: 'cinco',  label: '5',           emoji: '🖐️', gesture: 'open_hand',   hint: 'Toda la mano abierta (5 dedos)' },
+  { id: 'stop',   label: 'STOP',        emoji: '✋',  gesture: 'open_hand',   hint: 'Mano abierta y quieta frente a ti' },
+  { id: 'bien',   label: 'BIEN 👍',     emoji: '👍',  gesture: 'thumbs_up',   hint: 'Pulgar arriba' },
+  { id: 'no',     label: 'NO ✊',       emoji: '✊',  gesture: 'fist',        hint: 'Cierra el puño' },
+  { id: 'hola',   label: 'HOLA 👋',    emoji: '👋',  gesture: 'open_hand',   motion: 'wave', hint: 'Mano abierta y agita de lado a lado' },
+  { id: 'amor',   label: 'TE AMO 🤟',  emoji: '🤟',  gesture: 'i_love_you',  hint: 'Pulgar, índice y meñique arriba' },
+  { id: 'paz',    label: 'PAZ ✌️',     emoji: '✌️',  gesture: 'peace',       hint: 'Índice y medio en V' },
+  { id: 'apunta', label: 'APUNTA ☝️',  emoji: '☝️',  gesture: 'pointing',    hint: 'Señala con el índice' },
+  { id: 'ok',     label: 'OK 👌',      emoji: '👌',  gesture: 'ok',          hint: 'Pulgar e índice formando un círculo' },
+  { id: 'adios',  label: 'ADIÓS 👋',   emoji: '👋',  gesture: 'open_hand',   motion: 'wave', hint: 'Abre la mano y agita para despedirte' },
+  { id: 'bravo',  label: 'BRAVO 🤙',   emoji: '🤙',  gesture: 'shaka',       hint: 'Pulgar y meñique arriba (cuernitos)' },
 ];
 
 // ── Audio ─────────────────────────────────────────────────────────────────────
@@ -56,11 +50,11 @@ const audio = new AudioFeedback();
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
-let ws           = null;
+let socket       = null;
 let stream       = null;
 let animFrame    = null;
-let processing   = false;
 let lastHands    = [];
+let wristHistory = [];   // [{t, x}] recent wrist-x samples for wave detection
 
 let mode           = null;       // 'learn' | 'challenge'
 let currentSignIdx = 0;          // index into SIGNS (learn mode)
@@ -236,28 +230,72 @@ function processGesture(hands) {
 
   if (hands.length === 0) {
     elGestureBadge.textContent = 'Sin mano detectada';
+    wristHistory = [];
     if (phase === 'confirming') resetHold();
     return;
   }
 
-  const gesture = hands[0].gesture ?? '';
-  elGestureBadge.textContent = gesture.replace(/_/g, ' ') || '—';
+  const hand = hands[0];
+  const gesture = hand.gesture ?? '';
+  elGestureBadge.textContent = HO.gestureLabel(gesture);
+
+  // Track wrist horizontal motion for wave-based signs (HOLA / ADIÓS).
+  trackWrist(hand);
+
+  const matches = gestureMatches(sign, hand);
 
   if (phase === 'detecting') {
-    if (gesture === sign.gesture) {
-      // Correct gesture detected — enter confirming phase
+    if (matches) {
+      // Correct sign detected — enter confirming phase
       phase     = 'confirming';
       holdStart = Date.now();
       elHoldRing.style.display = 'block';
       elStatusMsg.textContent  = '💪 ¡Mantén la seña!';
     }
   } else if (phase === 'confirming') {
+    // Wave signs keep their handshape during the wave, so only break the hold
+    // when the static handshape itself is lost.
     if (gesture !== sign.gesture) {
-      // Gesture lost — reset hold, go back to detecting
       resetHold();
     }
     // Hold progress is time-driven in the RAF loop (tickHoldRing)
   }
+}
+
+/** Whether the detected hand satisfies the target sign (handshape + motion). */
+function gestureMatches(sign, hand) {
+  if ((hand.gesture ?? '') !== sign.gesture) return false;
+  if (sign.motion === 'wave') return isWaving();
+  return true;
+}
+
+function trackWrist(hand) {
+  const lm = hand.landmarks;
+  if (!lm || lm.length < 1) return;
+  const now = Date.now();
+  wristHistory.push({ t: now, x: lm[0].x });
+  while (wristHistory.length && now - wristHistory[0].t > WAVE_WINDOW_MS) {
+    wristHistory.shift();
+  }
+}
+
+/** Detect a side-to-side wave: enough direction reversals with real amplitude. */
+function isWaving() {
+  if (wristHistory.length < 4) return false;
+  let reversals = 0;
+  let dir = 0;           // last movement direction (+1/-1)
+  let pivotX = wristHistory[0].x;
+  for (let i = 1; i < wristHistory.length; i++) {
+    const dx = wristHistory[i].x - wristHistory[i - 1].x;
+    const newDir = dx > 0 ? 1 : (dx < 0 ? -1 : dir);
+    if (dir !== 0 && newDir !== dir &&
+        Math.abs(wristHistory[i - 1].x - pivotX) >= WAVE_MIN_AMPLITUDE) {
+      reversals++;
+      pivotX = wristHistory[i - 1].x;
+    }
+    if (newDir !== dir && newDir !== 0) dir = newDir;
+  }
+  return reversals >= WAVE_MIN_REVERSALS;
 }
 
 function resetHold() {
@@ -429,31 +467,15 @@ async function initCamera() {
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 
 function connectWS() {
-  try {
-    ws = new WebSocket(WS_URL);
-  } catch (err) {
-    elStatusMsg.textContent = `⚠️ No se pudo crear WebSocket: ${err.message}`;
-    return;
-  }
-
-  ws.onopen = () => { /* connection established */ };
-
-  ws.onclose = () => { /* closed normally */ };
-
-  ws.onerror = () => {
-    elStatusMsg.textContent = '⚠️ Error WS — ¿está el servidor en el puerto 9876?';
-  };
-
-  ws.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      lastHands = data.hands ?? [];
+  socket = new HO.HandSocket({
+    onResult: (data) => {
+      lastHands = (data.hands ?? []).filter(
+        (h) => typeof h.confidence !== 'number' || h.confidence >= MIN_CONFIDENCE
+      );
       processGesture(lastHands);
-    } catch (_) {
-      // Malformed JSON — ignore
-    }
-    processing = false;
-  };
+    },
+  });
+  socket.connect();
 }
 
 // ── Render loop ───────────────────────────────────────────────────────────────
@@ -465,19 +487,11 @@ function startLoop() {
     if (!stream || elVideo.readyState < 2) return;
 
     // 1. Draw mirrored video frame onto canvas
-    ctx.save();
-    ctx.translate(elCanvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(elVideo, 0, 0, elCanvas.width, elCanvas.height);
-    ctx.restore();
+    HO.drawMirroredVideo(ctx, elVideo, elCanvas.width, elCanvas.height);
 
     // 2. Capture and send the clean video frame to the backend
     //    (done before landmarks are drawn so backend receives raw video)
-    if (!processing && ws && ws.readyState === WebSocket.OPEN) {
-      processing = true;
-      const b64 = elCanvas.toDataURL('image/jpeg', 0.6).split(',')[1];
-      ws.send(JSON.stringify({ frame: b64 }));
-    }
+    if (socket) socket.sendFrame(elCanvas, 0.6);
 
     // 3. Draw cached hand landmarks on top
     drawLandmarks(lastHands);
@@ -492,37 +506,8 @@ function startLoop() {
 // ── Landmark drawing ──────────────────────────────────────────────────────────
 
 function drawLandmarks(hands) {
-  const w  = elCanvas.width;
-  const h  = elCanvas.height;
-  const px = lm => lm.x * w;
-  const py = lm => lm.y * h;
-
   for (const hand of hands) {
-    const lm = hand.landmarks ?? [];
-    if (lm.length < 21) continue;
-
-    // Skeleton connections
-    ctx.strokeStyle = 'rgba(0, 255, 136, 0.7)';
-    ctx.lineWidth   = 2;
-    for (const [a, b] of HAND_CONNECTIONS) {
-      ctx.beginPath();
-      ctx.moveTo(px(lm[a]), py(lm[a]));
-      ctx.lineTo(px(lm[b]), py(lm[b]));
-      ctx.stroke();
-    }
-
-    // Landmark dots
-    for (let i = 0; i < lm.length; i++) {
-      ctx.beginPath();
-      if (FINGERTIPS.includes(i)) {
-        ctx.arc(px(lm[i]), py(lm[i]), 7, 0, Math.PI * 2);
-        ctx.fillStyle = '#00cfff';
-      } else {
-        ctx.arc(px(lm[i]), py(lm[i]), 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#ef4444';
-      }
-      ctx.fill();
-    }
+    HO.drawSkeleton(ctx, hand.landmarks, elCanvas.width, elCanvas.height);
   }
 }
 
@@ -542,10 +527,9 @@ function stopWebcam() {
     animFrame = null;
   }
 
-  if (ws) {
-    ws.onclose = null;   // prevent any reconnect / error side-effects
-    ws.close();
-    ws = null;
+  if (socket) {
+    socket.close();
+    socket = null;
   }
 
   if (stream) {
@@ -553,7 +537,7 @@ function stopWebcam() {
     stream = null;
   }
 
-  processing = false;
-  lastHands  = [];
-  phase      = 'idle';
+  lastHands    = [];
+  wristHistory = [];
+  phase        = 'idle';
 }
