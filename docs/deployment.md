@@ -56,10 +56,10 @@ services:
 ```nginx
 server {
     listen 443 ssl;
-    server_name handsoneau.unae.edu.ec;
+    server_name tu-dominio.com;
 
-    ssl_certificate     /etc/letsencrypt/live/handsoneau.unae.edu.ec/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/handsoneau.unae.edu.ec/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/tu-dominio.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/tu-dominio.com/privkey.pem;
 
     # WebSocket upgrade (requerido para /ws/analyze)
     location /ws/ {
@@ -82,7 +82,7 @@ server {
 # Redirigir HTTP a HTTPS
 server {
     listen 80;
-    server_name handsoneau.unae.edu.ec;
+    server_name tu-dominio.com;
     return 301 https://$host$request_uri;
 }
 ```
@@ -92,7 +92,7 @@ server {
 ### Variables de entorno en producción (`.env`)
 
 ```env
-MOODLE_URL=https://moodle.unae.edu.ec
+MOODLE_URL=https://tu-moodle.universidad.edu
 MOODLE_TOKEN=tu_token_de_produccion
 MOODLE_COURSE_ID=5
 APP_ENV=production

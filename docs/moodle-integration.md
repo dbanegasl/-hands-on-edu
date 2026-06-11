@@ -29,7 +29,7 @@ Administración del sitio
 Copia el token generado y agrégalo en tu `.env`:
 
 ```env
-MOODLE_URL=https://moodle.unae.edu.ec
+MOODLE_URL=https://tu-moodle.universidad.edu
 MOODLE_TOKEN=abc123...
 ```
 

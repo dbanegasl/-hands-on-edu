@@ -9,7 +9,7 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 - Cada requisito tiene su propio archivo detallado en `docs/requirements/REQ-XXX-*.md`.
 - Para agregar un nuevo requisito: crea el archivo `REQ-NNN-titulo-corto.md` siguiendo la plantilla de cualquier REQ existente, y añade una fila a la tabla de abajo.
 - Actualiza el **Estado** de un requisito cuando pase de fase (Pendiente → En progreso → Hecho).
-- Los requisitos de prioridad **Alta** deben resolverse antes de cualquier despliegue a producción institucional en UNAE.
+- Los requisitos de prioridad **Alta** deben resolverse antes de cualquier despliegue a producción institucional.
 
 ---
 

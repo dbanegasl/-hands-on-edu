@@ -112,7 +112,7 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to UNAE server via SSH
+      - name: Deploy to production server via SSH
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -161,7 +161,7 @@ Ir a `Settings → Secrets and variables → Actions → New repository secret`:
 |--------|-------------|---------|
 | `DOCKER_USER` | Username de Docker Hub | `cd.yml` |
 | `DOCKER_PASSWORD` | Password o token de Docker Hub | `cd.yml` |
-| `DEPLOY_HOST` | IP o hostname del servidor UNAE | `cd.yml` |
+| `DEPLOY_HOST` | IP o hostname del servidor de producción | `cd.yml` |
 | `DEPLOY_USER` | Usuario SSH del servidor | `cd.yml` |
 | `DEPLOY_SSH_KEY` | Clave SSH privada (RSA o ED25519) | `cd.yml` |
 

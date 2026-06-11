@@ -48,7 +48,7 @@
   - Botón **"📄 Exportar PDF"** en la pantalla de resultados de AttendEye (habilitado solo cuando hay ≥ 1 estudiante registrado).
   - **Modal** con campo de nombre del docente: validación de campo requerido, soporte Enter/Escape, cierre al hacer click fuera del card.
   - Contenido del PDF generado:
-    1. Encabezado institucional UNAE con franja azul.
+    1. Encabezado institucional con franja azul.
     2. Box de metadatos: docente, nombre de clase, fecha y hora completa.
     3. Cards de resumen: Presentes (verde) / Ausentes (rojo) / % Asistencia (azul).
     4. Tabla de asistencia con colores por estado (`Presente` verde / `Ausente` rojo / `Omitido`), filas alternadas, encabezado azul.

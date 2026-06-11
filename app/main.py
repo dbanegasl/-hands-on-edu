@@ -12,7 +12,7 @@ from app.core.hand_tracker import HandTracker
 
 app = FastAPI(
     title="HandsOnEdu",
-    description="Plataforma Educativa con Control Gestual — UNAE",
+    description="Plataforma Educativa con Control Gestual — HandsOnEdu",
     version="0.5.0",
     docs_url="/docs",
     redoc_url="/redoc",

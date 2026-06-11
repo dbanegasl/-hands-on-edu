@@ -21,7 +21,7 @@ La plataforma HandsOnEdu es actualmente **completamente pública**: cualquier pe
 - Acceder al editor de preguntas y modificar o eliminar el contenido de las evaluaciones.
 - Ver reportes históricos de asistencia y calificaciones.
 
-En un entorno institucional como **UNAE**, esto es un problema de privacidad y seguridad. Los datos de estudiantes (notas, asistencia) están protegidos por políticas institucionales y la normativa ecuatoriana de protección de datos.
+En un entorno institucional, esto es un problema de privacidad y seguridad. Los datos de estudiantes (notas, asistencia) están protegidos por políticas institucionales y normativas de protección de datos.
 
 ---
 

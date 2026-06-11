@@ -17,7 +17,7 @@
 
 El reporte de asistencia generado por AttendEye existe **únicamente en memoria de sesión del navegador**. Al cerrar la pestaña o recargar la página, los datos se pierden permanentemente.
 
-En el contexto institucional de **UNAE**, los docentes deben entregar registros de asistencia a coordinación académica. Actualmente no existe ningún mecanismo de exportación, lo que obliga a transcribir los datos manualmente o hacer una captura de pantalla (no aceptada como evidencia formal).
+En el contexto institucional, los docentes deben entregar registros de asistencia a coordinación académica. Actualmente no existe ningún mecanismo de exportación, lo que obliga a transcribir los datos manualmente o hacer una captura de pantalla (no aceptada como evidencia formal).
 
 ---
 
@@ -33,8 +33,8 @@ En el contexto institucional de **UNAE**, los docentes deben entregar registros 
 El PDF debe contener los siguientes elementos en orden:
 
 1. **Encabezado institucional**
-   - Logo de UNAE (imagen embebida en base64 o placeholder con texto).
-   - Nombre de la institución: "Universidad Nacional de Educación — UNAE".
+   - Logo de la institución (imagen embebida en base64 o placeholder con texto).
+   - Nombre de la institución (configurable).
    - Nombre del módulo: "Registro de Asistencia — AttendEye".
 
 2. **Metadatos de sesión**

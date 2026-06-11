@@ -24,7 +24,7 @@
 Esto hace **imposible**:
 - Seguimiento longitudinal del aprendizaje de los estudiantes.
 - Comparar resultados entre sesiones.
-- Reportes para coordinación académica de UNAE.
+- Reportes para coordinación académica institucional.
 - Implementar cualquier dashboard o análisis de datos.
 
 Este requisito es un **prerrequisito bloqueante** para REQ-006, REQ-007, REQ-008 y REQ-009 (ver también TD-004 en `docs/technical-debt/TECHNICAL-DEBT.md`).

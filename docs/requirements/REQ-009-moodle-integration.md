@@ -17,7 +17,7 @@
 
 El archivo `app/core/moodle_client.py` existe en el repositorio pero su implementación es **completamente un stub**: las funciones no realizan llamadas reales, solo muestran alertas o retornan datos ficticios.
 
-**UNAE utiliza Moodle como su LMS (Learning Management System) principal**. Los docentes esperan que los resultados de HandsOnEdu (notas de GestiEdu, asistencia de AttendEye) se sincronicen automáticamente con el gradebook y el módulo de asistencia de Moodle, eliminando la doble carga de trabajo administrativo.
+**Las instituciones que adoptan HandsOnEdu pueden utilizar Moodle como su LMS (Learning Management System) principal**. Los docentes esperan que los resultados de HandsOnEdu (notas de GestiEdu, asistencia de AttendEye) se sincronicen automáticamente con el gradebook y el módulo de asistencia de Moodle, eliminando la doble carga de trabajo administrativo.
 
 Actualmente, el docente debe:
 1. Completar la sesión en HandsOnEdu.
@@ -122,7 +122,7 @@ class MoodleClient:
 
 | Variable | Descripción | Ejemplo |
 |----------|-------------|---------|
-| `MOODLE_URL` | URL base de la instancia Moodle | `https://campus.unae.edu.ec` |
+| `MOODLE_URL` | URL base de la instancia Moodle | `https://tu-moodle.universidad.edu` |
 | `MOODLE_TOKEN` | Token de Web Services de Moodle | `abc123def456...` |
 | `MOODLE_COURSE_ID` | ID del curso por defecto | `42` |
 

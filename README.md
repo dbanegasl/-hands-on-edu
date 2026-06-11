@@ -1,6 +1,6 @@
 # 🖐️ HandsOnEdu
 
-> **Plataforma Educativa con Control Gestual** — Desarrollado para la [UNAE](https://www.unae.edu.ec/) (Universidad Nacional de Educación del Ecuador)
+> **Plataforma de accesibilidad educativa con Control Gestual** — Desarrollado por [Daniel Banegas — DUOTICS](https://duotics.com) para instituciones de educación superior
 
 [![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-0.10+-green.svg)](https://mediapipe.dev/)
@@ -126,7 +126,7 @@ HandsOnEdu se conecta con Moodle mediante su **REST API** para:
 3. Crear un usuario de servicio y generar token
 4. Configurar en `.env`:
    ```env
-   MOODLE_URL=https://tu-moodle.unae.edu.ec
+   MOODLE_URL=https://tu-moodle.universidad.edu
    MOODLE_TOKEN=tu_token_aqui
    ```
 
@@ -153,7 +153,7 @@ Ver [docs/moodle-integration.md](docs/moodle-integration.md) para instrucciones 
 
 ## 🏛️ Contexto Institucional
 
-Desarrollado en el **Área de Entornos Virtuales** de la [UNAE](https://www.unae.edu.ec/) como parte de iniciativas de innovación educativa con tecnología accesible e inclusiva para docentes y estudiantes del Ecuador.
+Desarrollado por **[Daniel Banegas — DUOTICS](https://duotics.com)** como parte de iniciativas de innovación educativa con tecnología accesible e inclusiva para personas con discapacidad auditiva y educación superior.
 
 ---
 
@@ -174,6 +174,6 @@ MIT License — ver [LICENSE](LICENSE) para detalles.
 ---
 
 <p align="center">
-  Desarrollado con ❤️ para la educación ecuatoriana 🇪🇨<br/>
-  <a href="https://www.unae.edu.ec/">UNAE — Universidad Nacional de Educación</a>
+  Desarrollado con ❤️ para la educación inclusiva<br/>
+  <a href="https://duotics.com">Daniel Banegas — DUOTICS</a>
 </p>

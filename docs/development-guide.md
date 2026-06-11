@@ -226,7 +226,7 @@ function captureAndSend() {
 
 | Variable | Requerida | Descripción |
 |----------|-----------|-------------|
-| `MOODLE_URL` | Solo si se usa Moodle | URL base de la instancia Moodle (ej: `https://moodle.unae.edu.ec`) |
+| `MOODLE_URL` | Solo si se usa Moodle | URL base de la instancia Moodle (ej: `https://tu-moodle.universidad.edu`) |
 | `MOODLE_TOKEN` | Solo si se usa Moodle | Token de servicio web de Moodle |
 | `MOODLE_COURSE_ID` | Solo si se usa Moodle | ID del curso en Moodle |
 | `APP_ENV` | No | `development` o `production` |

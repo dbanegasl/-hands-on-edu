@@ -22,7 +22,7 @@ Las 10 preguntas de GestiEdu están **hardcodeadas en `gestiedu.js`** como un ar
 - Todas las clases y cursos usan exactamente las mismas preguntas, sin posibilidad de adaptar al nivel o materia.
 - No se pueden agregar imágenes o ajustar los gestos asignados a cada respuesta sin intervención técnica.
 
-Esto contradice uno de los principios pedagógicos centrales de UNAE: la adaptación del contenido al contexto educativo del docente.
+Esto contradice uno de los principios pedagógicos centrales de la educación inclusiva: la adaptación del contenido al contexto educativo del docente.
 
 ---
 

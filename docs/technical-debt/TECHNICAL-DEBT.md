@@ -6,7 +6,7 @@
 
 ## 1. Resumen ejecutivo
 
-HandsOnEdu es una plataforma educativa funcional que logra su propósito inicial: demostrar el potencial de MediaPipe Hand Landmarker en el aula. Sin embargo, al acercarse a un despliegue institucional real en UNAE, el código base acumula deuda técnica que, de no gestionarse activamente, frenará el desarrollo futuro y expondrá riesgos operativos. La deuda más crítica se concentra en tres áreas: ausencia total de tests automatizados (que bloquea cualquier refactor seguro y la adopción de CI/CD), falta de persistencia de datos (que impide el seguimiento pedagógico longitudinal), y la ausencia de autenticación (inaceptable para un sistema que maneja datos de estudiantes en contexto institucional). Este registro existe para que el equipo tenga visibilidad completa de la deuda acumulada, priorice su resolución de forma informada, y evite acumular nueva deuda sin documentarla.
+HandsOnEdu es una plataforma educativa funcional que logra su propósito inicial: demostrar el potencial de MediaPipe Hand Landmarker en el aula. Sin embargo, al acercarse a un despliegue institucional real, el código base acumula deuda técnica que, de no gestionarse activamente, frenará el desarrollo futuro y expondrá riesgos operativos. La deuda más crítica se concentra en tres áreas: ausencia total de tests automatizados (que bloquea cualquier refactor seguro y la adopción de CI/CD), falta de persistencia de datos (que impide el seguimiento pedagógico longitudinal), y la ausencia de autenticación (inaceptable para un sistema que maneja datos de estudiantes en contexto institucional). Este registro existe para que el equipo tenga visibilidad completa de la deuda acumulada, priorice su resolución de forma informada, y evite acumular nueva deuda sin documentarla.
 
 ---
 
@@ -48,7 +48,7 @@ Las 10 preguntas de evaluación de GestiEdu están definidas como un array de ob
 **Impacto concreto:**
 - El docente no puede adaptar las preguntas a su materia o nivel educativo.
 - Personalizar el contenido requiere conocimientos de JavaScript y acceso al servidor.
-- Viola el principio pedagógico de adaptación curricular de UNAE.
+- Viola el principio pedagógico de adaptación curricular.
 
 ---
 
@@ -68,8 +68,8 @@ No existe ningún sistema de autenticación o autorización. Cualquier persona q
 **Impacto concreto:**
 - Datos de estudiantes (notas, asistencia) expuestos sin control de acceso.
 - Cualquier usuario puede modificar o eliminar preguntas de evaluaciones.
-- Inaceptable para despliegue institucional según políticas de privacidad de UNAE.
-- Potencial incumplimiento de la normativa ecuatoriana de protección de datos personales.
+- Inaceptable para despliegue institucional según políticas de privacidad institucionales.
+- Potencial incumplimiento de normativas de protección de datos personales.
 
 ---
 
@@ -107,7 +107,7 @@ Todos los resultados (notas GestiEdu, asistencia AttendEye, progreso MotivaSign)
 El archivo `app/core/moodle_client.py` existe y parece implementar la integración con Moodle, pero sus métodos son stubs que solo muestran alertas o retornan datos ficticios. No realiza ninguna llamada real a la API REST de Moodle.
 
 **Impacto concreto:**
-- La integración con el LMS de UNAE (Moodle) es completamente no funcional a pesar de estar listada como característica del sistema.
+- La integración con el LMS (Moodle) es completamente no funcional a pesar de estar listada como característica del sistema.
 - Los docentes que confían en la sincronización automática de notas deben cargarlas manualmente.
 - Genera expectativas incorrectas sobre las capacidades del sistema.
 

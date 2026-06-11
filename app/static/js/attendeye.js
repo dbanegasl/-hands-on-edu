@@ -804,7 +804,7 @@ function exportToPDF(teacherName, records) {
   doc.setTextColor(...WHITE);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.text('Universidad Nacional de Educación — UNAE', margin, 11);
+  doc.text('HandsOnEdu — Plataforma Educativa Inclusiva', margin, 11);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text('Registro de Asistencia — AttendEye', margin, 19);
