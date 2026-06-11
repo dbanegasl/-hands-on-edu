@@ -42,8 +42,11 @@ JSON enviado por cada frame:
   "hands": [
     {
       "handedness": "Right",
+      "confidence": 0.94,
       "gesture": "pointing",
+      "gesture_raw": "pointing",
       "finger_count": 1,
+      "fingers_up": {"thumb": false, "index": true, "middle": false, "ring": false, "pinky": false},
       "landmarks": [
         {"x": 0.452, "y": 0.613, "z": -0.021},
         {"x": 0.461, "y": 0.589, "z": -0.019},
@@ -66,9 +69,14 @@ JSON enviado por cada frame:
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `handedness` | string | `"Right"` o `"Left"`, según MediaPipe. Relativo al frame **reflejado** (espacio selfie). |
-| `gesture` | string | Gesto clasificado (ver tabla de gestos más abajo). |
-| `finger_count` | integer | Número de dedos levantados (0–5). |
+| `confidence` | float | Confianza de lateralidad de MediaPipe [0.0–1.0]. Los módulos descartan manos por debajo de su umbral (≈0.6–0.7) para evitar falsos positivos. |
+| `gesture` | string | Gesto clasificado y **suavizado** temporalmente (voto mayoritario en ventana de 5 frames). Es el campo recomendado para lógica de UI. |
+| `gesture_raw` | string | Gesto del frame actual sin suavizar. Útil para diagnóstico (Testing Lab). |
+| `finger_count` | integer | Número de dedos levantados (0–5), suavizado por mediana. |
+| `fingers_up` | object | Booleanos por dedo: `{thumb, index, middle, ring, pinky}` del frame actual. |
 | `landmarks` | array[21] | Coordenadas normalizadas de los 21 landmarks de la mano. |
+
+> **Compatibilidad**: `confidence`, `gesture_raw` y `fingers_up` son **aditivos** (REQ-013) — los clientes que solo leen `gesture`/`finger_count`/`landmarks` siguen funcionando sin cambios.
 
 ### Campos de cada landmark
 
@@ -109,18 +117,19 @@ Para errores de excepción del servidor:
 | Valor de `gesture` | Descripción | Condición de activación |
 |--------------------|-------------|------------------------|
 | `"fist"` | Puño cerrado | 0 dedos arriba, pulgar dentro |
-| `"thumbs_up"` | Pulgar arriba | 0 dedos arriba, pulgar extendido lateralmente |
+| `"thumbs_up"` | Pulgar arriba | 0 dedos arriba, pulgar extendido |
 | `"pointing"` | Señalar con índice | Solo índice arriba, pulgar dentro |
 | `"peace"` | Señal de paz / V | Índice + medio arriba; anular y meñique abajo |
 | `"shaka"` | Shaka / aloha | Meñique arriba + pulgar extendido |
-| `"open_hand"` | Mano abierta | 4 o más dedos levantados |
+| `"i_love_you"` | Te amo (ILY) | Pulgar + índice + meñique arriba; medio y anular abajo |
+| `"ok"` | OK 👌 | Pinza pulgar-índice; medio, anular y meñique extendidos |
+| `"open_hand"` | Mano abierta | Los 5 dedos extendidos (pulgar incluido) |
 | `"1_fingers"` | 1 dedo (no índice) | 1 dedo arriba que no activa `pointing` |
-| `"2_fingers"` | 2 dedos | 2 dedos arriba que no activa `peace` |
+| `"2_fingers"` | 2 dedos | 2 dedos arriba que no activa `peace`/`i_love_you` |
 | `"3_fingers"` | 3 dedos | 3 dedos arriba |
-| `"4_fingers"` | 4 dedos | 4 dedos arriba (pulgar dentro) |
-| `"5_fingers"` | 5 dedos | 5 dedos arriba (capturado como `open_hand`) |
+| `"4_fingers"` | 4 dedos | 4 dedos arriba, pulgar recogido (la mano abierta con pulgar es `open_hand`) |
 
-> **Nota**: El clasificador usa comparación geométrica de landmarks, no ML específico para gestos. Gestos ambiguos o transiciones rápidas pueden producir valores de `gesture` inestables durante unos frames.
+> **Nota**: El clasificador usa razones de distancias entre landmarks (invariante a la orientación de la mano), no ML específico para gestos. El campo `gesture` está suavizado temporalmente; un frame ruidoso aislado no cambia el valor reportado.
 
 ---
 

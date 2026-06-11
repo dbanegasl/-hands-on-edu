@@ -23,6 +23,23 @@
 
 ---
 
+## [0.6.0] — 2026-06-10
+
+### Cambiado
+
+- **REQ-013** — Robustez de detección (backend). Reescritura de la heurística de gestos en `app/core/hand_tracker.py` para que sea **invariante a la orientación**: cada dedo se decide por razón de distancias al wrist (`dist(tip,wrist) > 1.15·dist(pip,wrist)`) en lugar de `tip.y < pip.y`; el pulgar se ancla al `PINKY_MCP` (sin ramas por lateralidad). Corrige los gestos mal leídos al rotar la mano (p. ej. pulgar-arriba reportado como "2 dedos").
+
+### Añadido
+
+- **REQ-013** — Nuevos gestos `i_love_you` (pulgar+índice+meñique) y `ok` (pinza pulgar-índice); `open_hand` ahora exige 5 dedos y aparece `4_fingers` (antes inalcanzable).
+- **REQ-013** — Umbrales de confianza en `HandLandmarkerOptions` (`detection=0.7`, `presence=0.6`, `tracking=0.6`) que eliminan falsos positivos de cara/antebrazo.
+- **REQ-013** — `HandTracker` **por conexión** (timestamps monótonos propios; cierre en `finally`) y `GestureSmoother` por conexión (voto mayoritario ventana 5 / mediana de conteo) que elimina el parpadeo gesto-a-gesto.
+- **REQ-013** — Campos aditivos en la respuesta WebSocket: `confidence`, `fingers_up` (dict por dedo) y `gesture_raw`; `gesture` pasa a ser el valor suavizado.
+- **REQ-013** — Healthcheck en `docker-compose.yml` (**TD-010**), logging estructurado con logger `handsonedu` (**TD-009**), guardia de tasa en el WS (**TD-008**) y `APP_VERSION` único usado por `/health` y `FastAPI(version=...)`.
+- **REQ-013** — Suite de tests reescrita: fixtures geométricas (`make_hand`) con rotación y tests parametrizados a 0/45/90/180/270°; tests de `GestureSmoother` y de los nuevos campos del WebSocket (111 tests).
+
+---
+
 ## [0.5.0] — 2026-04-30
 
 ### Añadido

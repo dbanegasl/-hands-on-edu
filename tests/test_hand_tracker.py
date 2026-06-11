@@ -1,142 +1,164 @@
 """
 Unit tests for app/core/hand_tracker.py
 
-These tests exercise the pure-logic methods (count_raised_fingers,
-detect_gesture, get_finger_tip) using synthetic landmarks — no camera,
-no MediaPipe model, no network required.
+Exercises the pure-logic methods (finger_states, count_raised_fingers,
+detect_gesture, get_finger_tip) and the GestureSmoother using synthetic
+landmarks — no camera, no MediaPipe model, no network required.
+
+The gesture heuristic is orientation-invariant, so every gesture test is
+parametrized across rotations: a thumbs-up tilted 90° must still read as
+thumbs_up (the exact bug seen in the GestiEdu screenshot).
 """
 import pytest
 
+from app.core.hand_tracker import GestureSmoother
 from tests.conftest import (
-    _lms,
+    four_fingers_landmarks,
     fist_landmarks,
+    i_love_you_landmarks,
+    ok_landmarks,
     open_hand_landmarks,
     peace_landmarks,
     pointing_landmarks,
     shaka_landmarks,
+    three_fingers_landmarks,
     thumbs_up_landmarks,
 )
+
+ROTATIONS = [0, 45, 90, 180, 270]
 
 
 # ── count_raised_fingers ──────────────────────────────────────────────────────
 
 class TestCountRaisedFingers:
-    def test_fist_returns_0(self, tracker):
-        assert tracker.count_raised_fingers(fist_landmarks()) == 0
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_fist_returns_0(self, tracker, rot):
+        assert tracker.count_raised_fingers(fist_landmarks(rot)) == 0
 
-    def test_open_hand_returns_4(self, tracker):
-        # open_hand_landmarks has all 4 non-thumb fingers up, thumb close
-        assert tracker.count_raised_fingers(open_hand_landmarks()) == 4
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_open_hand_returns_5(self, tracker, rot):
+        assert tracker.count_raised_fingers(open_hand_landmarks(rot)) == 5
 
-    def test_thumb_extension_adds_1(self, tracker):
-        lms = open_hand_landmarks()
-        lms[2].x = 0.30  # THUMB_MCP
-        lms[4].x = 0.60  # THUMB_TIP  → diff 0.30 > 0.08
-        assert tracker.count_raised_fingers(lms) == 5
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_four_fingers_returns_4(self, tracker, rot):
+        assert tracker.count_raised_fingers(four_fingers_landmarks(rot)) == 4
 
-    def test_pointing_returns_1(self, tracker):
-        assert tracker.count_raised_fingers(pointing_landmarks()) == 1
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_pointing_returns_1(self, tracker, rot):
+        assert tracker.count_raised_fingers(pointing_landmarks(rot)) == 1
 
-    def test_peace_returns_2(self, tracker):
-        assert tracker.count_raised_fingers(peace_landmarks()) == 2
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_peace_returns_2(self, tracker, rot):
+        assert tracker.count_raised_fingers(peace_landmarks(rot)) == 2
 
-    def test_three_fingers_returns_3(self, tracker):
-        lms = _lms({
-            2: (0.50, 0.70, 0), 4: (0.52, 0.80, 0),
-            6: (0.5, 0.60, 0),  8: (0.5, 0.20, 0),   # index  UP
-            10: (0.5, 0.60, 0), 12: (0.5, 0.20, 0),  # middle UP
-            14: (0.5, 0.60, 0), 16: (0.5, 0.20, 0),  # ring   UP
-            18: (0.5, 0.40, 0), 20: (0.5, 0.60, 0),  # pinky  DOWN
-        })
-        assert tracker.count_raised_fingers(lms) == 3
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_three_fingers_returns_3(self, tracker, rot):
+        assert tracker.count_raised_fingers(three_fingers_landmarks(rot)) == 3
 
 
-# ── detect_gesture ────────────────────────────────────────────────────────────
+# ── detect_gesture (orientation-invariant) ────────────────────────────────────
 
 class TestDetectGesture:
-    def test_fist(self, tracker):
-        assert tracker.detect_gesture(fist_landmarks()) == "fist"
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_fist(self, tracker, rot):
+        assert tracker.detect_gesture(fist_landmarks(rot)) == "fist"
 
-    def test_thumbs_up(self, tracker):
-        assert tracker.detect_gesture(thumbs_up_landmarks()) == "thumbs_up"
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_thumbs_up(self, tracker, rot):
+        # Regression for the GestiEdu screenshot: rotated thumbs-up was read as "2 fingers".
+        assert tracker.detect_gesture(thumbs_up_landmarks(rot)) == "thumbs_up"
 
-    def test_pointing(self, tracker):
-        assert tracker.detect_gesture(pointing_landmarks()) == "pointing"
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_pointing(self, tracker, rot):
+        assert tracker.detect_gesture(pointing_landmarks(rot)) == "pointing"
 
-    def test_peace(self, tracker):
-        assert tracker.detect_gesture(peace_landmarks()) == "peace"
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_peace(self, tracker, rot):
+        assert tracker.detect_gesture(peace_landmarks(rot)) == "peace"
 
-    def test_shaka(self, tracker):
-        assert tracker.detect_gesture(shaka_landmarks()) == "shaka"
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_shaka(self, tracker, rot):
+        assert tracker.detect_gesture(shaka_landmarks(rot)) == "shaka"
 
-    def test_open_hand(self, tracker):
-        assert tracker.detect_gesture(open_hand_landmarks()) == "open_hand"
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_open_hand(self, tracker, rot):
+        assert tracker.detect_gesture(open_hand_landmarks(rot)) == "open_hand"
 
-    def test_3_fingers_fallthrough(self, tracker):
-        """3 fingers (index+middle+ring) with no special condition → '3_fingers'."""
-        lms = _lms({
-            2: (0.50, 0.70, 0), 4: (0.52, 0.80, 0),
-            6: (0.5, 0.60, 0),  8: (0.5, 0.20, 0),   # index  UP
-            10: (0.5, 0.60, 0), 12: (0.5, 0.20, 0),  # middle UP
-            14: (0.5, 0.60, 0), 16: (0.5, 0.20, 0),  # ring   UP
-            18: (0.5, 0.40, 0), 20: (0.5, 0.60, 0),  # pinky  DOWN
-        })
-        assert tracker.detect_gesture(lms) == "3_fingers"
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_four_fingers(self, tracker, rot):
+        assert tracker.detect_gesture(four_fingers_landmarks(rot)) == "4_fingers"
 
-    def test_2_fingers_fallthrough(self, tracker):
-        """2 fingers that are NOT index+middle → '2_fingers' (not peace)."""
-        lms = _lms({
-            2: (0.50, 0.70, 0), 4: (0.52, 0.80, 0),
-            6: (0.5, 0.40, 0),  8: (0.5, 0.60, 0),   # index  DOWN
-            10: (0.5, 0.60, 0), 12: (0.5, 0.20, 0),  # middle UP
-            14: (0.5, 0.40, 0), 16: (0.5, 0.60, 0),  # ring   DOWN
-            18: (0.5, 0.60, 0), 20: (0.5, 0.20, 0),  # pinky  UP
-        })
-        assert tracker.detect_gesture(lms) == "2_fingers"
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_three_fingers(self, tracker, rot):
+        assert tracker.detect_gesture(three_fingers_landmarks(rot)) == "3_fingers"
 
-    def test_1_finger_fallthrough(self, tracker):
-        """1 finger (ring only) with no thumb → '1_fingers' (not pointing/shaka)."""
-        lms = _lms({
-            2: (0.50, 0.70, 0), 4: (0.52, 0.80, 0),
-            6: (0.5, 0.40, 0),  8: (0.5, 0.60, 0),   # index  DOWN
-            10: (0.5, 0.40, 0), 12: (0.5, 0.60, 0),  # middle DOWN
-            14: (0.5, 0.60, 0), 16: (0.5, 0.20, 0),  # ring   UP
-            18: (0.5, 0.40, 0), 20: (0.5, 0.60, 0),  # pinky  DOWN
-        })
-        assert tracker.detect_gesture(lms) == "1_fingers"
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_i_love_you(self, tracker, rot):
+        assert tracker.detect_gesture(i_love_you_landmarks(rot)) == "i_love_you"
+
+    @pytest.mark.parametrize("rot", ROTATIONS)
+    def test_ok(self, tracker, rot):
+        assert tracker.detect_gesture(ok_landmarks(rot)) == "ok"
+
+
+# ── GestureSmoother ───────────────────────────────────────────────────────────
+
+class TestGestureSmoother:
+    def test_single_noisy_frame_is_absorbed(self):
+        """[A,A,B,A,A] → B is a minority, smoother keeps emitting A."""
+        s = GestureSmoother(window=5, min_votes=3)
+        seq = ["pointing", "pointing", "peace", "pointing", "pointing"]
+        out = [s.smooth("Right", g, 1)[0] for g in seq]
+        assert out == ["pointing"] * 5
+
+    def test_sustained_change_flips_on_third_vote(self):
+        """A sustained new gesture takes over once it reaches min_votes."""
+        s = GestureSmoother(window=5, min_votes=3)
+        s.smooth("Right", "fist", 0)
+        s.smooth("Right", "peace", 2)
+        s.smooth("Right", "peace", 2)
+        g, _ = s.smooth("Right", "peace", 2)  # third 'peace' → majority
+        assert g == "peace"
+
+    def test_hands_are_smoothed_independently(self):
+        s = GestureSmoother(window=5, min_votes=3)
+        for _ in range(3):
+            s.smooth("Left", "fist", 0)
+            s.smooth("Right", "open_hand", 5)
+        assert s.smooth("Left", "fist", 0)[0] == "fist"
+        assert s.smooth("Right", "open_hand", 5)[0] == "open_hand"
+
+    def test_finger_count_uses_median(self):
+        s = GestureSmoother(window=5, min_votes=3)
+        counts = [5, 5, 0, 5, 5]  # one dropout frame
+        out = [s.smooth("Right", "open_hand", c)[1] for c in counts]
+        assert out[-1] == 5
 
 
 # ── get_finger_tip ────────────────────────────────────────────────────────────
 
 class TestGetFingerTip:
     def test_center_640x480(self, tracker):
-        lms = _lms({8: (0.5, 0.5, 0)})  # INDEX_TIP at center
+        from tests.conftest import _lms
+        lms = _lms({8: (0.5, 0.5, 0)})
         x, y = tracker.get_finger_tip(lms, finger=8, width=640, height=480)
-        assert x == 320
-        assert y == 240
-
-    def test_top_left_corner(self, tracker):
-        lms = _lms({8: (0.0, 0.0, 0)})
-        x, y = tracker.get_finger_tip(lms, finger=8, width=640, height=480)
-        assert x == 0
-        assert y == 0
+        assert (x, y) == (320, 240)
 
     def test_bottom_right_corner(self, tracker):
-        lms = _lms({4: (1.0, 1.0, 0)})  # THUMB_TIP
+        from tests.conftest import _lms
+        lms = _lms({4: (1.0, 1.0, 0)})
         x, y = tracker.get_finger_tip(lms, finger=4, width=640, height=480)
-        assert x == 640
-        assert y == 480
+        assert (x, y) == (640, 480)
 
     def test_custom_resolution_1280x720(self, tracker):
+        from tests.conftest import _lms
         lms = _lms({4: (0.5, 0.5, 0)})
         x, y = tracker.get_finger_tip(lms, finger=4, width=1280, height=720)
-        assert x == 640
-        assert y == 360
+        assert (x, y) == (640, 360)
 
     def test_default_finger_is_index_tip(self, tracker):
-        """Default finger parameter should be INDEX_TIP (index 8)."""
         from app.core.hand_tracker import INDEX_TIP
+        from tests.conftest import _lms
         lms = _lms({INDEX_TIP: (0.25, 0.75, 0)})
         x, y = tracker.get_finger_tip(lms, width=640, height=480)
-        assert x == 160
-        assert y == 360
+        assert (x, y) == (160, 360)

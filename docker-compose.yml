@@ -18,6 +18,14 @@ services:
       - MOODLE_TOKEN=${MOODLE_TOKEN:-}
       - MOODLE_COURSE_ID=${MOODLE_COURSE_ID:-}
     restart: unless-stopped
+    # Uses Python (always present) instead of curl — the image ships wget, not curl,
+    # and the app listens on 8000 inside the container regardless of HOST_PORT.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/health').status==200 else sys.exit(1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     # Note: webcam is captured by the browser via getUserMedia — no device passthrough needed.
     # Only add the devices section below if running OpenCV headless demos (non-web mode):
     # devices:
