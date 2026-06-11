@@ -23,6 +23,52 @@
 
 ---
 
+## [0.8.0] — 2026-06-11
+
+### Añadido
+
+- **REQ-015** — Insignia de conexión (🟢/🟡/⚫) añadida a **GestiEdu** y **MotivaSign** (como ya tenían VirtualPainter y AirPiano), conectada al `onStatus` de `HO.HandSocket`.
+- **REQ-015** — AirPiano: animación de fade-out de 120 ms al soltar una tecla, renderizada en el canvas de teclas.
+
+### Cambiado
+
+- **REQ-015** — GestiEdu: `.q-visual` usa `clamp(2rem, 6vw, 4rem)` para evitar desbordamiento en pantallas pequeñas; `.question-card` con `min-height: 220px` para evitar saltos de layout entre tipos de pregunta.
+- **REQ-015** — MotivaSign: badge de gesto detectado con `transition: opacity 0.15s, color 0.15s` para suavizar el parpadeo por fotograma.
+- **REQ-014** — Completada la migración de **todos los módulos** a `ho-common.js`: webcam, gestiedu, motivasign, virtualpainter, airpiano y attendeye. Eliminados ~450 líneas duplicadas de skeleton draw, mirror draw y boilerplate WS.
+- Versión `0.8.0` en `APP_VERSION`.
+
+---
+
+## [0.7.0] — 2026-06-11
+
+### Añadido
+
+- **REQ-014** — Nueva librería compartida `app/static/js/ho-common.js` (namespace `window.HO`): `HO.drawSkeleton`, `HO.drawMirroredVideo`, `HO.HandSocket` (auto-reconexión exponencial, ping-pong, validación de forma JSON), `HO.GestureStabilizer`, `HO.OneEuro`, `HO.GESTURE_LABELS_ES`, `HO.gestureLabel`.
+- **REQ-015** — VirtualPainter: debounce de modo 150 ms, filtro **One-Euro** en x/y para cursor suave, renderizado por puntos medios cuadráticos (sin gaps), snapshot de undo solo en transición idle→draw.
+- **REQ-015** — AirPiano: filtro por confianza ≥ 0.7 y span de mano ≥ 0.09 normalizado contra falsos positivos; solo los dedos extendidos (`fingers_up`) pueden presionar teclas.
+- **REQ-015** — MotivaSign: catálogo corregido (`tres→3_fingers`, `cuatro→4_fingers`, `amor→i_love_you`, `ok→ok`, `hola/adios→open_hand+wave`); detector de movimiento de muñeca para `hola`/`adios`; badges en español vía `HO.gestureLabel`.
+- **REQ-015** — GestiEdu: emojis de dedo corregidos (`FINGER_EMOJI[3]=3️⃣`, `[4]=4️⃣`); filtro confianza ≥ 0.6.
+- **REQ-015** — AttendEye: migrado a `HO.HandSocket` y `HO.gestureLabel` en modos lista de asistencia y participación.
+
+---
+
+## [0.6.0] — 2026-06-10
+
+### Cambiado
+
+- **REQ-013** — Robustez de detección (backend). Reescritura de la heurística de gestos en `app/core/hand_tracker.py` para que sea **invariante a la orientación**: cada dedo se decide por razón de distancias al wrist (`dist(tip,wrist) > 1.15·dist(pip,wrist)`) en lugar de `tip.y < pip.y`; el pulgar se ancla al `PINKY_MCP` (sin ramas por lateralidad). Corrige los gestos mal leídos al rotar la mano (p. ej. pulgar-arriba reportado como "2 dedos").
+
+### Añadido
+
+- **REQ-013** — Nuevos gestos `i_love_you` (pulgar+índice+meñique) y `ok` (pinza pulgar-índice); `open_hand` ahora exige 5 dedos y aparece `4_fingers` (antes inalcanzable).
+- **REQ-013** — Umbrales de confianza en `HandLandmarkerOptions` (`detection=0.7`, `presence=0.6`, `tracking=0.6`) que eliminan falsos positivos de cara/antebrazo.
+- **REQ-013** — `HandTracker` **por conexión** (timestamps monótonos propios; cierre en `finally`) y `GestureSmoother` por conexión (voto mayoritario ventana 5 / mediana de conteo) que elimina el parpadeo gesto-a-gesto.
+- **REQ-013** — Campos aditivos en la respuesta WebSocket: `confidence`, `fingers_up` (dict por dedo) y `gesture_raw`; `gesture` pasa a ser el valor suavizado.
+- **REQ-013** — Healthcheck en `docker-compose.yml` (**TD-010**), logging estructurado con logger `handsonedu` (**TD-009**), guardia de tasa en el WS (**TD-008**) y `APP_VERSION` único usado por `/health` y `FastAPI(version=...)`.
+- **REQ-013** — Suite de tests reescrita: fixtures geométricas (`make_hand`) con rotación y tests parametrizados a 0/45/90/180/270°; tests de `GestureSmoother` y de los nuevos campos del WebSocket (111 tests).
+
+---
+
 ## [0.5.0] — 2026-04-30
 
 ### Añadido

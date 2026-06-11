@@ -14,16 +14,11 @@
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const WS_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/analyze`;
-
-const HAND_CONNECTIONS = [
-  [0,1],[1,2],[2,3],[3,4],
-  [0,5],[5,6],[6,7],[7,8],
-  [0,9],[9,10],[10,11],[11,12],
-  [0,13],[13,14],[14,15],[15,16],
-  [0,17],[17,18],[18,19],[19,20],
-  [5,9],[9,13],[13,17],
-];
+// A candidate mode must persist this long before it takes effect — absorbs
+// gesture flicker so the pen doesn't drop to "En pausa" mid-stroke. Brief hand
+// dropouts (a missed frame or two) stay under this window, so strokes survive.
+const MODE_DEBOUNCE_MS = 150;
+const MIN_CONFIDENCE   = 0.7; // ignore low-confidence hands (stray marks)
 
 const COLORS = [
   { name: 'Rojo',     hex: '#ef4444' },
@@ -51,11 +46,13 @@ let isEraserMode = false;
 let bgMode       = 'ar'; // 'ar' | 'whiteboard'
 
 // Gesture/mode state
-let drawMode  = 'pause'; // 'draw' | 'erase' | 'pause' | 'select'
-let prevPoint = null;    // {x, y} last drawn point
-let smoothX   = 0;
-let smoothY   = 0;
-let smoothInit = false;
+let drawMode    = 'pause'; // 'draw' | 'erase' | 'pause' | 'select'
+let pendingMode = null;    // candidate mode awaiting debounce
+let pendingSince = 0;
+let prevPoint   = null;    // {x, y} last raw point (quadratic control point)
+let prevMid     = null;    // {x, y} last midpoint (quadratic start)
+let euroX = null, euroY = null; // One-Euro filters for the index tip
+let lastMsgTime = 0;
 
 // Color dwell selection state
 let dwellColor = null;
@@ -64,8 +61,7 @@ const DWELL_TIME = 1000; // ms
 
 // Webcam / WebSocket
 let video, camCanvas, drawCanvas, camCtx, drawCtx;
-let ws, animFrame, stream;
-let processing = false;
+let socket, animFrame, stream;
 let started    = false;
 
 // Undo / redo history
@@ -167,6 +163,9 @@ async function start() {
   drawCtx.lineJoin  = 'round';
   drawCtx.lineWidth = brushSize;
 
+  euroX = new HO.OneEuro();
+  euroY = new HO.OneEuro();
+
   // Initialize undo history with blank canvas state
   undoStack = [];
   redoStack = [];
@@ -180,30 +179,11 @@ async function start() {
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 
 function connectWS() {
-  updateConnBadge('connecting');
-  try {
-    ws = new WebSocket(WS_URL);
-
-    ws.onopen = () => updateConnBadge('connected');
-
-    ws.onclose = () => {
-      updateConnBadge('disconnected');
-      if (started) setTimeout(connectWS, 2000);
-    };
-
-    ws.onerror = () => updateConnBadge('disconnected');
-
-    ws.onmessage = (evt) => {
-      processing = false;
-      try {
-        handleWSMessage(JSON.parse(evt.data));
-      } catch (_) {
-        // Malformed JSON — ignore
-      }
-    };
-  } catch (err) {
-    updateConnBadge('disconnected');
-  }
+  socket = new HO.HandSocket({
+    onResult: handleWSMessage,
+    onStatus: updateConnBadge,
+  });
+  socket.connect();
 }
 
 // ── Render loop ───────────────────────────────────────────────────────────────
@@ -213,86 +193,63 @@ function renderLoop() {
 
   if (!video || video.readyState < 2) return;
 
-  const w = camCanvas.width;
-  const h = camCanvas.height;
-
   // Draw mirrored video to cam canvas
-  camCtx.save();
-  camCtx.translate(w, 0);
-  camCtx.scale(-1, 1);
-  camCtx.drawImage(video, 0, 0, w, h);
-  camCtx.restore();
+  HO.drawMirroredVideo(camCtx, video, camCanvas.width, camCanvas.height);
 
   // Send frame to backend when not waiting for a response
-  if (!processing && ws && ws.readyState === WebSocket.OPEN) {
-    processing = true;
-    const frameData = camCanvas.toDataURL('image/jpeg', 0.6).split(',')[1];
-    ws.send(JSON.stringify({ frame: frameData }));
-  }
+  if (socket) socket.sendFrame(camCanvas, 0.6);
 }
 
 // ── WebSocket message handler ─────────────────────────────────────────────────
 
 function handleWSMessage(data) {
-  if (!data.hands || data.hands.length === 0) {
-    drawMode      = 'pause';
-    prevPoint     = null;
-    smoothInit    = false;
-    palmUndoStart = null;
-    hidePalmUndoRing();
-    updateModeBadge();
-    moveCursor(-9999, -9999); // move off-screen to hide
+  // Drop low-confidence hands so a face/forearm can't leave stray marks.
+  const hands = (data.hands || []).filter(
+    (h) => typeof h.confidence !== 'number' || h.confidence >= MIN_CONFIDENCE
+  );
+  const hand = hands[0];
+  const lms  = hand && hand.landmarks;
+  const hasHand = !!(lms && lms.length >= 21);
+
+  // Candidate mode: pause when no usable hand, else derived from the gesture.
+  let candidate;
+  if      (!hasHand)                       candidate = 'pause';
+  else if (isEraserMode)                   candidate = 'erase';
+  else if (DRAW_GESTURES.has(hand.gesture))   candidate = 'draw';
+  else if (ERASE_GESTURES.has(hand.gesture))  candidate = 'erase';
+  else if (SELECT_GESTURES.has(hand.gesture)) candidate = 'select';
+  else                                     candidate = 'pause';
+
+  resolveMode(candidate);
+  updateModeBadge();
+
+  if (!hasHand) {
+    // Keep the committed mode through brief dropouts; only hide cursor / palm
+    // ring once we've actually settled into pause.
+    if (drawMode === 'pause' || drawMode === 'select') {
+      palmUndoStart = null;
+      hidePalmUndoRing();
+      moveCursor(-9999, -9999);
+    }
     return;
   }
-
-  const hand = data.hands[0];
-  const lms  = hand.landmarks;
-
-  if (!lms || lms.length < 21) return;
 
   const w = camCanvas.width;
   const h = camCanvas.height;
 
   // Draw skeleton on cam canvas after video frame
-  drawSkeleton(camCtx, lms, w, h);
+  HO.drawSkeleton(camCtx, lms, w, h, {
+    lineColor: 'rgba(0, 220, 255, 0.65)', lineWidth: 1.5,
+    tipColor: '#00d4ff', tipRadius: 5,
+    dotColor: 'rgba(255,255,255,0.8)', dotRadius: 3,
+  });
 
-  // Index tip = landmark 8
-  // Landmarks are already in mirrored space — use lm.x * w directly
-  const rawX = lms[8].x * w;
-  const rawY = lms[8].y * h;
-
-  // Exponential moving average smoothing (reduces jitter)
-  if (!smoothInit) {
-    smoothX    = rawX;
-    smoothY    = rawY;
-    smoothInit = true;
-  }
-  smoothX = smoothX * 0.5 + rawX * 0.5;
-  smoothY = smoothY * 0.5 + rawY * 0.5;
-
-  const x = smoothX;
-  const y = smoothY;
-
-  // Determine drawing mode from gesture
-  const gesture = hand.gesture;
-  let newMode;
-  if      (isEraserMode)                    newMode = 'erase';
-  else if (DRAW_GESTURES.has(gesture))      newMode = 'draw';
-  else if (ERASE_GESTURES.has(gesture))     newMode = 'erase';
-  else if (SELECT_GESTURES.has(gesture))    newMode = 'select';
-  else                                       newMode = 'pause';
-
-  if (newMode !== drawMode) {
-    // Save snapshot before starting a new draw/erase stroke
-    const wasIdle   = drawMode === 'pause' || drawMode === 'select';
-    const nowActive = newMode  === 'draw'  || newMode  === 'erase';
-    if (wasIdle && nowActive) saveSnapshot();
-
-    // Lift pen when transitioning to non-drawing mode
-    if (newMode === 'pause' || newMode === 'select') prevPoint = null;
-    drawMode = newMode;
-  }
-  updateModeBadge();
+  // Index tip = landmark 8. Landmarks are already in mirrored space.
+  const now = performance.now() / 1000;
+  const dt  = lastMsgTime ? now - lastMsgTime : 1 / 30;
+  lastMsgTime = now;
+  const x = euroX.filter(lms[8].x * w, dt);
+  const y = euroY.filter(lms[8].y * h, dt);
 
   // Position cursor div at index tip
   moveCursor(x, y);
@@ -330,33 +287,36 @@ function handleWSMessage(data) {
 
 // ── Drawing helpers ───────────────────────────────────────────────────────────
 
-function drawSkeleton(ctx, lms, w, h) {
-  // Connections — light cyan
-  ctx.strokeStyle = 'rgba(0, 220, 255, 0.65)';
-  ctx.lineWidth   = 1.5;
-  ctx.lineCap     = 'round';
-  for (const [a, b] of HAND_CONNECTIONS) {
-    ctx.beginPath();
-    ctx.moveTo(lms[a].x * w, lms[a].y * h);
-    ctx.lineTo(lms[b].x * w, lms[b].y * h);
-    ctx.stroke();
+/**
+ * Commit `candidate` as the active mode only once it has persisted for
+ * MODE_DEBOUNCE_MS, so single-frame gesture flicker never switches the pen.
+ */
+function resolveMode(candidate) {
+  if (candidate === drawMode) {
+    pendingMode = null;
+    return;
   }
+  const now = Date.now();
+  if (pendingMode !== candidate) {
+    pendingMode = candidate;
+    pendingSince = now;
+    return;
+  }
+  if (now - pendingSince < MODE_DEBOUNCE_MS) return;
 
-  // Landmark dots — white base, cyan for fingertips
-  const FINGERTIPS = [4, 8, 12, 16, 20];
-  for (let i = 0; i < lms.length; i++) {
-    const px = lms[i].x * w;
-    const py = lms[i].y * h;
-    ctx.beginPath();
-    if (FINGERTIPS.includes(i)) {
-      ctx.arc(px, py, 5, 0, Math.PI * 2);
-      ctx.fillStyle = '#00d4ff';
-    } else {
-      ctx.arc(px, py, 3, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,0.8)';
-    }
-    ctx.fill();
+  // Commit the transition.
+  const wasIdle   = drawMode === 'pause' || drawMode === 'select';
+  const nowActive = candidate === 'draw' || candidate === 'erase';
+  if (wasIdle && nowActive) {
+    saveSnapshot();
+    if (euroX) { euroX.reset(); euroY.reset(); } // fresh stroke, no stale lag
   }
+  if (candidate === 'pause' || candidate === 'select') {
+    prevPoint = null;
+    prevMid = null;
+  }
+  drawMode = candidate;
+  pendingMode = null;
 }
 
 function performDraw(x, y) {
@@ -366,13 +326,26 @@ function performDraw(x, y) {
   drawCtx.lineCap     = 'round';
   drawCtx.lineJoin    = 'round';
 
-  if (prevPoint) {
+  const pt = { x, y };
+  if (!prevPoint) {
+    // Stroke start — drop a dot so a single tap is visible.
     drawCtx.beginPath();
-    drawCtx.moveTo(prevPoint.x, prevPoint.y);
-    drawCtx.lineTo(x, y);
-    drawCtx.stroke();
+    drawCtx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+    drawCtx.fillStyle = currentColor;
+    drawCtx.fill();
+    prevPoint = pt;
+    prevMid = pt;
+    return;
   }
-  prevPoint = { x, y };
+  // Quadratic through the midpoint of the last two raw points: smooth curves
+  // with no gaps even when frames arrive unevenly.
+  const mid = { x: (prevPoint.x + x) / 2, y: (prevPoint.y + y) / 2 };
+  drawCtx.beginPath();
+  drawCtx.moveTo(prevMid.x, prevMid.y);
+  drawCtx.quadraticCurveTo(prevPoint.x, prevPoint.y, mid.x, mid.y);
+  drawCtx.stroke();
+  prevPoint = pt;
+  prevMid = mid;
 }
 
 function performErase(x, y) {
@@ -591,7 +564,7 @@ function saveImage() {
 
 window.addEventListener('beforeunload', () => {
   cancelAnimationFrame(animFrame);
-  if (ws)     ws.close();
+  if (socket) socket.close();
   if (stream) stream.getTracks().forEach(t => t.stop());
 });
 

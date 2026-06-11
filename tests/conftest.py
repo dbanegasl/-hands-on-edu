@@ -10,6 +10,7 @@ Strategy:
 This avoids the model file entirely and lets tests run without a camera.
 """
 import base64
+import math
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 
@@ -59,82 +60,110 @@ def _lms(overrides: dict = None) -> list:
     return base
 
 
-# ── Landmark presets (module-level helpers, importable by test files) ─────────
+# ── Geometric hand generator (rotation-invariant fixtures) ────────────────────
 #
-# MediaPipe indices:
-#   THUMB_MCP=2  THUMB_TIP=4
-#   INDEX_PIP=6  INDEX_TIP=8
-#   MIDDLE_PIP=10 MIDDLE_TIP=12
-#   RING_PIP=14  RING_TIP=16
-#   PINKY_PIP=18 PINKY_TIP=20
-#
-# "finger up"  → TIP.y < PIP.y  (y=0 is top of image)
-# "thumb out"  → abs(TIP.x − MCP.x) > 0.08
+# Builds a canonical hand in a local frame (x right, y up, hand pointing +y),
+# then rotates/scales/translates all 21 points. Because the production gesture
+# heuristic uses only distance ratios, the same gesture must be detected at any
+# rotation_deg — which is exactly what the rotation-parametrized tests assert.
 
-def fist_landmarks() -> list:
-    """All fingers bent down; thumb NOT extended → detect_gesture returns 'fist'."""
-    return _lms({
-        2: (0.50, 0.70, 0), 4: (0.52, 0.80, 0),  # thumb close (diff 0.02)
-        6: (0.5, 0.40, 0),  8: (0.5, 0.60, 0),   # index  DOWN (TIP.y > PIP.y)
-        10: (0.5, 0.40, 0), 12: (0.5, 0.60, 0),  # middle DOWN
-        14: (0.5, 0.40, 0), 16: (0.5, 0.60, 0),  # ring   DOWN
-        18: (0.5, 0.40, 0), 20: (0.5, 0.60, 0),  # pinky  DOWN
-    })
-
-
-def thumbs_up_landmarks() -> list:
-    """All fingers bent down; thumb IS extended → detect_gesture returns 'thumbs_up'."""
-    return _lms({
-        2: (0.30, 0.70, 0), 4: (0.60, 0.60, 0),  # thumb out (diff 0.30 > 0.08)
-        6: (0.5, 0.40, 0),  8: (0.5, 0.60, 0),
-        10: (0.5, 0.40, 0), 12: (0.5, 0.60, 0),
-        14: (0.5, 0.40, 0), 16: (0.5, 0.60, 0),
-        18: (0.5, 0.40, 0), 20: (0.5, 0.60, 0),
-    })
+# Static landmarks shared by every hand: wrist, thumb CMC, and the four MCPs.
+_BASE_POINTS = {
+    0: (0.0, 0.0),      # WRIST
+    1: (-0.6, 0.25),    # THUMB_CMC
+    5: (-0.45, 1.0),    # INDEX_MCP
+    9: (-0.15, 1.0),    # MIDDLE_MCP
+    13: (0.15, 1.0),    # RING_MCP
+    17: (0.45, 1.0),    # PINKY_MCP
+}
+# (column x, MCP, PIP, DIP, TIP) per finger.
+_FINGER_COLUMNS = {
+    "index": (-0.45, 5, 6, 7, 8),
+    "middle": (-0.15, 9, 10, 11, 12),
+    "ring": (0.15, 13, 14, 15, 16),
+    "pinky": (0.45, 17, 18, 19, 20),
+}
+_THUMB_EXTENDED = {2: (-0.95, 0.5), 3: (-1.3, 0.7), 4: (-1.65, 0.95)}
+_THUMB_FOLDED = {2: (-0.6, 0.7), 3: (-0.25, 0.95), 4: (0.1, 1.05)}
 
 
-def pointing_landmarks() -> list:
-    """Only index up; thumb NOT extended → detect_gesture returns 'pointing'."""
-    return _lms({
-        2: (0.50, 0.70, 0), 4: (0.52, 0.80, 0),  # thumb close
-        6: (0.5, 0.60, 0),  8: (0.5, 0.20, 0),   # index  UP (TIP.y < PIP.y)
-        10: (0.5, 0.40, 0), 12: (0.5, 0.60, 0),  # middle DOWN
-        14: (0.5, 0.40, 0), 16: (0.5, 0.60, 0),  # ring   DOWN
-        18: (0.5, 0.40, 0), 20: (0.5, 0.60, 0),  # pinky  DOWN
-    })
+def _finger_local(cx: float, extended: bool) -> dict:
+    if extended:
+        return {"pip": (cx, 1.55), "dip": (cx, 2.0), "tip": (cx, 2.35)}
+    return {"pip": (cx, 1.45), "dip": (cx, 1.2), "tip": (cx, 0.95)}
 
 
-def peace_landmarks() -> list:
-    """Index + middle up; ring + pinky down; no thumb → detect_gesture returns 'peace'."""
-    return _lms({
-        2: (0.50, 0.70, 0), 4: (0.52, 0.80, 0),
-        6: (0.5, 0.60, 0),  8: (0.5, 0.20, 0),   # index  UP
-        10: (0.5, 0.60, 0), 12: (0.5, 0.20, 0),  # middle UP
-        14: (0.5, 0.40, 0), 16: (0.5, 0.60, 0),  # ring   DOWN
-        18: (0.5, 0.40, 0), 20: (0.5, 0.60, 0),  # pinky  DOWN
-    })
+def make_hand(extended=(), thumb: bool = False, ok: bool = False,
+              rotation_deg: float = 0.0, center=(0.5, 0.55), scale: float = 0.16) -> list:
+    """
+    Build a 21-landmark hand. `extended` is the set of finger names raised
+    ("index"/"middle"/"ring"/"pinky"); `thumb` raises the thumb; `ok` overrides
+    thumb+index into the OK pinch shape. `rotation_deg` rotates the whole hand.
+    """
+    extended = set(extended)
+    pts = dict(_BASE_POINTS)
+    for name, (cx, _mcp, pip, dip, tip) in _FINGER_COLUMNS.items():
+        fp = _finger_local(cx, name in extended)
+        pts[pip], pts[dip], pts[tip] = fp["pip"], fp["dip"], fp["tip"]
+    pts.update(_THUMB_EXTENDED if thumb else _THUMB_FOLDED)
+    if ok:
+        # Thumb tip and index tip meet in a circle; middle/ring/pinky stay up.
+        pts[8] = (-0.55, 1.25); pts[7] = (-0.5, 1.35)
+        pts[4] = (-0.6, 1.2); pts[3] = (-0.75, 0.95); pts[2] = (-0.9, 0.6)
+
+    rad = math.radians(rotation_deg)
+    cos_a, sin_a = math.cos(rad), math.sin(rad)
+    out = []
+    for i in range(21):
+        x, y = pts[i]
+        rx = x * cos_a - y * sin_a
+        ry = x * sin_a + y * cos_a
+        out.append(Lm(center[0] + rx * scale, center[1] + ry * scale, 0.0))
+    return out
 
 
-def shaka_landmarks() -> list:
-    """Only pinky up + thumb extended → detect_gesture returns 'shaka'."""
-    return _lms({
-        2: (0.30, 0.70, 0), 4: (0.60, 0.60, 0),  # thumb out (diff 0.30)
-        6: (0.5, 0.40, 0),  8: (0.5, 0.60, 0),   # index  DOWN
-        10: (0.5, 0.40, 0), 12: (0.5, 0.60, 0),  # middle DOWN
-        14: (0.5, 0.40, 0), 16: (0.5, 0.60, 0),  # ring   DOWN
-        18: (0.5, 0.60, 0), 20: (0.5, 0.20, 0),  # pinky  UP
-    })
+# ── Named presets (importable by test files) ──────────────────────────────────
+
+def fist_landmarks(rotation_deg: float = 0.0) -> list:
+    return make_hand(rotation_deg=rotation_deg)
 
 
-def open_hand_landmarks() -> list:
-    """All 4 fingers up; thumb close → detect_gesture returns 'open_hand' (count==4)."""
-    return _lms({
-        2: (0.50, 0.70, 0), 4: (0.52, 0.80, 0),  # thumb close
-        6: (0.5, 0.60, 0),  8: (0.5, 0.20, 0),   # index  UP
-        10: (0.5, 0.60, 0), 12: (0.5, 0.20, 0),  # middle UP
-        14: (0.5, 0.60, 0), 16: (0.5, 0.20, 0),  # ring   UP
-        18: (0.5, 0.60, 0), 20: (0.5, 0.20, 0),  # pinky  UP
-    })
+def thumbs_up_landmarks(rotation_deg: float = 0.0) -> list:
+    return make_hand(thumb=True, rotation_deg=rotation_deg)
+
+
+def pointing_landmarks(rotation_deg: float = 0.0) -> list:
+    return make_hand(extended=["index"], rotation_deg=rotation_deg)
+
+
+def peace_landmarks(rotation_deg: float = 0.0) -> list:
+    return make_hand(extended=["index", "middle"], rotation_deg=rotation_deg)
+
+
+def shaka_landmarks(rotation_deg: float = 0.0) -> list:
+    return make_hand(extended=["pinky"], thumb=True, rotation_deg=rotation_deg)
+
+
+def open_hand_landmarks(rotation_deg: float = 0.0) -> list:
+    """All five digits extended → 'open_hand', finger_count 5."""
+    return make_hand(extended=["index", "middle", "ring", "pinky"], thumb=True, rotation_deg=rotation_deg)
+
+
+def four_fingers_landmarks(rotation_deg: float = 0.0) -> list:
+    """Four fingers up, thumb tucked → '4_fingers', finger_count 4."""
+    return make_hand(extended=["index", "middle", "ring", "pinky"], rotation_deg=rotation_deg)
+
+
+def three_fingers_landmarks(rotation_deg: float = 0.0) -> list:
+    return make_hand(extended=["index", "middle", "ring"], rotation_deg=rotation_deg)
+
+
+def i_love_you_landmarks(rotation_deg: float = 0.0) -> list:
+    return make_hand(extended=["index", "pinky"], thumb=True, rotation_deg=rotation_deg)
+
+
+def ok_landmarks(rotation_deg: float = 0.0) -> list:
+    return make_hand(extended=["middle", "ring", "pinky"], ok=True, rotation_deg=rotation_deg)
 
 
 # ── pytest fixtures ───────────────────────────────────────────────────────────

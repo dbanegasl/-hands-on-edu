@@ -118,10 +118,12 @@ El archivo `app/core/moodle_client.py` existe y parece implementar la integraci�
 | Campo | Detalle |
 |-------|---------|
 | **ID** | TD-008 |
-| **Estado** | 🟡 Pendiente (menor prioridad) |
+| **Estado** | ✅ Resuelto (REQ-013) |
 | **Impacto** | Medio |
 | **Esfuerzo de resolución** | S (2–3 horas) |
-| **REQ relacionado** | Ninguno aún — requiere nuevo REQ |
+| **REQ relacionado** | [REQ-013](../requirements/REQ-013-detection-robustness.md) |
+
+> **Resuelto en REQ-013:** guardia de tasa por conexión en `/ws/analyze` — si un frame llega < 25 ms tras el anterior, se reenvía el último resultado en vez de recomputar. El protocolo ping-pong del cliente nunca lo dispara en uso normal; solo limita a un cliente que satura el socket.
 
 **Descripción:**  
 El endpoint WebSocket `/ws/analyze` no implementa ningún tipo de rate limiting. Un cliente puede enviar frames a la máxima velocidad posible (potencialmente cientos por segundo), saturando la CPU del servidor con procesamiento de MediaPipe.
@@ -141,10 +143,12 @@ Implementar un token bucket o sliding window por conexión WebSocket. Limitar a 
 | Campo | Detalle |
 |-------|---------|
 | **ID** | TD-009 |
-| **Estado** | 🟡 Pendiente (menor prioridad) |
+| **Estado** | ✅ Resuelto (REQ-013) |
 | **Impacto** | Bajo |
 | **Esfuerzo de resolución** | S (1–2 horas) |
-| **REQ relacionado** | Ninguno aún |
+| **REQ relacionado** | [REQ-013](../requirements/REQ-013-detection-robustness.md) |
+
+> **Resuelto en REQ-013:** `logging.basicConfig` con formato timestamp/nivel/logger y un logger `handsonedu`; el WS registra conexión/desconexión y las excepciones (antes tragadas en silencio) con `logger.exception`.
 
 **Descripción:**  
 El archivo `app/main.py` y otros módulos del backend usan `print()` para logging en lugar del módulo `logging` estándar de Python o un framework de structured logging.
@@ -165,10 +169,12 @@ Reemplazar `print()` por `logging.getLogger(__name__)` con configuración centra
 | Campo | Detalle |
 |-------|---------|
 | **ID** | TD-010 |
-| **Estado** | 🟡 Pendiente (menor prioridad) |
+| **Estado** | ✅ Resuelto (REQ-013) |
 | **Impacto** | Bajo |
 | **Esfuerzo de resolución** | XS (< 30 minutos) |
-| **REQ relacionado** | Ninguno aún |
+| **REQ relacionado** | [REQ-013](../requirements/REQ-013-detection-robustness.md) |
+
+> **Resuelto en REQ-013:** `healthcheck` en `docker-compose.yml` que consulta `http://localhost:8000/health` con Python (la imagen trae `wget`, no `curl`; el puerto interno es 8000 sin importar `HOST_PORT`).
 
 **Descripción:**  
 El `docker-compose.yml` no configura un `healthcheck` para el servicio de la aplicación. Docker no puede determinar si el contenedor está realmente disponible o solo en estado "starting".

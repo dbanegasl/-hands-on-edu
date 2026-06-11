@@ -15,19 +15,15 @@
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const WS_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/analyze`;
-
-const HAND_CONNECTIONS = [
-  [0,1],[1,2],[2,3],[3,4],
-  [0,5],[5,6],[6,7],[7,8],
-  [0,9],[9,10],[10,11],[11,12],
-  [0,13],[13,14],[14,15],[15,16],
-  [0,17],[17,18],[18,19],[19,20],
-  [5,9],[9,13],[13,17],
-];
+// Reject false hands (a face/forearm read as a hand triggered phantom notes).
+const MIN_CONFIDENCE = 0.7;
+// Minimum normalized wrist→middle-MCP span: rejects tiny/degenerate detections.
+const MIN_HAND_SPAN  = 0.09;
 
 // Fingertip landmark indices: thumb, index, middle, ring, pinky
 const FINGERTIPS = [4, 8, 12, 16, 20];
+// Map a fingertip landmark to its fingers_up key (only extended fingers play).
+const FINGER_NAME_BY_TIP = { 4: 'thumb', 8: 'index', 12: 'middle', 16: 'ring', 20: 'pinky' };
 // Display labels per fingertip index
 const FINGERTIP_LABEL = { 4: 'pulgar', 8: 'índice', 12: 'medio', 16: 'anular', 20: 'meñique' };
 // Color per fingertip
@@ -86,8 +82,7 @@ let audioFx; // shared with /static/js/audio.js (for buzz on wrong-finger feedba
 
 let video, camCanvas, keysCanvas, waveCanvas;
 let camCtx, keysCtx, waveCtx;
-let stream, ws, animFrame;
-let processing = false;
+let stream, socket, animFrame;
 let started    = false;
 
 let currentScale      = 'do_mayor';
@@ -97,8 +92,12 @@ let mode              = 'libre';
 // Per-finger state: fingerIdx → { isDown, currentKey, lastY }
 const fingerStates = new Map();
 
-// Active keys → { key, midi, fingerIdx, highlightAt }
+// Active keys → { keyIdx, midi, highlightAt }
 const activeKeys = new Map();
+
+// Recently released keys for fade animation → { keyIdx, releasedAt }
+const releasedKeys = new Map();
+const KEY_FADE_MS = 120;
 
 // Tutorial mode
 let tutorialTargetKey = null; // 0..7
@@ -194,26 +193,18 @@ async function start() {
 function cleanup() {
   if (synth) synth.allOff();
   if (stream) stream.getTracks().forEach((t) => t.stop());
-  if (ws) try { ws.close(); } catch (_) {}
+  if (socket) socket.close();
   if (animFrame) cancelAnimationFrame(animFrame);
 }
 
 // ── WebSocket ────────────────────────────────────────────────────────────────
 
 function connectWS() {
-  updateConnBadge('connecting');
-  try {
-    ws = new WebSocket(WS_URL);
-    ws.onopen    = () => updateConnBadge('connected');
-    ws.onclose   = () => { updateConnBadge('disconnected'); if (started) setTimeout(connectWS, 2000); };
-    ws.onerror   = () => updateConnBadge('disconnected');
-    ws.onmessage = (evt) => {
-      processing = false;
-      try { handleWSMessage(JSON.parse(evt.data)); } catch (_) {}
-    };
-  } catch (_) {
-    updateConnBadge('disconnected');
-  }
+  socket = new HO.HandSocket({
+    onResult: handleWSMessage,
+    onStatus: updateConnBadge,
+  });
+  socket.connect();
 }
 
 function updateConnBadge(status) {
@@ -232,22 +223,11 @@ function renderLoop() {
   animFrame = requestAnimationFrame(renderLoop);
   if (!video || video.readyState < 2) return;
 
-  const w = camCanvas.width;
-  const h = camCanvas.height;
-
   // Mirrored camera feed
-  camCtx.save();
-  camCtx.translate(w, 0);
-  camCtx.scale(-1, 1);
-  camCtx.drawImage(video, 0, 0, w, h);
-  camCtx.restore();
+  HO.drawMirroredVideo(camCtx, video, camCanvas.width, camCanvas.height);
 
   // Send frame to backend
-  if (!processing && ws && ws.readyState === WebSocket.OPEN) {
-    processing = true;
-    const frameData = camCanvas.toDataURL('image/jpeg', 0.55).split(',')[1];
-    ws.send(JSON.stringify({ frame: frameData }));
-  }
+  if (socket) socket.sendFrame(camCanvas, 0.55);
 
   drawKeys();
   drawWaveform();
@@ -257,30 +237,38 @@ function renderLoop() {
 // ── WebSocket message handler ────────────────────────────────────────────────
 
 function handleWSMessage(data) {
-  // Clear keys overlay; will redraw with current state
-  if (!data.hands || data.hands.length === 0) {
+  // Keep only real hands: a face or forearm passes MediaPipe at default
+  // thresholds and used to trigger phantom notes. Require both a confident
+  // detection and a plausible hand size in frame.
+  const hands = (data.hands || []).filter(isPlausibleHand);
+
+  if (hands.length === 0) {
     leftHand = rightHand = null;
     releaseAllFingers();
     cancelDwell();
     return;
   }
 
-  // Sort hands by handedness (mirror: backend "Right" = user's left side on screen, etc.)
-  // We don't strictly trust handedness; we route by X position instead.
+  // Route by X position (we don't strictly trust handedness on mirrored frames).
   leftHand = rightHand = null;
-  data.hands.forEach((hand) => {
+  hands.forEach((hand) => {
     const wrist = hand.landmarks?.[0];
     if (!wrist) return;
     if (wrist.x < 0.5) leftHand  = hand;
     else               rightHand = hand;
   });
 
-  // Wheels: only allow dwell selection when one hand is in the wheel area
-  // and the OTHER hand is the one tocando (or none).
   handleWheelDwell();
+  detectKeyPresses(hands);
+}
 
-  // Detect key presses with all fingertips of all hands
-  detectKeyPresses(data.hands);
+/** A hand is real enough to play if it is confident and reasonably large. */
+function isPlausibleHand(hand) {
+  if (typeof hand.confidence === 'number' && hand.confidence < MIN_CONFIDENCE) return false;
+  const lms = hand.landmarks;
+  if (!lms || lms.length < 21) return false;
+  const span = Math.hypot(lms[0].x - lms[9].x, lms[0].y - lms[9].y);
+  return span >= MIN_HAND_SPAN;
 }
 
 // ── Finger / key detection ───────────────────────────────────────────────────
@@ -292,10 +280,14 @@ function detectKeyPresses(hands) {
   hands.forEach((hand, handIdx) => {
     const lms = hand.landmarks;
     if (!lms) return;
+    const fu = hand.fingers_up;
 
     FINGERTIPS.forEach((tipIdx) => {
       const lm = lms[tipIdx];
       if (!lm) return;
+      // Only an extended finger can press a key — a curled/resting finger (or
+      // noise from a non-hand) is left out, so it releases via the loop below.
+      if (fu && fu[FINGER_NAME_BY_TIP[tipIdx]] === false) return;
       const fingerKey = `${handIdx}-${tipIdx}`;
       seenIds.add(fingerKey);
       processFingertip(fingerKey, tipIdx, lm.x, lm.y);
@@ -402,14 +394,19 @@ function releaseKey(fingerKey, keyIdx) {
   const midi = SCALES[currentScale][keyIdx];
   synth.noteOff(midi);
   activeKeys.delete(fingerKey);
+  releasedKeys.set(fingerKey, { keyIdx, releasedAt: performance.now() });
 }
 
 function releaseAllFingers() {
+  const now = performance.now();
   for (const [fid, st] of fingerStates.entries()) {
     if (st.isDown && st.currentKey != null) {
       const midi = SCALES[currentScale][st.currentKey];
       synth.noteOff(midi);
     }
+  }
+  for (const [fid, v] of activeKeys.entries()) {
+    releasedKeys.set(fid, { keyIdx: v.keyIdx, releasedAt: now });
   }
   fingerStates.clear();
   activeKeys.clear();
@@ -551,7 +548,7 @@ function drawHandSkeleton(lms) {
   // Draw skeleton onto cam canvas (over the video)
   camCtx.lineWidth = 2;
   camCtx.strokeStyle = 'rgba(99, 102, 241, 0.55)';
-  HAND_CONNECTIONS.forEach(([a, b]) => {
+  HO.HAND_CONNECTIONS.forEach(([a, b]) => {
     const la = lms[a], lb = lms[b];
     if (!la || !lb) return;
     camCtx.beginPath();
@@ -591,18 +588,29 @@ function drawKeys() {
 
   const now = performance.now();
   const pressedKeys = new Set();
-  for (const v of activeKeys.values()) {
-    if (now - v.highlightAt < HIGHLIGHT_MS * 4) pressedKeys.add(v.keyIdx);
+  for (const v of activeKeys.values()) pressedKeys.add(v.keyIdx);
+
+  // Build fade map: keyIdx → alpha (0–1) for recently released keys
+  const fadeAlpha = new Map();
+  for (const [fid, v] of releasedKeys.entries()) {
+    const elapsed = now - v.releasedAt;
+    if (elapsed >= KEY_FADE_MS) { releasedKeys.delete(fid); continue; }
+    if (!pressedKeys.has(v.keyIdx)) {
+      const a = 1 - elapsed / KEY_FADE_MS;
+      fadeAlpha.set(v.keyIdx, Math.max(fadeAlpha.get(v.keyIdx) ?? 0, a));
+    }
   }
 
   for (let i = 0; i < 8; i += 1) {
     const x = xLeft + i * keyW;
     const isPressed = pressedKeys.has(i);
+    const fade = fadeAlpha.get(i) ?? 0;
     const isTutorialTarget = (mode === 'tutorial' && tutorialTargetKey === i);
     const isSongTarget = (mode === 'cancion' && SONGS[songName][songIndex] === SCALES[currentScale][i]);
 
     let fill = 'rgba(255, 255, 255, 0.78)';
-    if (isPressed)         fill = 'rgba(34, 197, 94, 0.85)';
+    if (isPressed)            fill = 'rgba(34, 197, 94, 0.85)';
+    else if (fade > 0)        fill = `rgba(34, 197, 94, ${(0.85 * fade).toFixed(3)})`;
     else if (isTutorialTarget) fill = 'rgba(59, 130, 246, ' + (0.55 + 0.25 * Math.sin(now / 200)) + ')';
     else if (isSongTarget)     fill = 'rgba(168, 85, 247, ' + (0.55 + 0.25 * Math.sin(now / 200)) + ')';
 
@@ -615,7 +623,7 @@ function drawKeys() {
 
     // Note name label on the key
     const midi = SCALES[currentScale][i];
-    keysCtx.fillStyle = isPressed ? '#0a0a0f' : '#1e293b';
+    keysCtx.fillStyle = (isPressed || fade > 0.5) ? '#0a0a0f' : '#1e293b';
     keysCtx.font = '600 16px system-ui, sans-serif';
     keysCtx.textAlign = 'center';
     keysCtx.fillText(midiToName(midi), x + keyW / 2, yBot - 14);

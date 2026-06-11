@@ -10,22 +10,20 @@
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const WS_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/analyze`;
 const HOLD_TIME            = 2000;  // ms hold to confirm present
 const READING_DELAY        = 1500;  // ms before detection starts for each student
 const RAISE_ALERT_DURATION = 1500;  // ms to show hand-raise alert in participation mode
-
-const HAND_CONNECTIONS = [
-  [0,1],[1,2],[2,3],[3,4],
-  [0,5],[5,6],[6,7],[7,8],
-  [0,9],[9,10],[10,11],[11,12],
-  [0,13],[13,14],[14,15],[15,16],
-  [0,17],[17,18],[18,19],[19,20],
-  [5,9],[9,13],[13,17],
-];
+const MIN_CONFIDENCE       = 0.6;   // ignore low-confidence hands (face/forearm)
 
 // Gestures that count as "hand raised" for presence and participation
 const RAISE_GESTURES = new Set(['open_hand', 'thumbs_up', '5_fingers', '4_fingers']);
+
+/** Keep only hands MediaPipe is reasonably confident about. */
+function confidentHands(data) {
+  return (data.hands ?? []).filter(
+    (h) => typeof h.confidence !== 'number' || h.confidence >= MIN_CONFIDENCE
+  );
+}
 
 // ── Roll Call State ───────────────────────────────────────────────────────────
 
@@ -39,7 +37,7 @@ let holdStart        = null;
 let readingTimer     = null;
 
 // Roll call webcam/WS
-let videoEl, canvasEl, ctx, stream, ws, animFrame, processing;
+let videoEl, canvasEl, ctx, stream, socket, animFrame;
 
 // ── Participation State ───────────────────────────────────────────────────────
 
@@ -50,7 +48,7 @@ let raiseAlertTimer     = null;
 let lastRaiseGesture    = null;
 
 // Participation webcam/WS (separate elements)
-let videoElP, canvasElP, ctxP, streamP, wsP, animFrameP, processingP;
+let videoElP, canvasElP, ctxP, streamP, socketP, animFrameP;
 
 // ── Student helpers ───────────────────────────────────────────────────────────
 
@@ -117,18 +115,14 @@ async function startWebcam(videoId, canvasId) {
   return { video, canvas, ctx: canvas.getContext('2d'), stream: mediaStream };
 }
 
-/** Open a WebSocket connection and return the socket. */
-function openWS(onMessage, onError) {
-  const socket = new WebSocket(WS_URL);
-
-  socket.onopen  = () => {};
-  socket.onclose = () => {};
-  socket.onerror = () => {
-    if (onError) onError('No se pudo conectar al servidor. ¿Está corriendo en el puerto 9876?');
-  };
-  socket.onmessage = onMessage;
-
-  return socket;
+/** Open a managed HandSocket (auto-reconnect + validation) and return it. */
+function openWS(onResult, onError) {
+  const s = new HO.HandSocket({
+    onResult,
+    onStatus: (status) => { if (status === 'disconnected' && onError) onError(); },
+  });
+  s.connect();
+  return s;
 }
 
 /** Show an error message in a cam wrapper. */
@@ -155,25 +149,10 @@ function showCamError(wrapperId, msg) {
  */
 function drawHands(drawCtx, hands, w, h) {
   hands.forEach(hand => {
-    const lms = hand.landmarks;
-    if (!lms || lms.length < 21) return;
-
-    // Draw connections
-    drawCtx.strokeStyle = '#38bdf8';
-    drawCtx.lineWidth   = 2;
-    HAND_CONNECTIONS.forEach(([a, b]) => {
-      drawCtx.beginPath();
-      drawCtx.moveTo(lms[a].x * w, lms[a].y * h);
-      drawCtx.lineTo(lms[b].x * w, lms[b].y * h);
-      drawCtx.stroke();
-    });
-
-    // Draw dots
-    lms.forEach(lm => {
-      drawCtx.beginPath();
-      drawCtx.arc(lm.x * w, lm.y * h, 4, 0, Math.PI * 2);
-      drawCtx.fillStyle = '#f0f6ff';
-      drawCtx.fill();
+    HO.drawSkeleton(drawCtx, hand.landmarks, w, h, {
+      lineColor: '#38bdf8', lineWidth: 2,
+      tipColor: '#f0f6ff', tipRadius: 4,
+      dotColor: '#f0f6ff', dotRadius: 4,
     });
   });
 }
@@ -197,7 +176,6 @@ async function startRollCall() {
   phase = 'idle';
   currentStudentIdx = 0;
   holdStart = null;
-  processing = false;
 
   showScreen('rollcall');
   document.getElementById('ae-class-header').textContent = className;
@@ -217,7 +195,7 @@ async function startRollCall() {
   }
 
   // Connect WebSocket
-  ws = openWS(handleRCMessage, msg => {
+  socket = openWS(handleRCMessage, () => {
     document.getElementById('ae-gesture-badge').textContent = '⚠️ Sin servidor';
   });
 
@@ -335,20 +313,10 @@ function startRCLoop() {
     const w = canvasEl.width;
     const h = canvasEl.height;
 
-    // Draw mirrored video
-    ctx.save();
-    ctx.translate(w, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(videoEl, 0, 0, w, h);
-    ctx.restore();
+    HO.drawMirroredVideo(ctx, videoEl, w, h);
 
-    // Send frame to backend during active phases
     const shouldSend = phase === 'reading' || phase === 'detecting' || phase === 'confirming';
-    if (!processing && shouldSend && ws && ws.readyState === WebSocket.OPEN) {
-      processing = true;
-      const b64 = canvasEl.toDataURL('image/jpeg', 0.6).split(',')[1];
-      ws.send(JSON.stringify({ frame: b64 }));
-    }
+    if (shouldSend && socket) socket.sendFrame(canvasEl, 0.6);
 
     // Animate hold ring in confirming phase
     if (phase === 'confirming' && holdStart !== null) {
@@ -364,31 +332,16 @@ function startRCLoop() {
 
 // ── Roll Call WS handler ──────────────────────────────────────────────────────
 
-function handleRCMessage(event) {
-  processing = false;
-
+function handleRCMessage(data) {
   if (phase !== 'detecting' && phase !== 'confirming') return;
 
-  let data;
-  try { data = JSON.parse(event.data); } catch (_) { return; }
-
-  const hands = data.hands ?? [];
-
-  // Draw skeleton
-  ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
-  // Redraw video (overlay-style: draw on same canvas)
-  ctx.save();
-  ctx.translate(canvasEl.width, 0);
-  ctx.scale(-1, 1);
-  ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
-  ctx.restore();
+  const hands = confidentHands(data);
   drawHands(ctx, hands, canvasEl.width, canvasEl.height);
 
   const badge = document.getElementById('ae-gesture-badge');
 
   if (hands.length === 0) {
     badge.textContent = 'Sin mano detectada';
-    // Drop out of confirming if hand disappears
     if (phase === 'confirming') {
       phase = 'detecting';
       holdStart = null;
@@ -399,7 +352,7 @@ function handleRCMessage(event) {
 
   const hand    = hands[0];
   const gesture = hand.gesture ?? '';
-  badge.textContent = gesture.replace(/_/g, ' ') || 'mano detectada';
+  badge.textContent = HO.gestureLabel(gesture) || 'mano detectada';
 
   const isRaised = RAISE_GESTURES.has(gesture);
 
@@ -524,10 +477,9 @@ function stopRollCall() {
   if (animFrame)    { cancelAnimationFrame(animFrame); animFrame = null; }
   if (readingTimer) { clearTimeout(readingTimer);      readingTimer = null; }
   if (stream)       { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  if (ws)           { ws.onclose = null; ws.close(); ws = null; }
-  processing = false;
-  phase      = 'idle';
-  holdStart  = null;
+  if (socket)       { socket.close(); socket = null; }
+  phase     = 'idle';
+  holdStart = null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -546,7 +498,6 @@ async function startParticipation() {
   }
 
   mode = 'participation';
-  processingP      = false;
   lastRaiseGesture = null;
 
   showScreen('participation');
@@ -567,7 +518,7 @@ async function startParticipation() {
   }
 
   // Connect WebSocket
-  wsP = openWS(handlePartMessage, () => {
+  socketP = openWS(handlePartMessage, () => {
     document.getElementById('ae-gesture-badge-p').textContent = '⚠️ Sin servidor';
   });
 
@@ -639,39 +590,17 @@ function startPartLoop() {
     const w = canvasElP.width;
     const h = canvasElP.height;
 
-    // Draw mirrored video
-    ctxP.save();
-    ctxP.translate(w, 0);
-    ctxP.scale(-1, 1);
-    ctxP.drawImage(videoElP, 0, 0, w, h);
-    ctxP.restore();
+    HO.drawMirroredVideo(ctxP, videoElP, w, h);
 
-    // Send frame
-    if (!processingP && wsP && wsP.readyState === WebSocket.OPEN) {
-      processingP = true;
-      const b64 = canvasElP.toDataURL('image/jpeg', 0.6).split(',')[1];
-      wsP.send(JSON.stringify({ frame: b64 }));
-    }
+    if (socketP) socketP.sendFrame(canvasElP, 0.6);
   }
   loop();
 }
 
 // ── Participation WS handler ──────────────────────────────────────────────────
 
-function handlePartMessage(event) {
-  processingP = false;
-
-  let data;
-  try { data = JSON.parse(event.data); } catch (_) { return; }
-
-  const hands = data.hands ?? [];
-
-  // Draw skeleton overlay
-  ctxP.save();
-  ctxP.translate(canvasElP.width, 0);
-  ctxP.scale(-1, 1);
-  ctxP.drawImage(videoElP, 0, 0, canvasElP.width, canvasElP.height);
-  ctxP.restore();
+function handlePartMessage(data) {
+  const hands = confidentHands(data);
   drawHands(ctxP, hands, canvasElP.width, canvasElP.height);
 
   const badge = document.getElementById('ae-gesture-badge-p');
@@ -683,7 +612,7 @@ function handlePartMessage(event) {
   }
 
   const gesture = hands[0].gesture ?? '';
-  badge.textContent = gesture.replace(/_/g, ' ') || 'mano detectada';
+  badge.textContent = HO.gestureLabel(gesture) || 'mano detectada';
 
   // Flash raise alert only on a new raise gesture (not every frame)
   const isRaised = RAISE_GESTURES.has(gesture);
@@ -728,8 +657,7 @@ function stopParticipation() {
   if (timerInterval) { clearInterval(timerInterval);      timerInterval = null; }
   if (raiseAlertTimer) { clearTimeout(raiseAlertTimer);   raiseAlertTimer = null; }
   if (streamP)       { streamP.getTracks().forEach(t => t.stop()); streamP = null; }
-  if (wsP)           { wsP.onclose = null; wsP.close(); wsP = null; }
-  processingP      = false;
+  if (socketP)       { socketP.close(); socketP = null; }
   lastRaiseGesture = null;
 }
 

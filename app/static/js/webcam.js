@@ -5,17 +5,7 @@
  */
 
 // ── Constants ────────────────────────────────────────────────────────────────
-
-const HAND_CONNECTIONS = [
-  [0, 1], [1, 2], [2, 3], [3, 4],          // thumb
-  [0, 5], [5, 6], [6, 7], [7, 8],          // index
-  [0, 9], [9, 10], [10, 11], [11, 12],     // middle
-  [0, 13], [13, 14], [14, 15], [15, 16],   // ring
-  [0, 17], [17, 18], [18, 19], [19, 20],   // pinky
-  [5, 9], [9, 13], [13, 17],               // palm cross
-];
-
-const FINGERTIPS = [4, 8, 12, 16, 20];
+// Hand topology, skeleton drawing and the WebSocket live in HO (ho-common.js).
 
 const MODE_INFO = {
   detection: {
@@ -47,7 +37,7 @@ const MODE_INFO = {
 // ── State ────────────────────────────────────────────────────────────────────
 
 const STATE = {
-  ws: null,
+  socket: null,
   stream: null,
   animFrame: null,
   mode: 'detection',
@@ -176,10 +166,9 @@ function stopCamera() {
   }
 
   // Close WebSocket
-  if (STATE.ws) {
-    STATE.ws.onclose = null; // prevent reconnect logic
-    STATE.ws.close();
-    STATE.ws = null;
+  if (STATE.socket) {
+    STATE.socket.close();
+    STATE.socket = null;
   }
 
   // Cancel animation
@@ -213,39 +202,22 @@ function stopCamera() {
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 
 function connectWS() {
-  try {
-    const wsUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/analyze`;
-    const ws = new WebSocket(wsUrl);
-
-    ws.onopen = () => {
-      STATE.connected = true;
-      statusDot.classList.add('connected');
-      statusText.textContent = '🟢 Conectado';
-    };
-
-    ws.onclose = () => {
-      STATE.connected = false;
-      setStatusDisconnected();
-    };
-
-    ws.onerror = () => {
-      showError('Error de conexión WebSocket — ¿Está el servidor corriendo en el puerto 9876?');
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        handleResult(data);
-      } catch (_) {
-        // Malformed JSON — ignore
+  STATE.socket = new HO.HandSocket({
+    onResult: (data) => handleResult(data),
+    onStatus: (status) => {
+      STATE.connected = status === 'connected';
+      if (status === 'connected') {
+        statusDot.classList.add('connected');
+        statusText.textContent = '🟢 Conectado';
+      } else if (status === 'connecting') {
+        statusDot.classList.remove('connected');
+        statusText.textContent = '🟡 Conectando…';
+      } else {
+        setStatusDisconnected();
       }
-      STATE.processing = false;
-    };
-
-    STATE.ws = ws;
-  } catch (err) {
-    showError(`No se pudo crear WebSocket: ${err.message}`);
-  }
+    },
+  });
+  STATE.socket.connect();
 }
 
 // ── Render loop ───────────────────────────────────────────────────────────────
@@ -256,12 +228,7 @@ function startLoop() {
 
     if (!STATE.stream || video.readyState < 2) return;
 
-    // Draw mirrored video to video-canvas
-    videoCtx.save();
-    videoCtx.translate(videoCanvas.width, 0);
-    videoCtx.scale(-1, 1);
-    videoCtx.drawImage(video, 0, 0, videoCanvas.width, videoCanvas.height);
-    videoCtx.restore();
+    HO.drawMirroredVideo(videoCtx, video, videoCanvas.width, videoCanvas.height);
 
     // FPS counter
     STATE.frameCount++;
@@ -274,12 +241,8 @@ function startLoop() {
       STATE.lastFpsUpdate = now;
     }
 
-    // Send frame to backend
-    if (!STATE.processing && STATE.ws && STATE.ws.readyState === WebSocket.OPEN) {
-      STATE.processing = true;
-      const b64 = videoCanvas.toDataURL('image/jpeg', 0.6).split(',')[1];
-      STATE.ws.send(JSON.stringify({ frame: b64 }));
-    }
+    // Send frame to backend (HandSocket applies ping-pong backpressure).
+    if (STATE.socket) STATE.socket.sendFrame(videoCanvas, 0.6);
   }
 
   loop();
@@ -320,39 +283,7 @@ function drawOverlay(hands) {
     const px = (lm) => lm.x * w;
     const py = (lm) => lm.y * h;
 
-    // Draw connections
-    overlayCtx.strokeStyle = 'rgba(0, 255, 136, 0.7)';
-    overlayCtx.lineWidth = 2;
-    for (const [a, b] of HAND_CONNECTIONS) {
-      overlayCtx.beginPath();
-      overlayCtx.moveTo(px(lm[a]), py(lm[a]));
-      overlayCtx.lineTo(px(lm[b]), py(lm[b]));
-      overlayCtx.stroke();
-    }
-
-    // Draw landmark dots
-    for (let i = 0; i < lm.length; i++) {
-      const x = px(lm[i]);
-      const y = py(lm[i]);
-      const isTip = FINGERTIPS.includes(i);
-
-      overlayCtx.beginPath();
-      if (isTip) {
-        overlayCtx.arc(x, y, 7, 0, Math.PI * 2);
-        overlayCtx.fillStyle = '#00cfff';
-      } else {
-        overlayCtx.arc(x, y, 4, 0, Math.PI * 2);
-        overlayCtx.fillStyle = '#ef4444';
-      }
-      overlayCtx.fill();
-
-      // Landmark indices in landmarks mode
-      if (STATE.mode === 'landmarks') {
-        overlayCtx.fillStyle = '#ffffff';
-        overlayCtx.font = '9px system-ui';
-        overlayCtx.fillText(String(i), x + 5, y - 4);
-      }
-    }
+    HO.drawSkeleton(overlayCtx, lm, w, h, { showIndices: STATE.mode === 'landmarks' });
 
     // Tracker mode: draw trail & accumulate index-tip point
     if (STATE.mode === 'tracker') {
@@ -406,7 +337,8 @@ function renderDetection(hands) {
       </div>
       <div class="handedness-row">`;
     for (const h of hands) {
-      html += `<span class="handedness-pill">${h.handedness === 'Left' ? '🫲 Izquierda' : '🫱 Derecha'}</span>`;
+      const conf = typeof h.confidence === 'number' ? ` ${Math.round(h.confidence * 100)}%` : '';
+      html += `<span class="handedness-pill">${h.handedness === 'Left' ? '🫲 Izquierda' : '🫱 Derecha'}${conf}</span>`;
     }
     html += `</div>`;
   } else {
@@ -475,30 +407,30 @@ function renderCounter(hands) {
 }
 
 // gestures mode
-const GESTURE_EMOJI = {
-  fist:       '✊',
-  open_hand:  '✋',
-  pointing:   '☝️',
-  peace:      '✌️',
-  thumbs_up:  '👍',
-  shaka:      '🤙',
-};
+const GESTURE_EMOJI = HO.GESTURE_EMOJI;
 
 function renderGestures(hands) {
   if (hands.length === 0) {
     resultsPanel.innerHTML = emptyHandsHtml('Prueba un gesto frente a la cámara');
     return;
   }
-  const gesture = hands[0].gesture ?? 'unknown';
+  const hand = hands[0];
+  const gesture = hand.gesture ?? 'unknown';
+  const raw = hand.gesture_raw ?? gesture;
   const emoji = GESTURE_EMOJI[gesture] ?? '🖐️';
+  const conf = typeof hand.confidence === 'number' ? `${Math.round(hand.confidence * 100)}%` : '—';
+  const fu = hand.fingers_up || {};
+  const fingerStr = ['thumb', 'index', 'middle', 'ring', 'pinky']
+    .map((f) => `${fu[f] ? '🟢' : '⚪'} ${f}`).join('  ');
 
   resultsPanel.innerHTML = `
     <div class="gesture-display">
       <div class="gesture-emoji">${emoji}</div>
-      <div class="gesture-name">${gesture.replace(/_/g, ' ')}</div>
+      <div class="gesture-name">${HO.gestureLabel(gesture)}</div>
       <div class="gesture-confidence" style="color:var(--dark-muted);font-size:0.8rem;margin-top:6px;">
-        Clasificado por MediaPipe Gesture Recognizer
+        crudo: <code>${raw}</code> · confianza: ${conf}
       </div>
+      <div style="color:var(--dark-muted);font-size:0.78rem;margin-top:8px;letter-spacing:0.3px;">${fingerStr}</div>
     </div>`;
 }
 
