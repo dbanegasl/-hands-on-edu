@@ -6,24 +6,15 @@
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const WS_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/analyze`;
 const HOLD_DURATION   = 1800;  // ms to hold gesture to confirm answer
 const READING_DELAY   = 2000;  // ms before gesture detection activates on new question
 const FEEDBACK_DURATION = 1500; // ms to show correct/incorrect feedback
 const CIRCUMFERENCE   = 2 * Math.PI * 44; // SVG arc circumference (r=44)
+const MIN_CONFIDENCE  = 0.6;   // ignore low-confidence hands (face/forearm false positives)
 
-const HAND_CONNECTIONS = [
-  [0, 1], [1, 2], [2, 3], [3, 4],
-  [0, 5], [5, 6], [6, 7], [7, 8],
-  [0, 9], [9, 10], [10, 11], [11, 12],
-  [0, 13], [13, 14], [14, 15], [15, 16],
-  [0, 17], [17, 18], [18, 19], [19, 20],
-  [5, 9], [9, 13], [13, 17],
-];
-
-const FINGERTIPS = [4, 8, 12, 16, 20];
-
-const FINGER_EMOJI = { 1: '☝️', 2: '✌️', 3: '🤟', 4: '🖐️', 5: '✋' };
+// Numeral emojis for 3 and 4 — no Unicode emoji shows 3 or 4 raised fingers, so
+// the hand-shape cue lives in the question hint instead.
+const FINGER_EMOJI = { 1: '☝️', 2: '✌️', 3: '3️⃣', 4: '4️⃣', 5: '✋' };
 
 // ── Questions ────────────────────────────────────────────────────────────────
 
@@ -47,7 +38,7 @@ const QUESTIONS = [
     type: 'choice', subject: 'Ciencias', emoji: '🌿',
     text: '¿Qué animal puede volar?',
     options: ['🐟 Pez', '🦅 Águila', '🐕 Perro'], answer: 2,
-    hint: '☝️ Pez  ·  ✌️ Águila  ·  🤟 Perro',
+    hint: '☝️ Pez  ·  ✌️ Águila  ·  3️⃣ Perro',
   },
   {
     type: 'truefalse', subject: 'Ciencias', emoji: '🌿',
@@ -63,7 +54,7 @@ const QUESTIONS = [
     type: 'choice', subject: 'Lengua', emoji: '📖',
     text: '¿Cuál es la fruta amarilla?',
     options: ['🍎 Manzana', '🍌 Banano', '🍇 Uvas'], answer: 2,
-    hint: '☝️ Manzana  ·  ✌️ Banano  ·  🤟 Uvas',
+    hint: '☝️ Manzana  ·  ✌️ Banano  ·  3️⃣ Uvas',
   },
   {
     type: 'truefalse', subject: 'Matemáticas', emoji: '🔢',
@@ -79,7 +70,7 @@ const QUESTIONS = [
     type: 'choice', subject: 'Ciencias', emoji: '🌿',
     text: '¿Qué necesita una planta para crecer?',
     options: ['💧 Agua y sol', '🍕 Pizza', '📱 Celular'], answer: 1,
-    hint: '☝️ Agua y sol  ·  ✌️ Pizza  ·  🤟 Celular',
+    hint: '☝️ Agua y sol  ·  ✌️ Pizza  ·  3️⃣ Celular',
   },
 ];
 
@@ -112,10 +103,9 @@ let arcFill;
 
 // ── WebSocket + webcam ────────────────────────────────────────────────────────
 
-let ws     = null;
+let socket = null;
 let stream = null;
 let animFrame = null;
-let processing = false;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -246,8 +236,7 @@ async function startCamera() {
 function stopCamera() {
   if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
   if (stream)    { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  if (ws)        { ws.onclose = null; ws.close(); ws = null; }
-  processing = false;
+  if (socket)    { socket.close(); socket = null; }
 
   // Clear canvases
   if (videoCtx)   videoCtx.clearRect(0, 0, videoCanvas.width, videoCanvas.height);
@@ -280,27 +269,17 @@ function showCameraError(msg) {
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 
 function connectWS() {
-  try {
-    ws = new WebSocket(WS_URL);
-
-    ws.onopen = () => { /* ready */ };
-
-    ws.onclose = () => {
-      if (GAME.state === 'detecting' || GAME.state === 'confirming') {
-        // Connection lost mid-game — reset hold
+  socket = new HO.HandSocket({
+    onResult: handleResult,
+    onStatus: (status) => {
+      if (status !== 'connected' && (GAME.state === 'detecting' || GAME.state === 'confirming')) {
+        // Connection lost mid-game — reset hold until it reconnects.
         resetHold();
         updateGestureDisplay(null);
       }
-    };
-
-    ws.onerror = () => {
-      console.warn('GestiEdu: WebSocket error — is the backend running on port 9876?');
-    };
-
-    ws.onmessage = handleWSMessage;
-  } catch (err) {
-    console.error('GestiEdu: Could not create WebSocket:', err.message);
-  }
+    },
+  });
+  socket.connect();
 }
 
 // ── Render loop ───────────────────────────────────────────────────────────────
@@ -311,12 +290,7 @@ function startLoop() {
 
     if (!stream || video.readyState < 2) return;
 
-    // Draw mirrored video to video-canvas
-    videoCtx.save();
-    videoCtx.translate(videoCanvas.width, 0);
-    videoCtx.scale(-1, 1);
-    videoCtx.drawImage(video, 0, 0, videoCanvas.width, videoCanvas.height);
-    videoCtx.restore();
+    HO.drawMirroredVideo(videoCtx, video, videoCanvas.width, videoCanvas.height);
 
     // Send frame to backend when active
     const shouldSend = (
@@ -325,11 +299,7 @@ function startLoop() {
       GAME.state === 'confirming'
     );
 
-    if (!processing && shouldSend && ws && ws.readyState === WebSocket.OPEN) {
-      processing = true;
-      const b64 = videoCanvas.toDataURL('image/jpeg', 0.6).split(',')[1];
-      ws.send(JSON.stringify({ frame: b64 }));
-    }
+    if (shouldSend && socket) socket.sendFrame(videoCanvas, 0.6);
   }
 
   loop();
@@ -337,16 +307,14 @@ function startLoop() {
 
 // ── WebSocket message handler ─────────────────────────────────────────────────
 
-function handleWSMessage(event) {
-  processing = false;
-
+function handleResult(data) {
   // Only act on messages during detecting / confirming phases
   if (GAME.state !== 'detecting' && GAME.state !== 'confirming') return;
 
-  let data;
-  try { data = JSON.parse(event.data); } catch (_) { return; }
-
-  const hands = data.hands ?? [];
+  // Drop low-confidence hands (face/forearm false positives).
+  const hands = (data.hands ?? []).filter(
+    (h) => typeof h.confidence !== 'number' || h.confidence >= MIN_CONFIDENCE
+  );
 
   // Draw skeleton overlay on every detected hand
   drawSkeletonOverlay(hands);
@@ -656,34 +624,7 @@ function drawSkeletonOverlay(hands) {
   const w = overlayCanvas.width;
   const h = overlayCanvas.height;
   overlayCtx.clearRect(0, 0, w, h);
-
   for (const hand of hands) {
-    const lm = hand.landmarks ?? [];
-    if (lm.length < 21) continue;
-
-    const px = p => p.x * w;
-    const py = p => p.y * h;
-
-    // Connections
-    overlayCtx.strokeStyle = 'rgba(0, 255, 136, 0.7)';
-    overlayCtx.lineWidth   = 2;
-    for (const [a, b] of HAND_CONNECTIONS) {
-      overlayCtx.beginPath();
-      overlayCtx.moveTo(px(lm[a]), py(lm[a]));
-      overlayCtx.lineTo(px(lm[b]), py(lm[b]));
-      overlayCtx.stroke();
-    }
-
-    // Landmark dots
-    for (let i = 0; i < lm.length; i++) {
-      const x     = px(lm[i]);
-      const y     = py(lm[i]);
-      const isTip = FINGERTIPS.includes(i);
-
-      overlayCtx.beginPath();
-      overlayCtx.arc(x, y, isTip ? 7 : 4, 0, Math.PI * 2);
-      overlayCtx.fillStyle = isTip ? '#00cfff' : '#ef4444';
-      overlayCtx.fill();
-    }
+    HO.drawSkeleton(overlayCtx, hand.landmarks, w, h);
   }
 }
