@@ -92,8 +92,12 @@ let mode              = 'libre';
 // Per-finger state: fingerIdx → { isDown, currentKey, lastY }
 const fingerStates = new Map();
 
-// Active keys → { key, midi, fingerIdx, highlightAt }
+// Active keys → { keyIdx, midi, highlightAt }
 const activeKeys = new Map();
+
+// Recently released keys for fade animation → { keyIdx, releasedAt }
+const releasedKeys = new Map();
+const KEY_FADE_MS = 120;
 
 // Tutorial mode
 let tutorialTargetKey = null; // 0..7
@@ -390,14 +394,19 @@ function releaseKey(fingerKey, keyIdx) {
   const midi = SCALES[currentScale][keyIdx];
   synth.noteOff(midi);
   activeKeys.delete(fingerKey);
+  releasedKeys.set(fingerKey, { keyIdx, releasedAt: performance.now() });
 }
 
 function releaseAllFingers() {
+  const now = performance.now();
   for (const [fid, st] of fingerStates.entries()) {
     if (st.isDown && st.currentKey != null) {
       const midi = SCALES[currentScale][st.currentKey];
       synth.noteOff(midi);
     }
+  }
+  for (const [fid, v] of activeKeys.entries()) {
+    releasedKeys.set(fid, { keyIdx: v.keyIdx, releasedAt: now });
   }
   fingerStates.clear();
   activeKeys.clear();
@@ -579,18 +588,29 @@ function drawKeys() {
 
   const now = performance.now();
   const pressedKeys = new Set();
-  for (const v of activeKeys.values()) {
-    if (now - v.highlightAt < HIGHLIGHT_MS * 4) pressedKeys.add(v.keyIdx);
+  for (const v of activeKeys.values()) pressedKeys.add(v.keyIdx);
+
+  // Build fade map: keyIdx → alpha (0–1) for recently released keys
+  const fadeAlpha = new Map();
+  for (const [fid, v] of releasedKeys.entries()) {
+    const elapsed = now - v.releasedAt;
+    if (elapsed >= KEY_FADE_MS) { releasedKeys.delete(fid); continue; }
+    if (!pressedKeys.has(v.keyIdx)) {
+      const a = 1 - elapsed / KEY_FADE_MS;
+      fadeAlpha.set(v.keyIdx, Math.max(fadeAlpha.get(v.keyIdx) ?? 0, a));
+    }
   }
 
   for (let i = 0; i < 8; i += 1) {
     const x = xLeft + i * keyW;
     const isPressed = pressedKeys.has(i);
+    const fade = fadeAlpha.get(i) ?? 0;
     const isTutorialTarget = (mode === 'tutorial' && tutorialTargetKey === i);
     const isSongTarget = (mode === 'cancion' && SONGS[songName][songIndex] === SCALES[currentScale][i]);
 
     let fill = 'rgba(255, 255, 255, 0.78)';
-    if (isPressed)         fill = 'rgba(34, 197, 94, 0.85)';
+    if (isPressed)            fill = 'rgba(34, 197, 94, 0.85)';
+    else if (fade > 0)        fill = `rgba(34, 197, 94, ${(0.85 * fade).toFixed(3)})`;
     else if (isTutorialTarget) fill = 'rgba(59, 130, 246, ' + (0.55 + 0.25 * Math.sin(now / 200)) + ')';
     else if (isSongTarget)     fill = 'rgba(168, 85, 247, ' + (0.55 + 0.25 * Math.sin(now / 200)) + ')';
 
@@ -603,7 +623,7 @@ function drawKeys() {
 
     // Note name label on the key
     const midi = SCALES[currentScale][i];
-    keysCtx.fillStyle = isPressed ? '#0a0a0f' : '#1e293b';
+    keysCtx.fillStyle = (isPressed || fade > 0.5) ? '#0a0a0f' : '#1e293b';
     keysCtx.font = '600 16px system-ui, sans-serif';
     keysCtx.textAlign = 'center';
     keysCtx.fillText(midiToName(midi), x + keyW / 2, yBot - 14);

@@ -1,14 +1,14 @@
 # REQ-014 — Librería frontend compartida `ho-common.js`
 
-> **Última actualización:** 2026-06-10
-> **Estado:** 🔄 En progreso
+> **Última actualización:** 2026-06-11
+> **Estado:** ✅ Hecho
 
 | Campo | Valor |
 |-------|-------|
 | **ID** | REQ-014 |
 | **Tipo** | Tech-Debt |
 | **Prioridad** | Alta |
-| **Estado** | 🔄 En progreso |
+| **Estado** | ✅ Hecho |
 | **Módulo** | Global / Frontend (`app/static/js/`) |
 | **Esfuerzo estimado** | M (4–6 horas) |
 

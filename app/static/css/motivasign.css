@@ -112,6 +112,30 @@ body {
   white-space: nowrap;
   transition: color 0.2s;
 }
+
+.ms-conn-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.ms-conn-disconnected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.ms-conn-connecting {
+  background: rgba(234, 179, 8, 0.15);
+  color: #fde68a;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+.ms-conn-connected {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
 .ms-back:hover { color: var(--ms-text); }
 
 .ms-btn-mute {
@@ -300,6 +324,7 @@ body {
   z-index: 10;
   backdrop-filter: blur(4px);
   pointer-events: none;
+  transition: opacity 0.15s, color 0.15s;
 }
 
 /* Hold progress ring */

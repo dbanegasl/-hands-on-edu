@@ -268,12 +268,25 @@ function showCameraError(msg) {
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 
+function updateConnBadge(status) {
+  const el = document.getElementById('ge-connection');
+  if (!el) return;
+  const map = {
+    disconnected: ['⚫ Desconectado', 'ge-conn-disconnected'],
+    connecting:   ['🟡 Conectando…',  'ge-conn-connecting'],
+    connected:    ['🟢 Conectado',    'ge-conn-connected'],
+  };
+  const [text, cls] = map[status] || map.disconnected;
+  el.className   = 'ge-conn-badge ' + cls;
+  el.textContent = text;
+}
+
 function connectWS() {
   socket = new HO.HandSocket({
     onResult: handleResult,
     onStatus: (status) => {
+      updateConnBadge(status);
       if (status !== 'connected' && (GAME.state === 'detecting' || GAME.state === 'confirming')) {
-        // Connection lost mid-game — reset hold until it reconnects.
         resetHold();
         updateGestureDisplay(null);
       }

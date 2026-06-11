@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.hand_tracker import GestureSmoother, HandTracker, finger_states
 
-APP_VERSION = "0.6.0"
+APP_VERSION = "0.8.0"
 
 # Minimum interval between processed frames. Clients use a ping-pong loop so this
 # never throttles normal use; it only caps a misbehaving client that floods the

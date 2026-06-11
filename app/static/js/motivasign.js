@@ -466,6 +466,19 @@ async function initCamera() {
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 
+function updateConnBadge(status) {
+  const el = document.getElementById('ms-connection');
+  if (!el) return;
+  const map = {
+    disconnected: ['⚫ Desconectado', 'ms-conn-disconnected'],
+    connecting:   ['🟡 Conectando…',  'ms-conn-connecting'],
+    connected:    ['🟢 Conectado',    'ms-conn-connected'],
+  };
+  const [text, cls] = map[status] || map.disconnected;
+  el.className   = 'ms-conn-badge ' + cls;
+  el.textContent = text;
+}
+
 function connectWS() {
   socket = new HO.HandSocket({
     onResult: (data) => {
@@ -474,6 +487,7 @@ function connectWS() {
       );
       processGesture(lastHands);
     },
+    onStatus: updateConnBadge,
   });
   socket.connect();
 }

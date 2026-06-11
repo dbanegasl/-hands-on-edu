@@ -1,6 +1,6 @@
 # 📋 Índice de Requisitos — HandsOnEdu
 
-> **Última actualización:** 2026-04-30
+> **Última actualización:** 2026-06-11
 
 Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos los requisitos funcionales, mejoras y deuda técnica pendientes, con su prioridad, estado y módulo asociado.
 
@@ -30,8 +30,8 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 | [REQ-011](./REQ-011-cicd-github-actions.md) | Pipeline CI/CD con GitHub Actions | Tech-Debt | Alta | 📋 Pendiente | Global / DevOps |
 | [REQ-012](./REQ-012-airpiano-module.md) | Módulo AirPiano (Piano virtual gestual) | Feature | Media | ✅ Hecho | AirPiano (nuevo) |
 | [REQ-013](./REQ-013-detection-robustness.md) | Robustez de detección (heurística invariante + suavizado) | Tech-Debt | Alta | ✅ Hecho | Global / Backend |
-| [REQ-014](./REQ-014-shared-frontend-lib.md) | Librería frontend compartida `ho-common.js` | Tech-Debt | Alta | 🔄 En progreso | Global / Frontend |
-| [REQ-015](./REQ-015-module-fixes-ux-polish.md) | Correcciones de detección y pulido UX por módulo | Mejora | Alta | 📋 Pendiente | Todos los módulos |
+| [REQ-014](./REQ-014-shared-frontend-lib.md) | Librería frontend compartida `ho-common.js` | Tech-Debt | Alta | ✅ Hecho | Global / Frontend |
+| [REQ-015](./REQ-015-module-fixes-ux-polish.md) | Correcciones de detección y pulido UX por módulo | Mejora | Alta | ✅ Hecho | Todos los módulos |
 
 ---
 

@@ -23,6 +23,35 @@
 
 ---
 
+## [0.8.0] — 2026-06-11
+
+### Añadido
+
+- **REQ-015** — Insignia de conexión (🟢/🟡/⚫) añadida a **GestiEdu** y **MotivaSign** (como ya tenían VirtualPainter y AirPiano), conectada al `onStatus` de `HO.HandSocket`.
+- **REQ-015** — AirPiano: animación de fade-out de 120 ms al soltar una tecla, renderizada en el canvas de teclas.
+
+### Cambiado
+
+- **REQ-015** — GestiEdu: `.q-visual` usa `clamp(2rem, 6vw, 4rem)` para evitar desbordamiento en pantallas pequeñas; `.question-card` con `min-height: 220px` para evitar saltos de layout entre tipos de pregunta.
+- **REQ-015** — MotivaSign: badge de gesto detectado con `transition: opacity 0.15s, color 0.15s` para suavizar el parpadeo por fotograma.
+- **REQ-014** — Completada la migración de **todos los módulos** a `ho-common.js`: webcam, gestiedu, motivasign, virtualpainter, airpiano y attendeye. Eliminados ~450 líneas duplicadas de skeleton draw, mirror draw y boilerplate WS.
+- Versión `0.8.0` en `APP_VERSION`.
+
+---
+
+## [0.7.0] — 2026-06-11
+
+### Añadido
+
+- **REQ-014** — Nueva librería compartida `app/static/js/ho-common.js` (namespace `window.HO`): `HO.drawSkeleton`, `HO.drawMirroredVideo`, `HO.HandSocket` (auto-reconexión exponencial, ping-pong, validación de forma JSON), `HO.GestureStabilizer`, `HO.OneEuro`, `HO.GESTURE_LABELS_ES`, `HO.gestureLabel`.
+- **REQ-015** — VirtualPainter: debounce de modo 150 ms, filtro **One-Euro** en x/y para cursor suave, renderizado por puntos medios cuadráticos (sin gaps), snapshot de undo solo en transición idle→draw.
+- **REQ-015** — AirPiano: filtro por confianza ≥ 0.7 y span de mano ≥ 0.09 normalizado contra falsos positivos; solo los dedos extendidos (`fingers_up`) pueden presionar teclas.
+- **REQ-015** — MotivaSign: catálogo corregido (`tres→3_fingers`, `cuatro→4_fingers`, `amor→i_love_you`, `ok→ok`, `hola/adios→open_hand+wave`); detector de movimiento de muñeca para `hola`/`adios`; badges en español vía `HO.gestureLabel`.
+- **REQ-015** — GestiEdu: emojis de dedo corregidos (`FINGER_EMOJI[3]=3️⃣`, `[4]=4️⃣`); filtro confianza ≥ 0.6.
+- **REQ-015** — AttendEye: migrado a `HO.HandSocket` y `HO.gestureLabel` en modos lista de asistencia y participación.
+
+---
+
 ## [0.6.0] — 2026-06-10
 
 ### Cambiado
