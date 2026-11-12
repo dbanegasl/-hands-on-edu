@@ -9,11 +9,14 @@ services:
       - ./tests:/app/tests
       - ./pytest.ini:/app/pytest.ini
       - ./requirements-dev.txt:/app/requirements-dev.txt
+      # SQLite database (learners, sessions, attempts, sign templates)
+      - ./data:/app/data
       # models/ is baked into the image at build time — no need to mount it
     environment:
       - PYTHONUNBUFFERED=${PYTHONUNBUFFERED:-1}
       - APP_ENV=${APP_ENV:-development}
       - APP_HOST=${APP_HOST:-0.0.0.0}
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-}
       - MOODLE_URL=${MOODLE_URL:-http://localhost}
       - MOODLE_TOKEN=${MOODLE_TOKEN:-}
       - MOODLE_COURSE_ID=${MOODLE_COURSE_ID:-}

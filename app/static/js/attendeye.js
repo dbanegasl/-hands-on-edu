@@ -117,7 +117,7 @@ async function startWebcam(videoId, canvasId) {
 
 /** Open a managed HandSocket (auto-reconnect + validation) and return it. */
 function openWS(onResult, onError) {
-  const s = new HO.HandSocket({
+  const s = HO.createHandSource({
     onResult,
     onStatus: (status) => { if (status === 'disconnected' && onError) onError(); },
   });

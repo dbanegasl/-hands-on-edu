@@ -480,7 +480,7 @@ function updateConnBadge(status) {
 }
 
 function connectWS() {
-  socket = new HO.HandSocket({
+  socket = HO.createHandSource({
     onResult: (data) => {
       lastHands = (data.hands ?? []).filter(
         (h) => typeof h.confidence !== 'number' || h.confidence >= MIN_CONFIDENCE

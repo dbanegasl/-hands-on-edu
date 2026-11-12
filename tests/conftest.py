@@ -11,8 +11,14 @@ This avoids the model file entirely and lets tests run without a camera.
 """
 import base64
 import math
+import os
 from io import BytesIO
 from unittest.mock import MagicMock, patch
+
+# Isolated in-memory database and open admin endpoints for the whole test run.
+# Must be set before anything imports app.config.
+os.environ["DATABASE_URL"] = "sqlite://"
+os.environ["ADMIN_TOKEN"] = ""
 
 import mediapipe as mp  # noqa: F401 — touch mp to ensure tasks.vision is accessible
 import pytest
@@ -35,6 +41,7 @@ _hl_patch.start()
 # ── Step 3: now safe to import app.main (HandTracker() won't open the model) ──
 from app.main import app  # noqa: E402
 from app.core.hand_tracker import HandTracker  # noqa: E402
+from app.db import Base, engine  # noqa: E402
 from starlette.testclient import TestClient  # noqa: E402
 
 
@@ -176,7 +183,11 @@ def tracker():
 
 @pytest.fixture
 def client():
-    """Synchronous Starlette TestClient (supports HTTP + WebSocket)."""
+    """Synchronous Starlette TestClient (supports HTTP + WebSocket) on a fresh DB."""
+    from app import models  # noqa: F401 — register tables
+
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
     with TestClient(app) as c:
         yield c
 

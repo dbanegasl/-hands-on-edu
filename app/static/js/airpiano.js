@@ -200,7 +200,7 @@ function cleanup() {
 // ── WebSocket ────────────────────────────────────────────────────────────────
 
 function connectWS() {
-  socket = new HO.HandSocket({
+  socket = HO.createHandSource({
     onResult: handleWSMessage,
     onStatus: updateConnBadge,
   });

@@ -16,29 +16,34 @@ docker compose up                # normally
 # Tests (dev deps are NOT in the image; install them in the container first)
 docker compose exec hands-on-edu pip install -r requirements-dev.txt
 docker compose exec hands-on-edu pytest
+node --test tests/js/*.test.cjs                                     # browser engine + sign engine (host Node ≥ 20)
+docker compose exec hands-on-edu python -m tests.fixtures.gen_gesture_parity   # regenerate Python↔JS parity fixture after changing gesture heuristics
 docker compose exec hands-on-edu pytest tests/test_main.py::TestHealthEndpoint::test_status_200   # single test
-docker compose exec hands-on-edu pytest --cov=app --cov-report=term-missing                        # coverage (target ≥80% on app/core/ and app/main.py)
+docker compose exec hands-on-edu pytest --cov=app --cov-report=term-missing                        # coverage (CI enforces ≥80% overall; .github/workflows/ci.yml)
 ```
 
-Hot reload: `./app` and `./tests` are volume-mounted, so Python/HTML/CSS/JS changes apply without rebuild (uvicorn `--reload` handles Python). Only `Dockerfile`, `requirements.txt`, or `docker-compose.yml` changes need a rebuild.
+Hot reload: `./app`, `./tests` and `./data` (SQLite) are volume-mounted, so Python/HTML/CSS/JS changes apply without rebuild (uvicorn `--reload` handles Python). Only `Dockerfile`, `requirements.txt`, or `docker-compose.yml` changes need a rebuild.
 
 `MODEL_PATH` in `app/core/hand_tracker.py` is hardcoded to `/app/models/hand_landmarker.task` — the app expects to run inside the container (the model is downloaded at image build time).
 
 ## Architecture
 
-**All gesture intelligence lives in the browser; the backend is a thin landmark service.**
+**Hand detection and all gesture/sign intelligence run in the browser; the backend serves content and stores data.** Product direction: a reference platform for teaching sign language (LSEC, Ecuador) integrated with LMSs (LTI 1.3 planned, REQ-019).
 
-- The single WebSocket endpoint `WS /ws/analyze` (`app/main.py`) is shared by every module. The browser captures webcam frames via `getUserMedia()`, draws them mirrored to a canvas, and sends base64 JPEG frames; the backend decodes them and returns JSON: `{hands_detected, hands: [{handedness, landmarks (21 pts), finger_count, gesture}]}`. Protocol reference: `docs/websocket-protocol.md`.
-- `app/core/hand_tracker.py` — `HandTracker`, the only MediaPipe wrapper, with finger counting and gesture classification (`fist`, `pointing`, `peace`, `open_hand`, etc.). A single global `_tracker` instance in `main.py` is reused across all connections.
-- Each module (GestiEdu, MotivaSign, AttendEye, VirtualPainter, AirPiano) is a static page: `app/static/<module>.html` + `css/<module>.css` + `js/<module>.js`, served by a `FileResponse` route in `main.py`. All module logic (quiz state machines, drawing, attendance, scoring) is in its JS file.
+- `app/static/js/ho-hands.js` runs MediaPipe Hand Landmarker (Tasks JS 0.10.35, WASM vendored at `/vendor/mediapipe/`, model at `/models/`) on the mirrored canvas. Modules get hands via `HO.createHandSource({onResult, onStatus})`, which returns the in-browser `LocalHandEngine` or falls back to the server `HO.HandSocket` (`WS /ws/analyze`, `app/api/ws.py`; force with `?engine=server`). Both emit the same JSON: `{hands_detected, engine, hands: [{handedness, confidence, landmarks, world_landmarks, aspect, fingers_up, finger_count, gesture, gesture_raw}]}` — `docs/websocket-protocol.md`.
+- The JS gesture logic is a port of `app/core/hand_tracker.py` (`HandTracker`, `finger_states`, `GestureSmoother`, per-connection on the server). **Keep them in sync**: change Python, regenerate `tests/fixtures/gesture_parity.json`, port to JS; both test suites check the fixture.
+- `app/static/js/ho-signs.js` — sign recognizer (`HO.Signs.SignRecognizer`): handshape specs from the catalog (with Spanish didactic feedback), kNN over teacher-recorded templates, DTW for moving signs. Geometry conventions were calibrated on real photos (`tests/fixtures/real_hands.json`); read `docs/sign-engine.md` before changing them (e.g. on the mirrored canvas MediaPipe labels the real right hand `"Left"`).
+- Sign content is data: `app/content/<lang>/catalog.json`, schema-validated by `app/signs/catalog.py` (unknown handshape keys fail loudly). LSEC content is a draft flagged `validated: false` — don't present it as validated.
+- Backend: `app/main.py` wires routers `app/api/{pages,ws,signs,learning}.py`; settings in `app/config.py` (`DATABASE_URL`, `ADMIN_TOKEN`, …); SQLAlchemy 2.0 models in `app/models.py` (`Learner`, `ActivitySession`, `SignAttempt`, `SignTemplate`), tables created on startup (no Alembic yet). Write endpoints for templates require `X-Admin-Token` when `ADMIN_TOKEN` is set.
+- Each module (GestiEdu, MotivaSign, AttendEye, VirtualPainter, AirPiano, Estudio de Señas `/signstudio`) is a static page: `app/static/<module>.html` + `css/<module>.css` + `js/<module>.js`, registered in `PAGES` in `app/api/pages.py`. All module logic (quiz state machines, drawing, attendance, scoring) is in its JS file.
 - `app/modules/*/` are empty Python stubs reserved for future backend logic — don't expect logic there.
 - `app/integrations/moodle/rest_api.py` — async httpx client for Moodle REST API (grades/completion), configured via `MOODLE_*` env vars in `.env`.
 
-**Test mocking strategy** (`tests/conftest.py`): import order is critical — it imports `app.core.hand_tracker`, patches `HandLandmarker` there, and only then imports `app.main`, so `_tracker` is created against the mock and tests run without the model file or a camera. Synthetic landmarks are built with the `Lm` helper class.
+**Test mocking strategy** (`tests/conftest.py`): sets `DATABASE_URL=sqlite://` (in-memory, reset per `client` fixture) before importing anything, imports `app.core.hand_tracker`, patches `HandLandmarker` there, and only then imports `app.main`; WS tests patch `app.api.ws._new_tracker`. Synthetic landmarks come from `make_hand()` / the `Lm` helper. JS tests (`tests/js/*.test.cjs`, `node:test`) load the browser files directly — they export via `module.exports` when present.
 
 ## Conventions
 
-- **New module**: follow the steps in `docs/development-guide.md` — static files + route in `main.py` + landing-page card in `index.html` + doc in `docs/modules/`. Copy the WebSocket/canvas pattern from an existing module's JS.
-- **Frontend**: vanilla JS only (no frameworks). One CSS file per module with a BEM-like prefix (`.ge-` GestiEdu, `.ms-` MotivaSign, `.ae-` AttendEye, `.vp-` VirtualPainter). Always cancel `requestAnimationFrame` and close the WebSocket when leaving a screen.
+- **New module**: follow the steps in `docs/development-guide.md` — static files + entry in `PAGES` (`app/api/pages.py`) + landing-page card in `index.html` + doc in `docs/modules/`. Copy the WebSocket/canvas pattern from an existing module's JS.
+- **Frontend**: vanilla JS only (no frameworks). One CSS file per module with a BEM-like prefix (`.ge-` GestiEdu, `.ms-` MotivaSign, `.ae-` AttendEye, `.vp-` VirtualPainter, `.ss-` Estudio de Señas). Load `ho-common.js` then `ho-hands.js` (then `ho-signs.js` if needed) before the module script. Always cancel `requestAnimationFrame` and close the WebSocket when leaving a screen.
 - **Requirements workflow**: features are tracked as `docs/requirements/REQ-NNN-*.md` with a master table in `docs/requirements/INDEX.md` — update the REQ status there when implementing one. Changes are logged in `docs/changelog/CHANGELOG.md`, and the app version is bumped in the `FastAPI(version=...)` call in `app/main.py`.
 - **Git**: branches `feature/<name>` or `fix/<description>`; commits use conventional prefixes (`feat:`, `fix:`, `docs:`, `test:`), often scoped per module, e.g. `feat(airpiano): ...`.

@@ -1,5 +1,7 @@
 # WebSocket Protocol — HandsOnEdu
 
+> **Desde v0.9.0 (REQ-016)** la detección corre en el navegador (`app/static/js/ho-hands.js`) y produce **exactamente este mismo JSON** sin pasar por la red. Este endpoint queda como **respaldo** cuando MediaPipe no puede cargarse en el navegador, o cuando se fuerza con `?engine=server`. Los módulos no notan la diferencia: usan `HO.createHandSource()`.
+
 ## Endpoint
 
 ```
@@ -63,20 +65,23 @@ JSON enviado por cada frame:
 |-------|------|-------------|
 | `hands_detected` | integer | Número de manos detectadas. Valores: 0, 1 o 2. |
 | `hands` | array | Lista de objetos de mano (0, 1 o 2 elementos). |
+| `engine` | string | `"server"` (este endpoint) o `"browser"` (motor local). Desde v0.9.0. |
 
 ### Campos por objeto de mano
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `handedness` | string | `"Right"` o `"Left"`, según MediaPipe. Relativo al frame **reflejado** (espacio selfie). |
+| `handedness` | string | `"Right"` o `"Left"`, según MediaPipe. MediaPipe Tasks etiqueta como si la imagen **no** estuviera espejada; en el canvas espejado de la app, la mano derecha real llega como `"Left"` (verificado con fotos reales, ver `docs/sign-engine.md`). |
 | `confidence` | float | Confianza de lateralidad de MediaPipe [0.0–1.0]. Los módulos descartan manos por debajo de su umbral (≈0.6–0.7) para evitar falsos positivos. |
 | `gesture` | string | Gesto clasificado y **suavizado** temporalmente (voto mayoritario en ventana de 5 frames). Es el campo recomendado para lógica de UI. |
 | `gesture_raw` | string | Gesto del frame actual sin suavizar. Útil para diagnóstico (Testing Lab). |
 | `finger_count` | integer | Número de dedos levantados (0–5), suavizado por mediana. |
 | `fingers_up` | object | Booleanos por dedo: `{thumb, index, middle, ring, pinky}` del frame actual. |
 | `landmarks` | array[21] | Coordenadas normalizadas de los 21 landmarks de la mano. |
+| `world_landmarks` | array[21] | Coordenadas 3D métricas (metros, origen en el centro de la mano). Se guardan con las plantillas para ML futuro. Desde v0.9.0. |
+| `aspect` | float | Ancho/alto del cuadro analizado. Permite deshacer el estiramiento de los ejes normalizados al calcular geometría. Desde v0.9.0. |
 
-> **Compatibilidad**: `confidence`, `gesture_raw` y `fingers_up` son **aditivos** (REQ-013) — los clientes que solo leen `gesture`/`finger_count`/`landmarks` siguen funcionando sin cambios.
+> **Compatibilidad**: `confidence`, `gesture_raw`, `fingers_up` (REQ-013), `engine`, `world_landmarks` y `aspect` (REQ-016) son **aditivos** — los clientes que solo leen `gesture`/`finger_count`/`landmarks` siguen funcionando sin cambios.
 
 ### Campos de cada landmark
 
@@ -90,7 +95,14 @@ JSON enviado por cada frame:
 
 ## Error Response
 
-Devuelto cuando el frame no puede decodificarse o hay un error interno:
+Devuelto cuando el mensaje o el frame no son válidos, o hay un error interno. **La conexión sigue abierta** salvo en `internal_error`.
+
+| `error` | Causa |
+|---------|-------|
+| `invalid_payload` | El mensaje no es JSON, no tiene `frame`, o el base64 supera 2 000 000 caracteres |
+| `invalid_frame` | El base64 no decodifica a una imagen |
+| `internal_error` | Excepción del servidor (el detalle solo va al log; la conexión se cierra) |
+
 
 ```json
 {
@@ -100,15 +112,6 @@ Devuelto cuando el frame no puede decodificarse o hay un error interno:
 }
 ```
 
-Para errores de excepción del servidor:
-
-```json
-{
-  "error": "descripción del error",
-  "hands_detected": 0,
-  "hands": []
-}
-```
 
 ---
 
