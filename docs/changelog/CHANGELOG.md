@@ -15,6 +15,27 @@
 
 ---
 
+## [0.16.0] — 2026-11-12
+
+### Añadido
+
+- **TD-012** — **Migraciones de esquema con Alembic** (`app/migrations/`, `app/migrate.py`).
+  - La app actualiza la base al arrancar.
+  - Si arrancan varios workers a la vez, un bloqueo hace que solo uno migre.
+  - Las bases creadas por versiones anteriores se adoptan **sin pérdida de datos**: la revisión base es el esquema de 0.15.0 y crea solo las tablas que falten.
+  - `python -m app.migrate [current|head|check]`.
+- `deploy.sh`: si una versión que ya había migrado el esquema falla al desplegar, la reversión **restaura la copia de la base** tomada antes de actualizar. Si el esquema no cambió, conserva la base.
+- Pruebas:
+  - `test_migrations.py`: base nueva, adopción de una base antigua con datos, idempotencia y reversibilidad, workers simultáneos, modelos ↔ migraciones (falla si un modelo cambia sin su revisión) e historial lineal.
+  - `scripts/test-deploy.sh` prueba la restauración con una imagen que añade una migración.
+
+### Cambiado
+
+- Las pruebas de la API arrancan cada vez con una base vacía que la app migra, igual que en producción.
+- Nueva dependencia: `alembic`.
+
+---
+
 ## [0.15.0] — 2026-11-12
 
 ### Añadido

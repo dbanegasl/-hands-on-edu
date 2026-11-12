@@ -9,8 +9,10 @@
 # the version is then the last word of the command the client sent.
 #
 # Steps: pull the image (nothing changes if that fails) → hot SQLite backup →
-# switch HANDSONEDU_VERSION in .env → restart → wait for /health with the
-# expected version → on failure, return to the previous version.
+# switch HANDSONEDU_VERSION in .env → restart (the app applies its schema
+# migrations on startup) → wait for /health with the expected version → on
+# failure, return to the previous version, restoring the backup first if the
+# failed version had already changed the schema.
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -64,12 +66,12 @@ wait_healthy() {  # $1 = expected version or "latest"
   log "no healthy response after ${HEALTH_TIMEOUT}s"; return 1
 }
 
+BACKUP_NAME=""
 backup() {
   running || { log "service not running: no backup needed"; return 0; }
-  local name
-  name="handsonedu-$(date +%Y%m%d-%H%M%S)-before-$VERSION.db"
+  BACKUP_NAME="handsonedu-$(date +%Y%m%d-%H%M%S)-before-$VERSION.db"
   # Runs in the container (files there belong to its user); keeps the newest $KEEP_BACKUPS.
-  compose exec -T "$SERVICE" python - "$name" "$KEEP_BACKUPS" <<'PY' || die "backup failed: deployment aborted"
+  compose exec -T "$SERVICE" python - "$BACKUP_NAME" "$KEEP_BACKUPS" <<'PY' || die "backup failed: deployment aborted"
 import glob, os, sqlite3, sys
 from app.config import settings
 url = settings.database_url
@@ -84,6 +86,38 @@ print("backup: data/backups/" + sys.argv[1])
 old = sorted(glob.glob(os.path.join(folder, "handsonedu-*.db")), key=os.path.getmtime, reverse=True)
 for f in old[int(sys.argv[2]):]:
     os.remove(f)
+PY
+}
+
+# With the service stopped: if the failed version migrated the schema, the previous
+# version cannot use the database any more → put back the copy taken before it.
+restore_if_schema_changed() {
+  [ -n "$BACKUP_NAME" ] || return 0
+  compose run --rm --no-deps -T --entrypoint python "$SERVICE" - "$BACKUP_NAME" <<'PY' || log "WARNING: could not check/restore the database (backup: data/backups/$BACKUP_NAME)"
+import os, shutil, sqlite3, sys
+from app.config import settings
+url = settings.database_url
+if not url.startswith("sqlite:///"):
+    print("not SQLite: if the schema changed, restore your database backup by hand"); sys.exit(0)
+live, backup = url.removeprefix("sqlite:///"), "/app/data/backups/" + sys.argv[1]
+if not os.path.exists(backup):
+    print("no backup to restore"); sys.exit(0)
+def revision(path):
+    con = sqlite3.connect(path)
+    try:
+        return con.execute("SELECT version_num FROM alembic_version").fetchone()[0]
+    except sqlite3.Error:
+        return None
+    finally:
+        con.close()
+before, now = revision(backup), revision(live)
+if before == now:
+    print(f"schema unchanged ({now}): database kept"); sys.exit(0)
+for suffix in ("-wal", "-shm"):
+    if os.path.exists(live + suffix):
+        os.remove(live + suffix)
+shutil.copyfile(backup, live)
+print(f"schema had changed ({before} → {now}): database restored from data/backups/{sys.argv[1]}")
 PY
 }
 
@@ -107,6 +141,8 @@ fi
 log "✗ $VERSION is not healthy: rolling back to $PREVIOUS"
 compose logs --tail=40 "$SERVICE" || true
 set_version "$PREVIOUS"
+compose stop "$SERVICE" || true
+restore_if_schema_changed
 compose up -d "$SERVICE"
 if wait_healthy "$PREVIOUS"; then
   die "rolled back to $PREVIOUS; $VERSION was not deployed"

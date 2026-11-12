@@ -33,7 +33,7 @@ Este requisito es un **prerrequisito bloqueante** para REQ-006, REQ-007, REQ-008
 
 ## Implementación (v0.9.0 + v0.13.0)
 
-La propuesta original (más abajo, conservada como referencia histórica) se simplificó: en lugar de una tabla por módulo, **los juegos por estudiante reutilizan las tablas genéricas** del Aula y solo la asistencia, que es por clase, tiene tablas propias. SQLAlchemy 2.0 síncrono (no hizo falta async), base en `./data/` montada como volumen, tablas creadas al arrancar con `create_all` (Alembic pendiente, TD-012).
+La propuesta original (más abajo, conservada como referencia histórica) se simplificó: en lugar de una tabla por módulo, **los juegos por estudiante reutilizan las tablas genéricas** del Aula y solo la asistencia, que es por clase, tiene tablas propias. SQLAlchemy 2.0 síncrono (no hizo falta async), base en `./data/` montada como volumen, tablas creadas al arrancar con `create_all` (desde v0.16.0, migraciones Alembic: TD-012).
 
 | Módulo | Dónde se guarda | Qué se guarda |
 |---|---|---|

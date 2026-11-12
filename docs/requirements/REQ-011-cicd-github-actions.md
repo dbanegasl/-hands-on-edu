@@ -67,7 +67,7 @@ Paso a paso en [deployment.md §4](../deployment.md#4-actualizar):
 
 ### Pendiente
 
-- Migraciones de esquema (TD-012): `deploy.sh` copia la base antes de cada cambio, pero un cambio de columnas aún necesitaría una migración manual.
+- ~~Migraciones de esquema (TD-012)~~: resuelto en v0.16.0 (Alembic al arrancar; `deploy.sh` restaura la copia si una versión que migró el esquema falla).
 - Imagen multiarquitectura (arm64) si alguna institución usa servidores ARM.
 - El contenedor corre como root (heredado); pasar a un usuario sin privilegios exige migrar los permisos de `data/` de las instalaciones existentes.
 

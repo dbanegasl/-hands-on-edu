@@ -137,11 +137,15 @@ src.backup(dst); dst.close(); print('ok')"
 
 Programa esa copia a diario (cron) y lleva los archivos `data/backup-*.db` fuera del servidor. Además, `deploy.sh` hace una copia automática antes de cada actualización en `data/backups/` (conserva las 14 últimas; `KEEP_BACKUPS`). Para restaurar: detén el servicio, reemplaza `data/handsonedu.db` por la copia y arranca. Las plantillas también se pueden exportar a JSON desde el Estudio de Señas.
 
-> Sin migraciones automáticas (TD-012): las tablas nuevas se crean al arrancar, pero un cambio de columnas en tablas existentes necesitaría una migración manual. Lee el CHANGELOG antes de actualizar.
+> **Migraciones automáticas.** Desde v0.16.0 cada versión actualiza el esquema de la base al arrancar (Alembic). Las bases creadas por versiones anteriores se adoptan sin pérdida de datos.
+>
+> Para ver la versión del esquema: `docker compose exec hands-on-edu python -m app.migrate current`.
+>
+> Una migración no se deshace sola. Para volver a una versión anterior **después** de que la nueva arrancó bien, restaura la copia `data/backups/handsonedu-…-before-<versión>.db` con el servicio detenido. `deploy.sh` ya lo hace solo cuando la nueva versión falla al desplegar.
 
 ## 4. Actualizar
 
-Lee antes el CHANGELOG de la versión (en *Releases* de GitHub), sobre todo si menciona cambios en la base de datos (TD-012).
+Lee antes el CHANGELOG de la versión (en *Releases* de GitHub). Los cambios de esquema se aplican solos al arrancar, pero el CHANGELOG avisa cuando una versión los trae.
 
 ### A mano (opción A)
 
@@ -156,7 +160,8 @@ cd /opt/handsonedu
 1. Descarga la imagen. Si falla, no cambia nada.
 2. Copia la base en `data/backups/handsonedu-<fecha>-before-<versión>.db`.
 3. Cambia `HANDSONEDU_VERSION` en `.env` y reinicia.
-4. Espera a que `/health` responda **con esa versión**. Si no lo hace en 120 s (`HEALTH_TIMEOUT`), **vuelve sola a la versión anterior**, muestra los registros y termina con error.
+4. Espera a que `/health` responda **con esa versión**. Al arrancar, la app aplica sus migraciones.
+5. Si no responde en 120 s (`HEALTH_TIMEOUT`), **vuelve sola a la versión anterior**. Si la versión fallida ya había cambiado el esquema, antes **restaura la copia del paso 2**. Muestra los registros y termina con error.
 
 Con la opción B: `git pull && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build` (haz antes la copia del §3).
 
