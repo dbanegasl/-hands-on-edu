@@ -14,7 +14,7 @@
 ```
 -hands-on-edu/
 ├── app/
-│   ├── main.py                    # FastAPI: rutas HTTP + WebSocket /ws/analyze
+│   ├── main.py                    # FastAPI: monta routers de app/api/ (pages, ws, signs, learning)
 │   ├── core/
 │   │   └── hand_tracker.py        # Wrapper MediaPipe (compartido por todos los módulos)
 │   ├── integrations/
@@ -93,46 +93,52 @@ app/static/js/mi_modulo.js
 
 **Patrón mínimo de JS** (copiar de cualquier módulo existente):
 
+```html
+<!-- Orden de carga: librería común → motor de manos → (motor de señas) → módulo -->
+<script src="/static/js/ho-common.js"></script>
+<script src="/static/js/ho-hands.js"></script>
+<script src="/static/js/ho-signs.js"></script>  <!-- solo si el módulo reconoce señas -->
+<script src="/static/js/mi_modulo.js"></script>
+```
+
 ```js
-const WS_URL = 'ws://localhost:9876/ws/analyze';
-let ws, stream, animFrame, processing = false;
+let stream, source, animFrame, lastHands = [];
 
-async function startWebcam() {
-  stream = await navigator.mediaDevices.getUserMedia({ video: true });
+async function start() {
+  stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
   video.srcObject = stream;
+  await video.play();
+  // Motor en el navegador con respaldo automático al servidor (mismo JSON).
+  source = HO.createHandSource({
+    onResult: (data) => { lastHands = data.hands; /* gesture, landmarks, fingers_up… */ },
+    onStatus: (status) => { /* 'connecting' | 'connected' | 'disconnected' */ },
+  });
+  source.connect();
+  loop();
 }
 
-function connectWS() {
-  ws = new WebSocket(WS_URL);
-  ws.onmessage = (evt) => {
-    processing = false;
-    const data = JSON.parse(evt.data);
-    // data.hands[0].gesture, data.hands[0].landmarks, etc.
-  };
+function loop() {
+  animFrame = requestAnimationFrame(loop);
+  if (video.readyState < 2) return;
+  HO.drawMirroredVideo(ctx, video, canvas.width, canvas.height);
+  source.sendFrame(canvas);                       // detecta sobre el canvas espejado
+  for (const h of lastHands) HO.drawSkeleton(ctx, h.landmarks, canvas.width, canvas.height);
 }
 
-function renderLoop() {
-  animFrame = requestAnimationFrame(renderLoop);
-  if (!processing && ws?.readyState === WebSocket.OPEN) {
-    processing = true;
-    const ctx = canvas.getContext('2d');
-    ctx.save();
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    ctx.restore();
-    const b64 = canvas.toDataURL('image/jpeg', 0.65).split(',')[1];
-    ws.send(JSON.stringify({ frame: b64 }));
-  }
+function stop() {                                 // siempre al salir de la pantalla
+  cancelAnimationFrame(animFrame);
+  source.close();
+  stream.getTracks().forEach((t) => t.stop());
 }
 ```
 
-### 2. Registrar ruta en `app/main.py`
+### 2. Registrar la página en `PAGES` (`app/api/pages.py`)
 
 ```python
-@app.get("/mi-modulo")
-async def mi_modulo():
-    return FileResponse("app/static/mi_modulo.html")
+PAGES = {
+    # ...
+    "/mi-modulo": "mi_modulo.html",
+}
 ```
 
 ### 3. Actualizar la landing page

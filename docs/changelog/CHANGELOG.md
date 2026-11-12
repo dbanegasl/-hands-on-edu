@@ -13,13 +13,33 @@
 
 - **REQ-012** — Módulo **AirPiano** (piano virtual gestual): nueva ruta `/airpiano`, frontend completo con `airpiano.html`, `css/airpiano.css` y `js/airpiano.js`; sintetizador polifónico `js/audio-synth.js` (4 timbres: piano, marimba, synth, cuerdas) con envelopes ADSR por instrumento y vibrato LFO en cuerdas; detección de 5 dedos × 2 manos como controladores independientes con histéresis Y (0.65 entrar / 0.55 salir) anti-jitter; 4 escalas (Do mayor, La menor, pentatónica, blues) y 4 modos (libre, asignado, tutorial, canción) con scoring; wheels laterales con dwell de 1.5s para selección gestual de escala (mano izq.) e instrumento (mano der.); oscilograma en vivo vía `AnalyserNode`, etiquetas de notas flotantes, highlight de tecla presionada; mute compartido con `audio.js`; liberación limpia de notas activas en `beforeunload`/`pagehide`; nueva card en la landing y tests de la ruta `/airpiano` añadidos a `test_main.py`.
 
-- **REQ-005** — Persistencia de sesiones con SQLite + SQLAlchemy async: tablas `sessions`, `gestiedu_results`, `attendeye_records`, `motivasign_progress`; volumen Docker `./data:/app/data`.
-- **REQ-006** — Editor de preguntas para docentes en GestiEdu: ruta `/gestiedu/editor` protegida con PIN, CRUD completo de preguntas, carga dinámica vía `GET /api/gestiedu/questions`.
-- **REQ-007** — Dashboard del docente en `/dashboard`: cards de resumen por módulo, historial de sesiones con filtros, gráfica de progreso semanal con Chart.js, exportación CSV.
-- **REQ-008** — Autenticación básica con JWT: roles `teacher` / `student`, contraseñas hasheadas con bcrypt, tokens con expiración de 8h, middleware en rutas protegidas.
-- **REQ-009** — Integración real con Moodle LMS: implementación de `MoodleClient` con Moodle REST API, sincronización automática de notas y asistencia, variables de entorno `MOODLE_URL` / `MOODLE_TOKEN`.
-- **REQ-010** — Clasificador ML de gestos personalizado: pipeline de recolección de datos, entrenamiento con `MLPClassifier` (scikit-learn), exportación `.pkl`, integración en `HandTracker` con fallback a heurísticas.
-- **REQ-011** — Pipeline CI/CD con GitHub Actions: workflow `ci.yml` (tests + lint + docker build en cada push/PR), workflow `cd.yml` (deploy automático en tags `v*.*.*`), badge de CI en README.
+---
+
+## [0.9.0] — 2026-11-11
+
+Inicio de la nueva dirección del producto: **plataforma de enseñanza de lengua de señas (LSEC)** integrada con LMS.
+
+### Añadido
+
+- **REQ-016** — Detección de manos **en el navegador** con MediaPipe Tasks JS 0.10.35 (`app/static/js/ho-hands.js`): el video ya no sale del dispositivo. `HO.createHandSource()` en todos los módulos, con respaldo automático a `WS /ws/analyze` (`?engine=server` lo fuerza). Delegado adaptativo GPU/CPU (CPU con renderizador por software; cambio en caliente si la GPU es lenta). Bundle y WASM vendorizados en la imagen Docker (`/vendor/mediapipe/`) y modelo servido en `/models/`.
+- **REQ-017** — Motor de reconocimiento de señas `app/static/js/ho-signs.js`: descriptores de forma de mano con retroalimentación didáctica en español, kNN sobre plantillas (también a dos manos), DTW para señas con movimiento y canonicalización diestro/zurdo. Calibrado con fotos reales de MediaPipe (`tests/fixtures/real_hands.json`). Ver `docs/sign-engine.md`.
+- **REQ-017** — Catálogo **LSEC** (`app/content/lsec/catalog.json`): 50 señas (alfabeto dactilológico, números 1–10, saludos), 8 unidades, marcado como *borrador pendiente de validación* por intérpretes y la comunidad sorda.
+- **REQ-017** — **Estudio de Señas** (`/signstudio`): catálogo, prueba en vivo con medidor y retroalimentación, grabación de plantillas estáticas y dinámicas, exportar e importar dataset. Tarjeta en la landing.
+- **REQ-005 (base)** — Persistencia con SQLAlchemy 2.0 + SQLite (`DATABASE_URL`, volumen `./data`): estudiantes, sesiones, intentos por seña y plantillas. API `/api/learners`, `/api/sessions/*`, `/api/learners/{id}/progress` (dominio por seña con EWMA).
+- **REQ-011 (CI)** — `.github/workflows/ci.yml`: pytest con cobertura ≥ 80%, `node --test` (paridad Python↔JS + motor de señas) y build de la imagen Docker.
+- `ADMIN_TOKEN` (cabecera `X-Admin-Token`) protege la escritura de plantillas.
+
+### Cambiado
+
+- `app/main.py` dividido en routers (`app/api/pages.py`, `ws.py`, `signs.py`, `learning.py`); configuración centralizada en `app/config.py`.
+- `WS /ws/analyze`: un JSON inválido o un cuadro > 2 MB responden `invalid_payload` sin cerrar la conexión; los errores internos ya no exponen el mensaje de la excepción. La respuesta incluye `engine`, `aspect` y `world_landmarks`.
+- `mediapipe` fijado a `==0.10.35` (paridad con el bundle JS).
+- Versión `0.9.0`.
+
+### Corregido
+
+- Las fechas de la API se devuelven siempre con zona horaria UTC (SQLite las perdía y el navegador las mostraba como hora local).
+- CHANGELOG: retirada la lista anticipada de REQ-005…011 como "Añadido" cuando seguían pendientes.
 
 ---
 

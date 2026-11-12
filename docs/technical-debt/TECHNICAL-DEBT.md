@@ -1,6 +1,6 @@
 # Registro de Deuda Técnica — HandsOnEdu
 
-> **Última actualización:** 2026-04-30
+> **Última actualización:** 2026-11-11
 
 ---
 
@@ -17,7 +17,7 @@ HandsOnEdu es una plataforma educativa funcional que logra su propósito inicial
 | Campo | Detalle |
 |-------|---------|
 | **ID** | TD-001 |
-| **Estado** | 🔴 Pendiente |
+| **Estado** | ✅ Resuelto (REQ-001; 260+ tests Python y 20 JS, CI en REQ-011) |
 | **Impacto** | Alto |
 | **Esfuerzo de resolución** | M (2–4 horas) |
 | **REQ relacionado** | [REQ-001](../requirements/REQ-001-unit-tests.md), [REQ-011](../requirements/REQ-011-cicd-github-actions.md) |
@@ -78,7 +78,7 @@ No existe ningún sistema de autenticación o autorización. Cualquier persona q
 | Campo | Detalle |
 |-------|---------|
 | **ID** | TD-004 |
-| **Estado** | 🔴 Pendiente |
+| **Estado** | 🟡 Parcial (REQ-005 base en v0.9.0: progreso de señas y plantillas persisten; GestiEdu/AttendEye aún no) |
 | **Impacto** | Alto |
 | **Esfuerzo de resolución** | L (6–10 horas) |
 | **REQ relacionado** | [REQ-005](../requirements/REQ-005-sqlite-persistence.md) |
@@ -98,7 +98,7 @@ Todos los resultados (notas GestiEdu, asistencia AttendEye, progreso MotivaSign)
 | Campo | Detalle |
 |-------|---------|
 | **ID** | TD-005 |
-| **Estado** | 🔴 Pendiente |
+| **Estado** | 🟡 Replanificado (las notas irán por LTI 1.3 + AGS, REQ-019) |
 | **Impacto** | Medio |
 | **Esfuerzo de resolución** | XL (10–20 horas) |
 | **REQ relacionado** | [REQ-009](../requirements/REQ-009-moodle-integration.md) |
@@ -199,6 +199,33 @@ services:
       retries: 3
       start_period: 40s
 ```
+
+---
+
+### TD-011 — Contenido LSEC sin validación lingüística
+
+| Campo | Detalle |
+|-------|---------|
+| **ID** | TD-011 |
+| **Estado** | 🔴 Pendiente |
+| **Impacto** | Alto (pedagógico) |
+| **Esfuerzo de resolución** | M (requiere intérpretes / comunidad sorda) |
+| **REQ relacionado** | [REQ-017](../requirements/REQ-017-sign-recognition-engine.md) |
+
+**Descripción:** las 50 señas de `app/content/lsec/catalog.json` están marcadas `validated: false`. Los descriptores siguen el alfabeto manual latinoamericano y 30 señas solo se reconocen con plantillas que todavía no existen. Hay que validarlas antes de usarlas en el aula.
+
+---
+
+### TD-012 — Sin migraciones de esquema (Alembic)
+
+| Campo | Detalle |
+|-------|---------|
+| **ID** | TD-012 |
+| **Estado** | 🔴 Pendiente |
+| **Impacto** | Medio |
+| **Esfuerzo de resolución** | S |
+
+**Descripción:** las tablas se crean con `Base.metadata.create_all()` al arrancar. Cualquier cambio de columnas en una base existente requiere una migración manual. Conviene añadir Alembic antes del primer despliegue institucional.
 
 ---
 

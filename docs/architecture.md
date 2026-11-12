@@ -1,5 +1,14 @@
 # Arquitectura del Sistema — HandsOnEdu
 
+> **Cambio de arquitectura en v0.9.0 (REQ-016/017):** la detección de manos se movió **al navegador** (MediaPipe Tasks JS) y se añadieron el motor de señas, la persistencia SQLite y los routers de API. El diagrama de abajo describe el camino de **respaldo** por servidor, que sigue vigente. Para el camino principal y el motor de señas, ver [`sign-engine.md`](./sign-engine.md).
+>
+> ```
+> Navegador: cámara → canvas espejado → MediaPipe WASM (ho-hands.js) → módulos / ho-signs.js
+>                                                     │ (solo si falla) WS /ws/analyze
+> Servidor:  FastAPI ─ app/api/pages.py · ws.py · signs.py · learning.py ─ SQLAlchemy ─ SQLite (./data)
+>            app/content/<lengua>/catalog.json (catálogo de señas como datos)
+> ```
+
 ## Visión General
 
 HandsOnEdu sigue una arquitectura modular en capas:
@@ -198,6 +207,9 @@ Libera el `HandLandmarker` de MediaPipe. Llamar al apagar la aplicación.
 | `opencv-python-headless` | `opencv-python` | La versión headless no tiene dependencias de display (X11/Qt), esencial en contenedores |
 | Modelo descargado en `docker build` | Montado como volumen | Un volumen vacío en el primer run sobreescribiría el modelo; baked-in garantiza disponibilidad |
 | `libgl1` | `libgl1-mesa-glx` | `libgl1-mesa-glx` fue eliminado en Debian Trixie (base de `python:3.11-slim`); `libgl1` es el reemplazo correcto |
-| Una instancia global de `HandTracker` | Instancia por conexión WebSocket | MediaPipe es costoso de inicializar (~1–2 s); además el modo VIDEO requiere timestamps monótonos continuos |
+| Un `HandTracker` por conexión WebSocket (desde REQ-013) | Instancia global compartida | El modo VIDEO guarda estado de tracking por stream; compartirlo entre clientes corrompía el tracking de todos |
+| Detección en el navegador (REQ-016) | Solo servidor | Privacidad (el video de menores no sale del equipo) y escalabilidad (el servidor no procesa video por alumno); el servidor queda como respaldo |
+| Catálogo de señas como JSON versionado | Tablas en BD | Lingüistas e intérpretes pueden revisar el contenido sin tocar código; la validación de esquema lo hace seguro |
+| Plantillas guardadas como landmarks crudos | Guardar features | El extractor puede evolucionar sin migrar datos; el dataset sirve para entrenar un clasificador (REQ-010) |
 | Vanilla JS (sin framework) | React, Vue, Svelte | Zero build step, carga instantánea, fácil de mantener por docentes con conocimiento básico de JS |
 | FastAPI | Flask, Django | Async nativo (ideal para WebSockets), OpenAPI automático, tipado con Pydantic |

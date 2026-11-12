@@ -7,7 +7,7 @@
 | **ID** | REQ-005 |
 | **Tipo** | Feature |
 | **Prioridad** | Alta |
-| **Estado** | 📋 Pendiente |
+| **Estado** | 🔄 En progreso — base implementada en v0.9.0 (SQLAlchemy 2.0, `learners`, `activity_sessions`, `sign_attempts`, `sign_templates`); falta persistir GestiEdu y AttendEye |
 | **Módulo** | Global / Backend |
 | **Esfuerzo estimado** | L (6–10 horas) |
 

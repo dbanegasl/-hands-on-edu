@@ -1,6 +1,6 @@
 # 📋 Índice de Requisitos — HandsOnEdu
 
-> **Última actualización:** 2026-06-11
+> **Última actualización:** 2026-11-11
 
 Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos los requisitos funcionales, mejoras y deuda técnica pendientes, con su prioridad, estado y módulo asociado.
 
@@ -21,17 +21,21 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 | [REQ-002](./REQ-002-audio-feedback.md) | Feedback de Audio en GestiEdu y MotivaSign | Mejora | Media | ✅ Hecho | GestiEdu, MotivaSign |
 | [REQ-003](./REQ-003-pdf-export-attendeye.md) | Exportación PDF del Reporte de Asistencia | Mejora | Media | ✅ Hecho | AttendEye |
 | [REQ-004](./REQ-004-undo-virtualpainter.md) | Deshacer / Rehacer en VirtualPainter | Mejora | Media | ✅ Hecho | VirtualPainter |
-| [REQ-005](./REQ-005-sqlite-persistence.md) | Persistencia de Sesiones con SQLite | Feature | Alta | 📋 Pendiente | Global / Backend |
+| [REQ-005](./REQ-005-sqlite-persistence.md) | Persistencia de Sesiones con SQLite | Feature | Alta | 🔄 En progreso (base hecha en v0.9.0; falta conectar GestiEdu/AttendEye) | Global / Backend |
 | [REQ-006](./REQ-006-question-editor-gestiedu.md) | Editor de Preguntas para Docentes (GestiEdu) | Feature | Media | 📋 Pendiente | GestiEdu |
 | [REQ-007](./REQ-007-teacher-dashboard.md) | Dashboard del Docente | Feature | Alta | 📋 Pendiente | Global |
 | [REQ-008](./REQ-008-basic-auth.md) | Autenticación Básica (Roles Docente / Estudiante) | Feature | Alta | 📋 Pendiente | Global |
-| [REQ-009](./REQ-009-moodle-integration.md) | Integración Real con Moodle LMS | Feature | Baja | 📋 Pendiente | Global / Backend |
+| [REQ-009](./REQ-009-moodle-integration.md) | Integración Real con Moodle LMS (REST) — notas reemplazadas por REQ-019 | Feature | Baja | 📋 Pendiente | Global / Backend |
 | [REQ-010](./REQ-010-custom-ml-classifier.md) | Clasificador ML de Gestos Personalizado | Feature | Baja | 📋 Pendiente | Global / Backend |
-| [REQ-011](./REQ-011-cicd-github-actions.md) | Pipeline CI/CD con GitHub Actions | Tech-Debt | Alta | 📋 Pendiente | Global / DevOps |
+| [REQ-011](./REQ-011-cicd-github-actions.md) | Pipeline CI/CD con GitHub Actions | Tech-Debt | Alta | 🔄 En progreso (CI hecho en v0.9.0; falta CD) | Global / DevOps |
 | [REQ-012](./REQ-012-airpiano-module.md) | Módulo AirPiano (Piano virtual gestual) | Feature | Media | ✅ Hecho | AirPiano (nuevo) |
 | [REQ-013](./REQ-013-detection-robustness.md) | Robustez de detección (heurística invariante + suavizado) | Tech-Debt | Alta | ✅ Hecho | Global / Backend |
 | [REQ-014](./REQ-014-shared-frontend-lib.md) | Librería frontend compartida `ho-common.js` | Tech-Debt | Alta | ✅ Hecho | Global / Frontend |
 | [REQ-015](./REQ-015-module-fixes-ux-polish.md) | Correcciones de detección y pulido UX por módulo | Mejora | Alta | ✅ Hecho | Todos los módulos |
+| [REQ-016](./REQ-016-browser-hand-engine.md) | Detección de manos en el navegador (MediaPipe Tasks JS) | Tech-Debt | Alta | ✅ Hecho | Global / Frontend |
+| [REQ-017](./REQ-017-sign-recognition-engine.md) | Motor de reconocimiento de señas + Estudio de Señas (LSEC) | Feature | Alta | ✅ Hecho (contenido por validar) | Global / Señas |
+| [REQ-018](./REQ-018-aula-de-senas.md) | Aula de Señas: currículo, práctica y evaluación | Feature | Alta | 📋 Pendiente | Aula de Señas (nuevo) |
+| [REQ-019](./REQ-019-lti13-moodle.md) | Integración LTI 1.3 con Moodle (SSO + notas AGS) | Feature | Alta | 📋 Pendiente | Global / Integraciones |
 
 ---
 
@@ -42,17 +46,18 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 | **Tipo** | `Feature` — nueva funcionalidad · `Mejora` — mejora sobre algo existente · `Tech-Debt` — deuda técnica a saldar |
 | **Prioridad** | `Alta` — bloquea producción o seguridad · `Media` — importante pero no urgente · `Baja` — nice-to-have |
 | **Estado** | 📋 Pendiente · 🔄 En progreso · ✅ Hecho |
-| **Última actualización** | 2026-04-30 |
 
 ---
 
 ## Orden de implementación recomendado
 
+Dirección de producto (2026-11-11): plataforma de referencia para la **enseñanza de lengua de señas (LSEC)** integrada con LMS.
+
 ```
-REQ-001 (tests) → REQ-011 (CI/CD) → REQ-005 (SQLite) → REQ-008 (auth)
-    → REQ-007 (dashboard) → REQ-006 (editor preguntas)
-    → REQ-002, REQ-003, REQ-004 (mejoras UX, paralelo)
-    → REQ-009, REQ-010 (integraciones avanzadas)
+✅ REQ-016 (detección en navegador) → ✅ REQ-017 (motor de señas + Estudio)
+    → REQ-018 (Aula de Señas) → REQ-019 (LTI 1.3 + notas en Moodle)
+    → REQ-007 (dashboard docente) → REQ-005 (persistencia de GestiEdu/AttendEye)
+    → REQ-010 (clasificador ML entrenado con las plantillas grabadas) → REQ-011 (CD)
 ```
 
-Los requisitos de infraestructura (REQ-001, REQ-005, REQ-008) son prerrequisitos implícitos de la mayoría de los demás.
+REQ-008 (autenticación) queda cubierto mayormente por los roles de LTI 1.3. Para el uso sin LMS, `ADMIN_TOKEN` protege provisionalmente la escritura de plantillas.

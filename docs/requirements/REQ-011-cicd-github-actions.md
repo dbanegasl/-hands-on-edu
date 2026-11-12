@@ -7,7 +7,7 @@
 | **ID** | REQ-011 |
 | **Tipo** | Tech-Debt |
 | **Prioridad** | Alta |
-| **Estado** | 📋 Pendiente |
+| **Estado** | 🔄 En progreso — `ci.yml` implementado en v0.9.0 (pytest + node --test + docker build); falta `cd.yml` |
 | **Módulo** | Global / DevOps |
 | **Esfuerzo estimado** | M (3–5 horas) |
 
