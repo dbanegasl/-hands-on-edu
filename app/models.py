@@ -56,7 +56,9 @@ class Learner(Base):
     external_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now)
 
-    sessions: Mapped[list["ActivitySession"]] = relationship(back_populates="learner")
+    sessions: Mapped[list["ActivitySession"]] = relationship(
+        back_populates="learner", cascade="all, delete-orphan", passive_deletes=True
+    )
 
 
 class ActivitySession(Base):
@@ -75,7 +77,7 @@ class ActivitySession(Base):
 
     learner: Mapped[Learner] = relationship(back_populates="sessions")
     attempts: Mapped[list["SignAttempt"]] = relationship(
-        back_populates="session", cascade="all, delete-orphan"
+        back_populates="session", cascade="all, delete-orphan", passive_deletes=True
     )
 
 
