@@ -61,6 +61,7 @@
   async function api(path, opts) {
     const headers = { 'Content-Type': 'application/json' };
     if (A.lti) headers.Authorization = 'Bearer ' + A.lti.token;
+    else if (A.learnerToken) headers['X-Learner-Token'] = A.learnerToken;   // local profile (TD-013)
     const res = await fetch(path, Object.assign({ headers: headers }, opts || {}));
     if (res.status === 401 && A.lti) {
       toast('Tu sesión de la plataforma expiró: vuelve a abrir la actividad desde Moodle', true);
@@ -187,11 +188,12 @@
     const current = lsGet(LS_CURRENT, null);
     if (current) {
       try {
-        await selectLearner(await api('/api/learners/' + current));
+        await selectLearner(await openProfile(current));
         return;
       } catch (err) {
-        if (err.status !== 404) throw err;
+        if (!lostProfile(err)) throw err;
         forgetProfile(current);
+        renderProfiles();
       }
     }
     show('screen-profile');
@@ -209,13 +211,44 @@
       b.type = 'button';
       b.textContent = '👤 ' + p.name;
       b.addEventListener('click', async () => {
-        try { await selectLearner(await api('/api/learners/' + p.id)); } catch (err) {
-          if (err.status === 404) { forgetProfile(p.id); renderProfiles(); toast('Ese perfil ya no existe', true); } else toast(err.message, true);
+        try { await selectLearner(await openProfile(p.id)); } catch (err) {
+          if (lostProfile(err)) {
+            forgetProfile(p.id); renderProfiles();
+            toast(err.status === 404 ? 'Ese perfil ya no existe' : 'Ese perfil se usa en otro navegador', true);
+          } else toast(err.message, true);
         }
       });
       list.appendChild(b);
     }
   }
+
+  // ── Local profile credentials (TD-013) ─────────────────────────────────────
+  // The server hands out a secret per profile; this browser keeps it with the
+  // profile and sends it as X-Learner-Token. Profiles saved before v0.17 have
+  // none: they claim it once (the first browser that asks gets it).
+  function profileToken(id) {
+    const p = lsGet(LS_PROFILES, []).find((x) => x.id === id);
+    return (p && p.token) || null;
+  }
+
+  function storeProfileToken(id, token) {
+    lsSet(LS_PROFILES, lsGet(LS_PROFILES, []).map((p) => (p.id === id ? Object.assign({}, p, { token: token }) : p)));
+  }
+
+  /** The learner behind a stored profile, claiming its credential if needed. */
+  async function openProfile(id) {
+    let token = profileToken(id);
+    if (!token) {
+      A.learnerToken = null;
+      token = (await api('/api/learners/' + encodeURIComponent(id) + '/claim', { method: 'POST' })).token;
+      storeProfileToken(id, token);
+    }
+    A.learnerToken = token;
+    return api('/api/learners/' + encodeURIComponent(id));
+  }
+
+  /** Not found, or its credential belongs to another browser: drop it from this one. */
+  const lostProfile = (err) => [403, 404, 409].includes(err.status);
 
   function forgetProfile(id) {
     lsSet(LS_PROFILES, lsGet(LS_PROFILES, []).filter((p) => p.id !== id));
@@ -229,7 +262,8 @@
     try {
       const learner = await api('/api/learners', { method: 'POST', body: JSON.stringify({ display_name: name }) });
       const profiles = lsGet(LS_PROFILES, []).filter((p) => p.id !== learner.id);
-      profiles.unshift({ id: learner.id, name: learner.display_name });
+      profiles.unshift({ id: learner.id, name: learner.display_name, token: learner.token });
+      A.learnerToken = learner.token;
       lsSet(LS_PROFILES, profiles.slice(0, 8));
       await selectLearner(learner);
     } catch (err) {

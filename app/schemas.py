@@ -24,6 +24,15 @@ class LearnerOut(BaseModel):
     created_at: datetime
 
 
+class LearnerCreated(LearnerOut):
+    token: str          # only returned here: the browser stores it (X-Learner-Token)
+
+
+class LearnerClaimed(BaseModel):
+    id: str
+    token: str
+
+
 class SessionCreate(BaseModel):
     learner_id: str
     module: Annotated[str, Field(min_length=1, max_length=40)]

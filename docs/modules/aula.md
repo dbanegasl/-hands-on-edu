@@ -20,7 +20,10 @@ El curso de lengua de señas (hoy LSEC) para estudiantes: aprender cada seña fr
 
 ## Flujo
 
-1. **Perfil:** el estudiante escribe su nombre (`POST /api/learners`). Los perfiles del equipo se recuerdan en `localStorage` para continuar con un clic. Con LTI (REQ-019) la identidad vendrá de Moodle.
+1. **Perfil:** el estudiante escribe su nombre (`POST /api/learners`). Los perfiles del equipo se recuerdan en `localStorage` para continuar con un clic.
+   - Cada perfil guarda su **token secreto** (TD-013), que se envía en `X-Learner-Token`: solo ese navegador ve y guarda su progreso.
+   - Un perfil de antes de v0.17 reclama su token la primera vez.
+   - Con LTI (REQ-019) la identidad viene de Moodle y manda el token de lanzamiento.
 2. **Ruta:** las unidades del catálogo (`units`) en orden. Cada tarjeta muestra el estado, las señas (verde = dominada, tachada = sin grabación) y el dominio promedio.
 3. **Actividades:**
 

@@ -5,13 +5,15 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, s
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import lti_context
+from app.api.deps import LearnerCredentials, new_learner_secret
 from app.db import get_db
 from app.integrations.lti import services as lti_services
 from app.models import ActivitySession, Learner, LtiSessionLink, SignAttempt
 from app.schemas import (
     AttemptsBatch,
+    LearnerClaimed,
     LearnerCreate,
+    LearnerCreated,
     LearnerOut,
     ProgressOut,
     SessionCreate,
@@ -43,18 +45,46 @@ def _get_or_404(db: Session, model, key: str, label: str):
     return obj
 
 
-@router.post("/learners", response_model=LearnerOut, status_code=status.HTTP_201_CREATED,
-             summary="Crear un perfil de estudiante local")
-def create_learner(body: LearnerCreate, db: Session = Depends(get_db)):
-    learner = Learner(display_name=body.display_name.strip())
-    db.add(learner)
-    db.commit()
+def _learner_for(db: Session, learner_id: str, creds: LearnerCredentials) -> Learner:
+    learner = _get_or_404(db, Learner, learner_id, "Estudiante")
+    creds.check(learner)
     return learner
 
 
+def _session_for(db: Session, session_id: str, creds: LearnerCredentials) -> ActivitySession:
+    sess = _get_or_404(db, ActivitySession, session_id, "Sesión")
+    creds.check(sess.learner)
+    return sess
+
+
+@router.post("/learners", response_model=LearnerCreated, status_code=status.HTTP_201_CREATED,
+             summary="Crear un perfil de estudiante local",
+             description="Devuelve una sola vez el `token` del perfil: el navegador lo guarda y lo envía en "
+                         "`X-Learner-Token` para leer o guardar los datos de ese estudiante.")
+def create_learner(body: LearnerCreate, db: Session = Depends(get_db)):
+    secret, secret_hash = new_learner_secret()
+    learner = Learner(display_name=body.display_name.strip(), secret_hash=secret_hash)
+    db.add(learner)
+    db.commit()
+    return LearnerCreated(id=learner.id, display_name=learner.display_name, created_at=learner.created_at, token=secret)
+
+
+@router.post("/learners/{learner_id}/claim", response_model=LearnerClaimed,
+             summary="Obtener la credencial de un perfil creado antes de v0.17",
+             description="Solo para perfiles locales que aún no tienen credencial (creados antes de v0.17): "
+                         "el primer navegador que la pide la recibe. Después responde 409.")
+def claim_learner(learner_id: str, db: Session = Depends(get_db)):
+    learner = _get_or_404(db, Learner, learner_id, "Estudiante")
+    if learner.secret_hash is not None or learner.external_id is not None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Este perfil ya tiene credencial o es de la plataforma educativa")
+    secret, learner.secret_hash = new_learner_secret()
+    db.commit()
+    return LearnerClaimed(id=learner.id, token=secret)
+
+
 @router.get("/learners/{learner_id}", response_model=LearnerOut)
-def get_learner(learner_id: str, db: Session = Depends(get_db)):
-    return _get_or_404(db, Learner, learner_id, "Estudiante")
+def get_learner(learner_id: str, db: Session = Depends(get_db), creds: LearnerCredentials = Depends()):
+    return _learner_for(db, learner_id, creds)
 
 
 @router.get("/learners/{learner_id}/sessions", response_model=list[SessionOut],
@@ -65,8 +95,9 @@ def learner_sessions(
     finished: bool | None = Query(default=None),
     limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
+    creds: LearnerCredentials = Depends(),
 ):
-    _get_or_404(db, Learner, learner_id, "Estudiante")
+    _learner_for(db, learner_id, creds)
     stmt = select(ActivitySession).where(ActivitySession.learner_id == learner_id)
     if module:
         stmt = stmt.where(ActivitySession.module == module)
@@ -80,10 +111,9 @@ def learner_sessions(
 
 @router.post("/sessions", response_model=SessionOut, status_code=status.HTTP_201_CREATED,
              summary="Iniciar una sesión de actividad")
-def create_session(body: SessionCreate, db: Session = Depends(get_db), lti: dict | None = Depends(lti_context)):
-    _get_or_404(db, Learner, body.learner_id, "Estudiante")
-    if lti is not None and lti["sub"] != body.learner_id:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "La sesión no corresponde al estudiante del lanzamiento LTI")
+def create_session(body: SessionCreate, db: Session = Depends(get_db), creds: LearnerCredentials = Depends()):
+    _learner_for(db, body.learner_id, creds)
+    lti = creds.lti
     sess = ActivitySession(**body.model_dump())
     db.add(sess)
     db.flush()
@@ -96,8 +126,9 @@ def create_session(body: SessionCreate, db: Session = Depends(get_db), lti: dict
 
 @router.post("/sessions/{session_id}/attempts", status_code=status.HTTP_201_CREATED,
              summary="Registrar intentos de señas en una sesión")
-def add_attempts(session_id: str, body: AttemptsBatch, db: Session = Depends(get_db)):
-    sess = _get_or_404(db, ActivitySession, session_id, "Sesión")
+def add_attempts(session_id: str, body: AttemptsBatch, db: Session = Depends(get_db),
+                 creds: LearnerCredentials = Depends()):
+    sess = _session_for(db, session_id, creds)
     if sess.ended_at is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, "La sesión ya terminó")
     if not sess.language:
@@ -111,8 +142,9 @@ def add_attempts(session_id: str, body: AttemptsBatch, db: Session = Depends(get
 
 
 @router.post("/sessions/{session_id}/finish", response_model=SessionOut, summary="Cerrar una sesión con su resultado")
-def finish_session(session_id: str, body: SessionFinish, background: BackgroundTasks, db: Session = Depends(get_db)):
-    sess = _get_or_404(db, ActivitySession, session_id, "Sesión")
+def finish_session(session_id: str, body: SessionFinish, background: BackgroundTasks, db: Session = Depends(get_db),
+                   creds: LearnerCredentials = Depends()):
+    sess = _session_for(db, session_id, creds)
     if sess.ended_at is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, "La sesión ya terminó")
     sess.ended_at = datetime.now(timezone.utc)
@@ -126,8 +158,9 @@ def finish_session(session_id: str, body: SessionFinish, background: BackgroundT
 
 @router.get("/learners/{learner_id}/progress", response_model=ProgressOut,
             summary="Dominio por seña de un estudiante")
-def learner_progress(learner_id: str, language: str = Query(...), db: Session = Depends(get_db)):
-    _get_or_404(db, Learner, learner_id, "Estudiante")
+def learner_progress(learner_id: str, language: str = Query(...), db: Session = Depends(get_db),
+                     creds: LearnerCredentials = Depends()):
+    _learner_for(db, learner_id, creds)
     rows = db.execute(
         select(SignAttempt.sign_id, SignAttempt.correct, SignAttempt.created_at)
         .where(SignAttempt.learner_id == learner_id, SignAttempt.language == language)

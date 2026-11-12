@@ -15,6 +15,27 @@
 
 ---
 
+## [0.17.0] — 2026-11-12
+
+### Seguridad
+
+- **TD-013** — **Los datos de cada estudiante ya no se leen ni se escriben solo con conocer su id.**
+  - **Perfil local:** al crearlo, el servidor entrega un **token secreto** y guarda solo su SHA-256. El navegador lo guarda con el perfil y lo envía en `X-Learner-Token`.
+  - **Moodle:** se exige el token de lanzamiento de ese mismo estudiante.
+  - Sin credencial: 401; con una credencial ajena: 403. `ADMIN_TOKEN`, si está configurado, abre cualquier perfil.
+  - Afecta a `GET /api/learners/{id}`, `/sessions` y `/progress`, y a crear, registrar intentos y cerrar sesiones.
+- Los **perfiles creados antes de esta versión** reclaman su token automáticamente la primera vez que se abren (`POST /api/learners/{id}/claim`, una sola vez). Un navegador que ya no tiene acceso descarta ese perfil y crea uno nuevo. El Aula de Señas, GestiEdu y MotivaSign lo hacen solos.
+
+### Añadido
+
+- Migración `0002` (`learners.secret_hash`): la primera que se aplica sola al actualizar.
+
+### Corregido
+
+- Una prueba de migraciones simulaba una base antigua con el esquema actual. Ahora aplica solo la revisión de esa versión.
+
+---
+
 ## [0.16.0] — 2026-11-12
 
 ### Añadido

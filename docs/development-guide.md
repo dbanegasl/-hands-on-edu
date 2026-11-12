@@ -247,7 +247,7 @@ Si `MOODLE_URL` y `MOODLE_TOKEN` no se configuran, los módulos funcionan normal
 El esquema lo gestiona Alembic (`app/migrations/versions/`), y la app migra sola al arrancar. Después de cambiar un modelo en `app/models.py`:
 
 ```bash
-docker compose exec hands-on-edu alembic revision --autogenerate -m "añadir email a learners"
+docker compose exec -u "$(id -u):$(id -g)" hands-on-edu alembic revision --autogenerate -m "añadir email a learners"
 # revisar el archivo generado en app/migrations/versions/ (renombrados, datos, índices)
 docker compose restart hands-on-edu        # aplica la migración
 docker compose exec hands-on-edu python -m app.migrate check   # modelos ↔ migraciones
@@ -257,6 +257,8 @@ docker compose exec hands-on-edu python -m app.migrate check   # modelos ↔ mig
 - **SQLite no tiene `ALTER COLUMN`.** Alembic usa el modo *batch*, que reconstruye la tabla. Si una columna nueva es obligatoria en una tabla con datos, dale un `server_default`.
 - **Una sola cabeza.** Si dos ramas añaden revisiones sobre la misma anterior, `test_migrations.py` falla: crea una revisión de fusión (`alembic merge heads`).
 - La CI falla si un modelo cambió sin su migración.
+- `-u` hace que el archivo generado sea tuyo y no de root.
+- Para simular una base antigua en una prueba, aplica solo hasta la revisión de esa versión (`command.upgrade(cfg, "0001")`). No uses `create_all`: tiene el esquema actual.
 
 ## Ejecutar Tests
 

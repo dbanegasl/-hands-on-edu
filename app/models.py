@@ -61,6 +61,10 @@ class Learner(Base):
     display_name: Mapped[str] = mapped_column(String(120))
     # Identity in an external system (e.g. LTI issuer + sub). Null for local profiles.
     external_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
+    # SHA-256 of the local profile's secret (TD-013); the browser keeps the secret.
+    # Null for LTI learners (the launch token identifies them) and for profiles
+    # created before v0.17 until their device claims them.
+    secret_hash: Mapped[str | None] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now)
 
     sessions: Mapped[list["ActivitySession"]] = relationship(

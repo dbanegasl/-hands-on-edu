@@ -10,8 +10,10 @@ Strategy:
 This avoids the model file entirely and lets tests run without a camera.
 """
 import base64
+import json
 import math
 import os
+import re
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 
@@ -182,6 +184,56 @@ def tracker():
     return HandTracker(num_hands=2)
 
 
+class _Device:
+    """
+    Makes the test client behave like the browser that owns the local profiles
+    it creates (TD-013): it keeps each profile's token (from POST /api/learners
+    or /claim) and the profile of each session it starts, and sends
+    X-Learner-Token on that learner's requests — exactly what aula.js and
+    ho-learning.js do. Requests that already carry Authorization (LTI) or
+    X-Learner-Token are left alone. Use the `stranger` fixture for a client
+    without any profile.
+    """
+
+    _LEARNER = re.compile(r"^/api/learners/([^/]+)")
+    _SESSION = re.compile(r"^/api/sessions/([^/]+)/")
+
+    def __init__(self):
+        self.tokens: dict[str, str] = {}
+        self.session_owner: dict[str, str] = {}
+
+    def _learner_of(self, request) -> str | None:
+        path = request.url.path
+        if m := self._LEARNER.match(path):
+            return m.group(1)
+        if m := self._SESSION.match(path):
+            return self.session_owner.get(m.group(1))
+        if path == "/api/sessions" and request.method == "POST":
+            try:
+                return json.loads(request.content or b"{}").get("learner_id")
+            except (ValueError, AttributeError):
+                return None
+        return None
+
+    def on_request(self, request):
+        if "authorization" in request.headers or "x-learner-token" in request.headers:
+            return
+        token = self.tokens.get(self._learner_of(request) or "")
+        if token:
+            request.headers["X-Learner-Token"] = token
+
+    def on_response(self, response):
+        request, path = response.request, response.request.url.path
+        if request.method != "POST" or response.status_code >= 300:
+            return
+        response.read()
+        body = response.json()
+        if path == "/api/learners" or path.endswith("/claim"):
+            self.tokens[body["id"]] = body["token"]
+        elif path == "/api/sessions":
+            self.session_owner[body["id"]] = body["learner_id"]
+
+
 @pytest.fixture
 def client():
     """Synchronous Starlette TestClient (supports HTTP + WebSocket) on a fresh DB."""
@@ -192,8 +244,17 @@ def client():
     Base.metadata.drop_all(bind=engine)
     with engine.begin() as conn:
         conn.exec_driver_sql("DROP TABLE IF EXISTS alembic_version")
+    device = _Device()
     with TestClient(app) as c:
+        c.event_hooks = {"request": [device.on_request], "response": [device.on_response]}
+        c.device = device
         yield c
+
+
+@pytest.fixture
+def stranger(client):
+    """Another browser on the same server: knows no profile token."""
+    return TestClient(app)
 
 
 @pytest.fixture

@@ -5,6 +5,9 @@
  * localStorage keys), creates/finishes activity sessions on /api/sessions,
  * and provides a small "¿Quién juega?" picker. The admin token (teacher
  * actions such as attendance) is read from either key used by other pages.
+ * Each stored profile keeps its secret (`token`, TD-013), sent as
+ * X-Learner-Token on that learner's requests; profiles saved before v0.17
+ * claim theirs once (POST /api/learners/{id}/claim).
  * Load after ho-common.js:  <script src="/static/js/ho-learning.js"></script>
  */
 (function (global) {
@@ -29,9 +32,12 @@
     return (profiles || []).find((p) => sameName(p.name, name)) || null;
   }
 
-  /** Most-recent-first list without duplicates (by id or by name). */
+  /** Most-recent-first list without duplicates (by id or by name); keeps the profile's token. */
   function rememberIn(profiles, learner) {
     const entry = { id: learner.id, name: normalizeName(learner.name || learner.display_name) };
+    const known = (profiles || []).find((p) => p.id === entry.id);
+    const token = learner.token || (known && known.token);
+    if (token) entry.token = token;
     const rest = (profiles || []).filter((p) => p.id !== entry.id && !sameName(p.name, entry.name));
     return [entry].concat(rest).slice(0, MAX_PROFILES);
   }
@@ -56,6 +62,10 @@
   function current() {
     const id = lsGet(LS_CURRENT, null);
     return profiles().find((p) => p.id === id) || null;
+  }
+  function tokenOf(learnerId) {
+    const p = profiles().find((x) => x.id === learnerId);
+    return (p && p.token) || null;
   }
   function remember(learner) {
     const list = rememberIn(profiles(), learner);
@@ -83,6 +93,7 @@
     opts = opts || {};
     const headers = Object.assign({}, opts.body !== undefined ? { 'Content-Type': 'application/json' } : {}, opts.headers);
     if (opts.admin && adminToken()) headers['X-Admin-Token'] = adminToken();
+    if (opts.learnerToken) headers['X-Learner-Token'] = opts.learnerToken;
     const res = await fetch(path, {
       method: opts.method || (opts.body !== undefined ? 'POST' : 'GET'),
       headers: headers,
@@ -106,21 +117,33 @@
     return res.status === 204 ? null : res.json();
   }
 
-  /** Reuse the stored profile with that name (if it still exists) or create one. */
+  /** The profile's secret; a profile saved before v0.17 claims it once. */
+  async function credential(profile) {
+    if (profile.token) return profile.token;
+    const claimed = await request('/api/learners/' + encodeURIComponent(profile.id) + '/claim', { method: 'POST' });
+    return claimed.token;
+  }
+
+  /**
+   * Reuse the stored profile with that name (if it still exists and this
+   * browser holds its credential) or create one.
+   */
   async function ensureLearner(name) {
     name = normalizeName(name);
     if (!name) return null;
     const known = findProfile(profiles(), name);
     if (known) {
       try {
-        const l = await request('/api/learners/' + encodeURIComponent(known.id));
-        return remember({ id: l.id, name: l.display_name });
+        const token = await credential(known);
+        const l = await request('/api/learners/' + encodeURIComponent(known.id), { learnerToken: token });
+        return remember({ id: l.id, name: l.display_name, token: token });
       } catch (err) {
-        if (err.status !== 404) throw err;
+        // 404 deleted · 403/409 its credential belongs to another browser → new profile
+        if (![403, 404, 409].includes(err.status)) throw err;
       }
     }
     const created = await request('/api/learners', { body: { display_name: name } });
-    return remember({ id: created.id, name: created.display_name });
+    return remember({ id: created.id, name: created.display_name, token: created.token });
   }
 
   /**
@@ -141,7 +164,7 @@
       try {
         this.learner = await ensureLearner(name);
         if (!this.learner) return null;
-        const s = await request('/api/sessions', { body: {
+        const s = await request('/api/sessions', { learnerToken: this.learner.token, body: {
           learner_id: this.learner.id, module: this.module, activity: this.activity, language: this.language } });
         this.sessionId = s.id;
         return s.id;
@@ -159,9 +182,10 @@
     if (!id) return { saved: false, learner: this.learner, error: this.error };
     try {
       if (attempts && attempts.length && this.language) {
-        await request('/api/sessions/' + id + '/attempts', { body: { attempts: attempts }, keepalive: keepalive });
+        await request('/api/sessions/' + id + '/attempts',
+          { body: { attempts: attempts }, keepalive: keepalive, learnerToken: this.learner.token });
       }
-      await request('/api/sessions/' + id + '/finish', { body: result, keepalive: keepalive });
+      await request('/api/sessions/' + id + '/finish', { body: result, keepalive: keepalive, learnerToken: this.learner.token });
       return { saved: true, learner: this.learner };
     } catch (err) {
       return { saved: false, learner: this.learner, error: err };
@@ -170,7 +194,7 @@
 
   async function history(learnerId, module, limit) {
     const q = '?module=' + encodeURIComponent(module) + '&finished=true&limit=' + (limit || 10);
-    return request('/api/learners/' + encodeURIComponent(learnerId) + '/sessions' + q);
+    return request('/api/learners/' + encodeURIComponent(learnerId) + '/sessions' + q, { learnerToken: tokenOf(learnerId) });
   }
 
   /** Fill a <table> with the learner's last results: date · score · grade (optionally one activity). */
@@ -253,7 +277,7 @@
 
   const api = {
     normalizeName, sameName, findProfile, rememberIn, letterGrade,
-    profiles, current, remember, adminToken, setAdminToken,
+    profiles, current, remember, tokenOf, adminToken, setAdminToken,
     request, ensureLearner, Recorder, history, showHistory, LearnerPicker,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

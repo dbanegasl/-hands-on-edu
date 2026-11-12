@@ -39,11 +39,12 @@ def test_single_linear_history():
 
 def test_adopts_a_database_created_by_create_all_without_losing_data(db_url):
     eng = make_engine(db_url)
-    # An install from before REQ-005/REQ-010: some tables missing, no alembic_version.
-    old = [t for name, t in Base.metadata.tables.items()
-           if name not in {"sign_models", "attendance_sessions", "attendance_records"}]
-    Base.metadata.create_all(eng, tables=old)
+    # What create_all() left in an install from before REQ-005/REQ-010: the v0.15
+    # schema (= revision 0001) minus some tables, and no alembic_version.
     with eng.begin() as conn:
+        command.upgrade(m.alembic_config(conn), "0001")
+        for table in ("attendance_records", "attendance_sessions", "sign_models", "alembic_version"):
+            conn.execute(text(f"DROP TABLE {table}"))
         conn.execute(text("INSERT INTO learners (id, display_name, created_at) VALUES ('l1', 'Ana', '2026-01-01')"))
 
     before, after = m.migrate(eng)

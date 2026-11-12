@@ -57,7 +57,7 @@ La propuesta original (más abajo, conservada como referencia histórica) se sim
 | `GET` | `/api/attendance/{id}/export.csv?tz=-300` | CSV (UTF-8 con BOM); `tz` = minutos respecto de UTC para fechas y horas locales |
 | `DELETE` | `/api/attendance/{id}` | Elimina una sesión |
 
-GestiEdu y MotivaSign usan los endpoints que ya existían (`POST /api/learners`, `/api/sessions`, `/attempts`, `/finish`, `GET /api/learners/{id}/sessions`).
+GestiEdu y MotivaSign usan los endpoints que ya existían (`POST /api/learners`, `/api/sessions`, `/attempts`, `/finish`, `GET /api/learners/{id}/sessions`). Desde v0.17 (TD-013) envían el token del perfil en `X-Learner-Token`.
 
 ### Interfaz
 
