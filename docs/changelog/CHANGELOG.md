@@ -15,6 +15,21 @@
 
 ---
 
+## [0.10.0] — 2026-11-12
+
+### Añadido
+
+- **REQ-018** — **Aula de Señas** (`/aula`), el curso para estudiantes: ruta por unidades con desbloqueo progresivo, lecciones con retroalimentación en vivo (mantener la seña correcta 1,2 s), evaluaciones que aprueban la unidad con ≥ 70%, repaso espaciado de las señas con menor dominio o más tiempo sin practicar, y deletreo de palabras con el alfabeto manual (dígrafos CH, LL, RR y Ñ). Perfiles locales por nombre; todos los intentos se guardan en `/api/sessions/*`. Modo docente `?unlock=all`. Tarjeta en la landing.
+- `app/static/js/ho-curriculum.js` (`HO.Curriculum`): lógica pedagógica pura (desbloqueo, repaso, cuestionarios, `HoldVerifier`) con tests en `node --test`.
+- `GET /api/learners/{id}/sessions`: historial de sesiones con filtros `module`, `finished` y `limit`; las sesiones devuelven `details`.
+- Catálogo: lista `spelling_words` y campo opcional `media` por seña (URL de video del intérprete), validados por `app/signs/catalog.py`.
+
+### Corregido
+
+- Borrar un estudiante desde el ORM intentaba dejar sus sesiones sin dueño (`NOT NULL constraint failed`); ahora se borran en cascada sesiones e intentos.
+
+---
+
 ## [0.9.0] — 2026-11-11
 
 Inicio de la nueva dirección del producto: **plataforma de enseñanza de lengua de señas (LSEC)** integrada con LMS.
