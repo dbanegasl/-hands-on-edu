@@ -221,11 +221,19 @@ services:
 | Campo | Detalle |
 |-------|---------|
 | **ID** | TD-012 |
-| **Estado** | 🔴 Pendiente |
+| **Estado** | ✅ Resuelto (v0.16.0) |
 | **Impacto** | Medio |
 | **Esfuerzo de resolución** | S |
 
-**Descripción:** las tablas se crean con `Base.metadata.create_all()` al arrancar. Cualquier cambio de columnas en una base existente requiere una migración manual. Conviene añadir Alembic antes del primer despliegue institucional.
+**Descripción:** las tablas se creaban con `Base.metadata.create_all()` al arrancar. Cualquier cambio de columnas en una base existente requería una migración manual.
+
+> **Resuelto en v0.16.0:**
+> - El esquema lo gestiona **Alembic** (`app/migrations/`), y la app se migra sola al arrancar con `app/migrate.py`.
+> - Si arrancan varios workers a la vez, un bloqueo (de archivo en SQLite, *advisory lock* en PostgreSQL) hace que solo uno migre.
+> - La revisión base `0001` es el esquema de v0.15.0 y es **idempotente**: adopta las bases creadas con `create_all` sin perder datos (crea las tablas que falten y registra la versión).
+> - Las pruebas de la API corren sobre el esquema migrado.
+> - `test_migrations.py` falla si un modelo cambia sin su revisión.
+> - Si una versión que ya migró el esquema falla al desplegar, `deploy.sh` restaura la copia previa.
 
 ---
 

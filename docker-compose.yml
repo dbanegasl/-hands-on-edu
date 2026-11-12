@@ -11,6 +11,7 @@ services:
       - ./tests:/app/tests
       - ./scripts:/app/scripts
       - ./docs:/app/docs
+      - ./alembic.ini:/app/alembic.ini
       - ./pytest.ini:/app/pytest.ini
       - ./requirements-dev.txt:/app/requirements-dev.txt
       # SQLite database (learners, sessions, attempts, sign templates)

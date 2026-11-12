@@ -11,7 +11,10 @@ ORM models.
 - Lti*             — LTI 1.3 (REQ-019): tool keys, registered platforms and
                      deployments, one-time OIDC login states, launches, the
                      launch a session belongs to, and AGS score submissions.
-                     New tables only, so create_all works on existing DBs.
+
+Schema changes need a migration (TD-012): after editing a model run
+`alembic revision --autogenerate -m "…"` (see app/migrate.py); CI fails if
+the models and app/migrations/versions/ disagree.
 """
 import uuid
 from datetime import datetime, timezone

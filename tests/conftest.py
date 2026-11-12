@@ -187,8 +187,11 @@ def client():
     """Synchronous Starlette TestClient (supports HTTP + WebSocket) on a fresh DB."""
     from app import models  # noqa: F401 — register tables
 
+    # Empty database: the app's startup applies the Alembic migrations (TD-012),
+    # so every API test also runs against the migrated schema.
     Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
+    with engine.begin() as conn:
+        conn.exec_driver_sql("DROP TABLE IF EXISTS alembic_version")
     with TestClient(app) as c:
         yield c
 
