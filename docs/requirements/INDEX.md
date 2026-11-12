@@ -36,6 +36,7 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 | [REQ-017](./REQ-017-sign-recognition-engine.md) | Motor de reconocimiento de señas + Estudio de Señas (LSEC) | Feature | Alta | ✅ Hecho (contenido por validar) | Global / Señas |
 | [REQ-018](./REQ-018-aula-de-senas.md) | Aula de Señas: currículo, práctica y evaluación | Feature | Alta | ✅ Hecho | Aula de Señas (nuevo) |
 | [REQ-019](./REQ-019-lti13-moodle.md) | Integración LTI 1.3 con Moodle (SSO + notas AGS) | Feature | Alta | 📋 Pendiente | Global / Integraciones |
+| [REQ-020](./REQ-020-videos-ia-validados.md) | Videos de referencia generados con IA y validados por intérprete | Feature | Alta | 🔄 En progreso (falta producir y validar) | Aula / Contenido LSEC |
 
 ---
 

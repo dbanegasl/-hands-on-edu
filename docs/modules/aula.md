@@ -57,6 +57,6 @@ Si un envío de intento falla se reintenta al cerrar la sesión.
 En `app/content/<lang>/catalog.json`:
 
 - `spelling_words`: lista de palabras para el deletreo (se tokenizan con los dígrafos CH, LL, RR y la Ñ).
-- `media` opcional por seña: `{"video": "https://…"}` se muestra en la lección.
+- `media` opcional por seña: video de referencia que se muestra en la lección con su aviso (*🤖 Video generado con IA · ✔ Validado por intérprete de LSEC*). Los estudiantes solo ven videos con `validated_by`; en modo docente también los pendientes. Producción y formato: [REQ-020](../requirements/REQ-020-videos-ia-validados.md) y [docs/content/videos-ia-lsec.md](../content/videos-ia-lsec.md).
 
 El contenido LSEC actual es un **borrador sin validar**; el aula lo indica con un aviso.

@@ -38,6 +38,8 @@ jobs:
         run: for f in app/static/js/*.js; do node --check "$f"; done
       - name: Gesture parity + sign engine tests
         run: node --test tests/js/*.test.cjs
+      - name: AI video prompt catalog in sync with catalog.json
+        run: python3 scripts/gen_video_prompts.py --check
 
   docker:
     name: Docker image builds
