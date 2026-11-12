@@ -1,0 +1,31 @@
+# Never bake secrets or institutional data into an image (COPY . . in the Dockerfile).
+.env
+.env.*
+!.env.example
+data/
+*.db
+*.db-*
+backups/
+
+# VCS, CI and editor files
+.git
+.github
+.claude
+.vscode
+.idea
+
+# Python / test artefacts (tests/ is mounted in development, not needed in the image)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+.venv/
+venv/
+
+# Model files are downloaded during the build
+models/
+
+# Node artefacts (only used by tests and the CLI trainer)
+node_modules/

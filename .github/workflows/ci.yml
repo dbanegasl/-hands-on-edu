@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:          # release.yml runs the same checks before publishing an image
+
+permissions:
+  contents: read
 
 jobs:
   python:
@@ -40,13 +44,25 @@ jobs:
         run: node --test tests/js/*.test.cjs
       - name: AI video prompt catalog in sync with catalog.json
         run: python3 scripts/gen_video_prompts.py --check
+      - name: APP_VERSION has a CHANGELOG entry
+        run: python3 scripts/release.py check
 
   docker:
-    name: Docker image builds
+    name: Docker image + deploy script
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Lint deploy scripts
+        run: shellcheck deploy/deploy.sh scripts/test-deploy.sh
+      - name: Compose files are valid
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml config -q
+          cp deploy/.env.example deploy/.env && docker compose -f deploy/docker-compose.yml config -q && rm deploy/.env
       - name: Build
-        run: docker build -t handsonedu:ci .
+        run: docker build -t handsonedu:ci --build-arg VERSION="$(python3 scripts/release.py version)" --build-arg REVISION="$GITHUB_SHA" .
       - name: Vendored MediaPipe JS present
         run: docker run --rm handsonedu:ci ls /app/vendor/mediapipe/vision_bundle.mjs /app/vendor/mediapipe/wasm/vision_wasm_internal.wasm /app/models/hand_landmarker.task
+      - name: No secrets or data baked into the image
+        run: docker run --rm handsonedu:ci sh -c '! ls -A /app/.env /app/data /app/.git /app/tests 2>/dev/null | grep .'
+      - name: deploy.sh — install, backup, rollback
+        run: scripts/test-deploy.sh handsonedu:ci

@@ -15,6 +15,36 @@
 
 ---
 
+## [0.15.0] — 2026-11-12
+
+### Añadido
+
+- **REQ-011** — **Entrega continua.** Al publicar una etiqueta `vX.Y.Z`:
+  - se repite toda la CI;
+  - se construye y prueba la imagen y se publica en GitHub Container Registry (`ghcr.io/dbanegasl/handsonedu`, etiquetas `X.Y.Z`, `X.Y` y `latest`);
+  - se crea la *GitHub Release* con las notas de este CHANGELOG;
+  - opcionalmente se actualiza el servidor por SSH (entorno `production`).
+- `deploy/` (instalación desde la imagen publicada, **sin clonar el repositorio**) y `deploy/deploy.sh <versión>`:
+  - descarga la imagen;
+  - hace una copia de la base;
+  - cambia de versión;
+  - comprueba `/health` con la versión esperada y **vuelve sola a la anterior** si falla.
+
+  También sirve para revertir a mano, y el workflow se puede ejecutar a mano para desplegar o revertir una versión ya publicada.
+- `scripts/release.py` (coherencia entre etiqueta, `APP_VERSION` y CHANGELOG; notas de la versión) y `scripts/test-deploy.sh` (prueba de punta a punta de `deploy.sh`, también en CI).
+- CI:
+  - comprueba que la versión tenga entrada en el CHANGELOG;
+  - pasa `shellcheck` a los scripts y valida los archivos compose;
+  - verifica que la imagen no contenga `.env`, `data/` ni `.git`;
+  - prueba `deploy.sh`.
+
+### Cambiado
+
+- La imagen arranca en modo producción por defecto (sin `--reload`, con `--proxy-headers`). El número de workers se fija con `WEB_CONCURRENCY` y los proxies de confianza con `FORWARDED_ALLOW_IPS`. El `docker-compose.yml` de desarrollo añade `--reload` y ahora también monta `scripts/` y `docs/`. Etiquetas OCI con versión y commit.
+- `.dockerignore`: `COPY . .` ya no puede meter `.env`, la base de datos ni el historial de git en la imagen.
+
+---
+
 ## [0.14.0] — 2026-11-12
 
 ### Añadido

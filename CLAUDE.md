@@ -19,6 +19,8 @@ docker compose exec hands-on-edu pytest
 node --test tests/js/*.test.cjs                                     # browser engine + sign engine (host Node ≥ 20)
 docker compose exec hands-on-edu python -m tests.fixtures.gen_gesture_parity   # regenerate Python↔JS parity fixture after changing gesture heuristics
 node scripts/train-sign-model.cjs [--out m.json] [--publish]               # train + cross-validate the sign classifier from the server's templates (REQ-010)
+python3 scripts/release.py check [--tag vX.Y.Z]                             # APP_VERSION ↔ CHANGELOG ↔ tag (CI runs it)
+docker build -t handsonedu:ci . && scripts/test-deploy.sh handsonedu:ci    # end-to-end test of deploy/deploy.sh (install, backup, rollback)
 docker compose exec hands-on-edu pytest tests/test_main.py::TestHealthEndpoint::test_status_200   # single test
 docker compose exec hands-on-edu pytest --cov=app --cov-report=term-missing                        # coverage (CI enforces ≥80% overall; .github/workflows/ci.yml)
 ```
@@ -52,5 +54,6 @@ Hot reload: `./app`, `./tests` and `./data` (SQLite) are volume-mounted, so Pyth
 
 - **New module**: follow the steps in `docs/development-guide.md` — static files + entry in `PAGES` (`app/api/pages.py`) + landing-page card in `index.html` + doc in `docs/modules/`. Copy the WebSocket/canvas pattern from an existing module's JS.
 - **Frontend**: vanilla JS only (no frameworks). One CSS file per module with a BEM-like prefix (`.ge-` GestiEdu, `.ms-` MotivaSign, `.ae-` AttendEye, `.vp-` VirtualPainter, `.ss-` Estudio de Señas, `.au-` Aula de Señas, `.pn-` Panel docente). Load `ho-common.js` then `ho-hands.js` (then `ho-signs.js`, and `ho-curriculum.js` for course logic, if needed) before the module script. Always cancel `requestAnimationFrame` and close the WebSocket when leaving a screen.
+- **Releases (REQ-011)**: bump `APP_VERSION` + add a `## [X.Y.Z]` CHANGELOG section, merge to `main`, push tag `vX.Y.Z` → `.github/workflows/release.yml` re-runs CI, pushes `ghcr.io/dbanegasl/handsonedu:X.Y.Z`, creates the GitHub Release and (if `DEPLOY_HOST` is set) runs `deploy/deploy.sh` on the server over SSH. The image's default command is production (no `--reload`; dev compose adds it). Server install uses only `deploy/` (compose + `.env` + `deploy.sh`); keep `deploy.sh` and `scripts/test-deploy.sh` shellcheck-clean.
 - **Requirements workflow**: features are tracked as `docs/requirements/REQ-NNN-*.md` with a master table in `docs/requirements/INDEX.md` — update the REQ status there when implementing one. Changes are logged in `docs/changelog/CHANGELOG.md`, and the app version is bumped in the `FastAPI(version=...)` call in `app/main.py`.
 - **Git**: branches `feature/<name>` or `fix/<description>`; commits use conventional prefixes (`feat:`, `fix:`, `docs:`, `test:`), often scoped per module, e.g. `feat(airpiano): ...`.

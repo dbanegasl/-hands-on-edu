@@ -1,18 +1,22 @@
-# Production override: immutable image (no source mounts, no --reload), port bound
-# to localhost for the HTTPS reverse proxy, persistent data only.
+# Production override when building from source: immutable image (no source
+# mounts, no --reload), port bound to localhost for the HTTPS reverse proxy,
+# persistent data only.
 #
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 #
+# To install from the published image instead (no source checkout), use deploy/.
 # Guide: docs/deployment.md
 
 services:
   hands-on-edu:
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000",
-              "--workers", "2", "--proxy-headers", "--forwarded-allow-ips", "*"]
+    # The image's default command (no --reload); workers and trusted proxies via env.
+    command: !reset null
     ports: !override
       - "127.0.0.1:${HOST_PORT:-9876}:8000"
     volumes: !override
       - ./data:/app/data
     environment:
       - APP_ENV=production
+      - WEB_CONCURRENCY=${WEB_CONCURRENCY:-2}
+      - FORWARDED_ALLOW_IPS=*
     restart: always
