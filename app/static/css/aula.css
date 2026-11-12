@@ -192,7 +192,10 @@ body {
 .au-ref { width: 120px; height: 120px; background: var(--au-surface2); border-radius: 14px; }
 .au-desc { font-size: 1.05rem; line-height: 1.45; }
 .au-hint { color: var(--au-accent2); font-weight: 600; }
-.au-media { width: 100%; border-radius: 12px; }
+.au-media-box { display: flex; flex-direction: column; gap: 6px; }
+.au-media { width: 100%; border-radius: 12px; background: #000; }
+.au-media-note { font-size: 0.8rem; color: var(--au-muted); line-height: 1.35; }
+.au-media-note.pending { color: #fde68a; }
 
 .au-meter { height: 12px; background: var(--au-surface2); border-radius: 999px; overflow: hidden; }
 .au-meter-fill { height: 100%; width: 0; background: var(--au-bad); transition: width 0.12s linear; }

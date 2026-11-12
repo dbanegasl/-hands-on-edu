@@ -119,6 +119,27 @@ test('grade thresholds', () => {
   assert.equal(C.grade(0.1).letter, 'D');
 });
 
+// ── Reference videos ─────────────────────────────────────────────────────────
+
+test('mediaInfo: learners only see interpreter-validated videos, always with the AI notice', () => {
+  assert.equal(C.mediaInfo({ id: 'a' }), null);
+  const pending = { media: { video: '/v.mp4', ai_generated: true } };
+  const p = C.mediaInfo(pending);
+  assert.equal(p.show, false);
+  assert.equal(C.mediaInfo(pending, { teacher: true }).show, true);
+  assert.match(p.notice, /generado con IA/);
+  assert.match(p.notice, /Pendiente de validación/);
+
+  const ok = C.mediaInfo({ media: { video: '/v.mp4', poster: '/p.jpg', ai_generated: true, validated_by: 'Ana Pérez', validated_at: '2026-11-20' } });
+  assert.equal(ok.show, true);
+  assert.equal(ok.poster, '/p.jpg');
+  assert.equal(ok.notice, '🤖 Video generado con IA · ✔ Validado por intérprete de LSEC: Ana Pérez (20/11/2026)');
+
+  const human = C.mediaInfo({ media: { video: '/v.mp4', ai_generated: false, validated_by: 'Ana' } });
+  assert.doesNotMatch(human.notice, /IA/);
+  assert.equal(human.aiGenerated, false);
+});
+
 // ── HoldVerifier ─────────────────────────────────────────────────────────────
 
 test('HoldVerifier completes after holding the correct sign', () => {

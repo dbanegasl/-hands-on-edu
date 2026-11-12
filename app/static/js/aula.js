@@ -347,9 +347,22 @@
     $('au-timer').hidden = !act.cfg.timeoutMs;
     $('au-btn-skip').disabled = act.cfg.skipAfterMs > 0;
     const media = $('au-media');
-    const src = act.cfg.info && s.media && s.media.video;
-    media.hidden = !src;
-    if (src) media.src = src; else media.removeAttribute('src');
+    const info = act.cfg.info ? C.mediaInfo(s, { teacher: UNLOCK_ALL }) : null;
+    const showMedia = !!(info && info.show);
+    $('au-media-box').hidden = !showMedia;
+    if (showMedia) {
+      media.src = info.src;
+      if (info.poster) media.poster = info.poster; else media.removeAttribute('poster');
+      media.play().catch(() => { /* autoplay may be blocked; controls remain */ });
+      const note = $('au-media-note');
+      note.textContent = info.notice;
+      note.classList.toggle('pending', !info.validated);
+    } else {
+      media.pause();
+      media.removeAttribute('src');
+      media.load();
+      $('au-media-note').textContent = '';
+    }
     drawReference(id, act.cfg.info || act.mode === 'review');
   }
 

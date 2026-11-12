@@ -148,6 +148,42 @@
     return { letter: 'D', label: 'Sigue practicando', passed: false };
   }
 
+  // ── Reference video disclosure ─────────────────────────────────────────────
+
+  function formatDate(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+    return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
+  }
+
+  /**
+   * Whether and how to show a sign's reference video.
+   * Learners only see videos validated by an interpreter; teachers also see
+   * pending ones. AI-generated videos always carry a visible notice.
+   * @returns null | {src, poster, show, validated, aiGenerated, notice}
+   */
+  function mediaInfo(sign, opts) {
+    const m = sign && sign.media;
+    if (!m || !m.video) return null;
+    const teacher = !!(opts && opts.teacher);
+    const validated = !!m.validated_by;
+    const parts = [];
+    if (m.ai_generated) parts.push('🤖 Video generado con IA');
+    if (validated) {
+      const when = formatDate(m.validated_at);
+      parts.push('✔ Validado por intérprete de LSEC: ' + m.validated_by + (when ? ' (' + when + ')' : ''));
+    } else {
+      parts.push('⚠️ Pendiente de validación por un intérprete — solo visible para docentes');
+    }
+    return {
+      src: m.video,
+      poster: m.poster || '',
+      show: validated || teacher,
+      validated: validated,
+      aiGenerated: !!m.ai_generated,
+      notice: parts.join(' · '),
+    };
+  }
+
   // ── HoldVerifier ───────────────────────────────────────────────────────────
 
   /**
@@ -232,6 +268,7 @@
     shuffle: shuffle,
     buildQuiz: buildQuiz,
     grade: grade,
+    mediaInfo: mediaInfo,
     HoldVerifier: HoldVerifier,
   };
 

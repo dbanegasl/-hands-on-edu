@@ -77,7 +77,14 @@ class TestCatalogValidation:
         {"handshape": {"mystery": 1}},
         {"confusable": ["ghost"]},
         {"media": "video.mp4"},
-        {"media": {"video": 3}},
+        {"media": {"video": 3, "ai_generated": True}},
+        {"media": {"video": "/v.mp4"}},
+        {"media": {"video": "/v.mp4", "ai_generated": "yes"}},
+        {"media": {"ai_generated": True}},
+        {"media": {"video": "/v.mp4", "ai_generated": True, "license": "x"}},
+        {"media": {"video": "/v.mp4", "ai_generated": True, "validated_at": "2026-11-20"}},
+        {"media": {"video": "/v.mp4", "ai_generated": True, "validated_by": "Ana", "validated_at": "20/11/2026"}},
+        {"media": {"video": "/v.mp4", "ai_generated": True, "validated_by": " "}},
     ])
     def test_rejects_invalid_signs(self, bad):
         with pytest.raises(CatalogError):
@@ -103,7 +110,8 @@ class TestCatalogValidation:
             _validate("t", data)
 
     def test_accepts_media_and_spelling_words(self):
-        data = self._base(media={"video": "https://example.org/x.mp4"})
+        data = self._base(media={"video": "/static/media/lsec/sofia/a.mp4", "poster": "/p.jpg", "avatar": "sofia",
+                                 "ai_generated": True, "validated_by": "Ana Pérez", "validated_at": "2026-11-20"})
         data["spelling_words"] = ["OSO"]
         assert _validate("t", data)["spelling_words"] == ["OSO"]
 
