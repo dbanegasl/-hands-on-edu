@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estudio de Señas | HandsOnEdu</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+  <link rel="stylesheet" href="/static/css/signstudio.css">
+</head>
+<body>
+
+  <nav class="ss-nav">
+    <a href="/" class="ss-logo">🖐️ HandsOnEdu</a>
+    <span class="ss-module-name">🎬 Estudio de Señas</span>
+    <select id="ss-language" class="ss-select" aria-label="Lengua de señas"></select>
+    <div id="ss-connection" class="ss-conn-badge ss-conn-disconnected" title="Motor de detección de manos">⚫ Sin cámara</div>
+    <a href="/" class="ss-back">← Inicio</a>
+  </nav>
+
+  <div id="ss-validation" class="ss-banner" hidden></div>
+
+  <main class="ss-layout">
+
+    <!-- LEFT: sign catalog -->
+    <aside class="ss-catalog" aria-label="Catálogo de señas">
+      <input id="ss-search" class="ss-input" type="search" placeholder="Buscar seña…" autocomplete="off">
+      <div id="ss-categories" class="ss-tabs" role="tablist"></div>
+      <ul id="ss-sign-list" class="ss-sign-list"></ul>
+      <div class="ss-legend">
+        <span class="ss-chip ss-chip-spec">Descriptor</span> reconoce sin datos ·
+        <span class="ss-chip ss-chip-tpl">N</span> plantillas ·
+        <span class="ss-chip ss-chip-none">—</span> necesita grabación
+      </div>
+    </aside>
+
+    <!-- CENTER: camera + recording -->
+    <section class="ss-stage">
+      <div class="ss-cam-wrapper">
+        <video id="ss-video" autoplay playsinline muted></video>
+        <canvas id="ss-canvas" width="640" height="480"></canvas>
+        <div id="ss-countdown" class="ss-countdown" hidden></div>
+        <div id="ss-rec-indicator" class="ss-rec-indicator" hidden>● GRABANDO</div>
+        <button id="ss-btn-camera" class="ss-btn ss-btn-primary ss-cam-start">📷 Activar cámara</button>
+      </div>
+
+      <div class="ss-rec-panel">
+        <div class="ss-rec-row">
+          <label class="ss-field">
+            <span>Autor/a</span>
+            <input id="ss-author" class="ss-input" type="text" maxlength="120" placeholder="Nombre del docente o intérprete">
+          </label>
+          <label class="ss-field ss-field-small" id="ss-duration-field">
+            <span>Duración</span>
+            <select id="ss-duration" class="ss-select">
+              <option value="1200">1,2 s</option>
+              <option value="2000" selected>2 s</option>
+              <option value="3000">3 s</option>
+              <option value="4000">4 s</option>
+            </select>
+          </label>
+        </div>
+        <button id="ss-btn-record" class="ss-btn ss-btn-record" disabled>⏺ Grabar plantilla</button>
+        <p id="ss-rec-help" class="ss-help"></p>
+      </div>
+    </section>
+
+    <!-- RIGHT: selected sign + live recognition + templates -->
+    <aside class="ss-detail" aria-live="polite">
+      <div class="ss-card ss-sign-card">
+        <div class="ss-sign-head">
+          <div id="ss-sign-gloss" class="ss-sign-gloss">—</div>
+          <div>
+            <div id="ss-sign-meta" class="ss-sign-meta"></div>
+            <div id="ss-sign-flags" class="ss-sign-flags"></div>
+          </div>
+        </div>
+        <p id="ss-sign-desc" class="ss-sign-desc">Elige una seña del catálogo.</p>
+        <p id="ss-sign-hint" class="ss-sign-hint"></p>
+      </div>
+
+      <div class="ss-card">
+        <h3>Verificación en vivo</h3>
+        <div class="ss-meter"><div id="ss-meter-fill" class="ss-meter-fill"></div></div>
+        <div class="ss-verdict-row">
+          <span id="ss-verdict" class="ss-verdict">Sin mano</span>
+          <span id="ss-score" class="ss-score">0%</span>
+        </div>
+        <ul id="ss-feedback" class="ss-feedback"></ul>
+        <h4>Candidatos</h4>
+        <ol id="ss-candidates" class="ss-candidates"></ol>
+      </div>
+
+      <div class="ss-card">
+        <div class="ss-card-head">
+          <h3>Plantillas de esta seña</h3>
+          <span id="ss-tpl-count" class="ss-chip ss-chip-tpl">0</span>
+        </div>
+        <ul id="ss-templates" class="ss-templates"></ul>
+        <div class="ss-io">
+          <button id="ss-btn-export" class="ss-btn ss-btn-ghost">⬇ Exportar dataset</button>
+          <label class="ss-btn ss-btn-ghost">⬆ Importar
+            <input id="ss-import" type="file" accept="application/json" hidden>
+          </label>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <div id="ss-toast" class="ss-toast" role="status" hidden></div>
+
+  <script src="/static/js/ho-common.js"></script>
+  <script src="/static/js/ho-hands.js"></script>
+  <script src="/static/js/ho-signs.js"></script>
+  <script src="/static/js/signstudio.js"></script>
+</body>
+</html>
