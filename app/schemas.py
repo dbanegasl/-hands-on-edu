@@ -118,3 +118,55 @@ class TemplateOut(BaseModel):
 
 class TemplateImport(BaseModel):
     templates: Annotated[list[TemplateCreate], Field(min_length=1, max_length=2000)]
+
+
+# ── LTI 1.3 ─────────────────────────────────────────────────────────────────
+
+HttpUrl = Annotated[str, Field(min_length=8, max_length=500, pattern=r"^https?://\S+$")]
+
+
+class LtiPlatformIn(BaseModel):
+    name: Annotated[str, Field(min_length=1, max_length=120)]
+    issuer: Annotated[str, Field(min_length=1, max_length=255)]
+    client_id: Annotated[str, Field(min_length=1, max_length=255)]
+    auth_login_url: HttpUrl
+    auth_token_url: HttpUrl
+    jwks_url: HttpUrl
+    deployment_ids: Annotated[list[Annotated[str, Field(min_length=1, max_length=255)]], Field(max_length=50)] = []
+
+
+class LtiPlatformOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    name: str
+    issuer: str
+    client_id: str
+    auth_login_url: str
+    auth_token_url: str
+    jwks_url: str
+    deployment_ids: list[str]
+    created_at: datetime
+
+
+class LtiDeploymentIn(BaseModel):
+    deployment_id: Annotated[str, Field(min_length=1, max_length=255)]
+
+
+class DeepLinkIn(BaseModel):
+    language: Annotated[str, Field(min_length=2, max_length=16)] = "lsec"
+    units: Annotated[list[str], Field(max_length=20)] = []
+    course: bool = False
+    graded: bool = True
+
+
+class DeepLinkOut(BaseModel):
+    return_url: str
+    jwt: str
+
+
+class GradeSyncOut(BaseModel):
+    status: str  # none | sent | skipped | failed | not_graded
+    score_given: float | None = None
+    score_maximum: float | None = None
+    detail: str | None = None

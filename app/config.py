@@ -33,6 +33,9 @@ class Settings:
     # the in-browser engine).
     models_dir: Path
     content_dir: Path
+    # Public origin of the tool as the LMS and browsers reach it (LTI redirect
+    # URIs, JWKS URL, deep-linking targets). No trailing slash.
+    public_base_url: str
 
     @property
     def is_dev(self) -> bool:
@@ -48,6 +51,7 @@ def load_settings() -> Settings:
         vendor_dir=Path(_env("VENDOR_DIR", str(BASE_DIR / "vendor"))),
         models_dir=Path(_env("MODELS_DIR", str(BASE_DIR / "models"))),
         content_dir=Path(__file__).resolve().parent / "content",
+        public_base_url=_env("PUBLIC_BASE_URL", "http://localhost:9876").rstrip("/"),
     )
 
 

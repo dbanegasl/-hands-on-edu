@@ -1,12 +1,14 @@
 """Learners, activity sessions, sign attempts and per-sign mastery."""
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.deps import lti_context
 from app.db import get_db
-from app.models import ActivitySession, Learner, SignAttempt
+from app.integrations.lti import services as lti_services
+from app.models import ActivitySession, Learner, LtiSessionLink, SignAttempt
 from app.schemas import (
     AttemptsBatch,
     LearnerCreate,
@@ -78,10 +80,16 @@ def learner_sessions(
 
 @router.post("/sessions", response_model=SessionOut, status_code=status.HTTP_201_CREATED,
              summary="Iniciar una sesión de actividad")
-def create_session(body: SessionCreate, db: Session = Depends(get_db)):
+def create_session(body: SessionCreate, db: Session = Depends(get_db), lti: dict | None = Depends(lti_context)):
     _get_or_404(db, Learner, body.learner_id, "Estudiante")
+    if lti is not None and lti["sub"] != body.learner_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "La sesión no corresponde al estudiante del lanzamiento LTI")
     sess = ActivitySession(**body.model_dump())
     db.add(sess)
+    db.flush()
+    if lti is not None:
+        # Started inside an LMS activity: its result can go back to the gradebook (AGS).
+        db.add(LtiSessionLink(session_id=sess.id, launch_id=lti["lti_launch"]))
     db.commit()
     return sess
 
@@ -103,13 +111,16 @@ def add_attempts(session_id: str, body: AttemptsBatch, db: Session = Depends(get
 
 
 @router.post("/sessions/{session_id}/finish", response_model=SessionOut, summary="Cerrar una sesión con su resultado")
-def finish_session(session_id: str, body: SessionFinish, db: Session = Depends(get_db)):
+def finish_session(session_id: str, body: SessionFinish, background: BackgroundTasks, db: Session = Depends(get_db)):
     sess = _get_or_404(db, ActivitySession, session_id, "Sesión")
     if sess.ended_at is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, "La sesión ya terminó")
     sess.ended_at = datetime.now(timezone.utc)
     sess.score, sess.max_score, sess.details = body.score, body.max_score, body.details
     db.commit()
+    if db.get(LtiSessionLink, session_id) is not None:
+        # Publish to the LMS gradebook after responding: a slow LMS never blocks the learner.
+        background.add_task(lti_services.publish_in_background, session_id)
     return sess
 
 
