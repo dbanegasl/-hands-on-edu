@@ -50,6 +50,8 @@ Se prueban los pesos 0,35 / 0,5 / 0,65 / 0,8 y se elige el que maximiza *aceptad
 3. El Estudio avisa cuando hay grabaciones nuevas o eliminadas desde el entrenamiento.
 4. Sin navegador: `node scripts/train-sign-model.cjs [--out model.json] [--publish]` ejecuta el mismo código (`--templates dataset.json` evalúa un dataset exportado).
 
+Manual operativo para el equipo de contenido (plan de grabación, cómo leer el informe, cuándo publicar): [onboarding 07](../onboarding/07-entrenamiento-modelo.md).
+
 ### API
 
 | Método | Ruta | Descripción |

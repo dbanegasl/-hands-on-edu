@@ -66,7 +66,7 @@ Procedimiento por seña:
 
 Compartir: **⬇ Exportar dataset** genera un JSON con todas las plantillas; otra instalación lo carga con **⬆ Importar**. Así una institución puede aprovechar las grabaciones de otra.
 
-**Entrenar el modelo (opcional, recomendado cuando ya hay grabaciones de varias señas):** en la tarjeta **🧠 Modelo entrenado** del Estudio, *Entrenar y evaluar*. El informe dice si el modelo mejora el reconocimiento de las letras y números estáticos con grabaciones que no vio al entrenar. Si mejora, **Publicar modelo**. Repetirlo cuando se agreguen grabaciones (el Estudio avisa). Cuantas más personas distintas graben, más fiable es la cifra para los estudiantes. Detalle: [REQ-010](../requirements/REQ-010-custom-ml-classifier.md).
+**Entrenar el modelo (opcional, recomendado cuando ya hay grabaciones de varias señas):** en la tarjeta **🧠 Modelo entrenado** del Estudio, *Entrenar y evaluar*. El informe dice si el modelo mejora el reconocimiento de las letras y números estáticos con grabaciones que no vio al entrenar. Si mejora, **Publicar modelo**. Repetirlo cuando se agreguen grabaciones (el Estudio avisa). Cuantas más personas distintas graben, más fiable es la cifra para los estudiantes. Paso a paso, con plan de grabación y cómo leer el informe: [07 · Grabación y entrenamiento del modelo](./07-entrenamiento-modelo.md).
 
 ## 4. Videos de referencia con IA (producción + validación)
 

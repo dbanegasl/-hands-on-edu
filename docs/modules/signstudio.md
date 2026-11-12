@@ -53,7 +53,7 @@ La tarjeta **🧠 Modelo entrenado** muestra si hay un modelo activo, con cuánt
 
 Solo si mejora aparece **Publicar modelo** (pide el token). El Aula y el Estudio lo usan desde ese momento, y en los candidatos en vivo la fuente aparece como `…+model`. **Desactivar** vuelve al motor sin modelo.
 
-Sin navegador: `node scripts/train-sign-model.cjs` (`--out`, `--publish`, `--templates`).
+Sin navegador: `node scripts/train-sign-model.cjs` (`--out`, `--publish`, `--templates`). Manual para el equipo de contenido: [onboarding 07](../onboarding/07-entrenamiento-modelo.md).
 
 ## Seguridad
 

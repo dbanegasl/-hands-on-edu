@@ -127,7 +127,7 @@ Probado de punta a punta con Moodle 4.5.4. Prueba local en 30 minutos: `docker c
 
 | Documento | Descripción |
 |-----------|-------------|
-| **[Puesta en marcha (onboarding)](docs/onboarding/README.md)** | **Ruta para instituciones: prueba local, despliegue, Moodle, contenido LSEC, docentes, problemas frecuentes** |
+| **[Puesta en marcha (onboarding)](docs/onboarding/README.md)** | **Ruta para instituciones: prueba local, despliegue, Moodle, contenido LSEC, docentes, entrenamiento del modelo, problemas frecuentes** |
 | [Arquitectura del Sistema](docs/architecture.md) | Diagrama de capas, flujo WebSocket, decisiones de diseño |
 | [Protocolo WebSocket](docs/websocket-protocol.md) | Referencia completa del endpoint `/ws/analyze` |
 | [Panel docente](docs/modules/panel.md) | Progreso del curso: unidades, dominio por seña, lista NRPS, notas en Moodle, CSV |
