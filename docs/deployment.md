@@ -137,6 +137,12 @@ src.backup(dst); dst.close(); print('ok')"
 
 Programa esa copia a diario (cron) y lleva los archivos `data/backup-*.db` fuera del servidor. Además, `deploy.sh` hace una copia automática antes de cada actualización en `data/backups/` (conserva las 14 últimas; `KEEP_BACKUPS`). Para restaurar: detén el servicio, reemplaza `data/handsonedu.db` por la copia y arranca. Las plantillas también se pueden exportar a JSON desde el Estudio de Señas.
 
+> **Permisos de `data/` (v0.18).** Las versiones anteriores escribían `./data` como root. Al primer arranque de v0.18, el contenedor pasa esos archivos a uid/gid 1000, el usuario sin privilegios con el que corre la app. Volver a una versión anterior sigue funcionando.
+>
+> - Si `./data` está en un recurso que no permite `chown` (NFS con `root_squash`), dale tú la propiedad a uid 1000.
+> - Para usar otro uid, construye con `--build-arg APP_UID=…`.
+> - En Kubernetes usa `runAsUser: 1000` y `fsGroup: 1000`: arrancado ya sin root, el contenedor no intenta cambiar permisos.
+
 > **Migraciones automáticas.** Desde v0.16.0 cada versión actualiza el esquema de la base al arrancar (Alembic). Las bases creadas por versiones anteriores se adoptan sin pérdida de datos.
 >
 > Para ver la versión del esquema: `docker compose exec hands-on-edu python -m app.migrate current`.
@@ -224,6 +230,7 @@ Si las notas no llegan a Moodle, el detalle de cada intento está en la tabla `l
 | `ADMIN_TOKEN` | Definido, largo y fuera del repositorio (`.env` está en `.gitignore`) |
 | Puerto | Solo `127.0.0.1:9876`; el exterior entra por el proxy |
 | Imagen | No contiene `.env`, datos ni el historial de git (`.dockerignore`, comprobado en CI) |
+| Usuario | La app **no corre como root**: el contenedor arranca, entrega `data/` al usuario `app` (uid/gid 1000) y suelta todos los privilegios (sin capacidades, `no_new_privs`). Desde v0.18, `./data` pertenece a uid 1000 en el servidor |
 | Despliegue automático | Clave SSH exclusiva y restringida a `deploy.sh --from-ssh`; `known_hosts` obligatorio; entorno `production` con aprobación |
 | Video | La detección corre en el navegador: el video de los estudiantes **no** viaja al servidor (salvo que se fuerce `?engine=server`) |
 | Datos personales | Se guarda el nombre que envía Moodle y los resultados de práctica. Informa a las familias según la normativa de protección de datos (Ecuador: LOPDP) |

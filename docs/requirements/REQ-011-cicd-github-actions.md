@@ -69,7 +69,7 @@ Paso a paso en [deployment.md §4](../deployment.md#4-actualizar):
 
 - ~~Migraciones de esquema (TD-012)~~: resuelto en v0.16.0 (Alembic al arrancar; `deploy.sh` restaura la copia si una versión que migró el esquema falla).
 - Imagen multiarquitectura (arm64) si alguna institución usa servidores ARM.
-- El contenedor corre como root (heredado); pasar a un usuario sin privilegios exige migrar los permisos de `data/` de las instalaciones existentes.
+- ~~El contenedor corre como root~~: resuelto en v0.18.0 (usuario `app` uid 1000; el entrypoint migra los permisos de `data/` de las instalaciones existentes).
 
 ---
 
