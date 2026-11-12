@@ -25,6 +25,13 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
+# Unprivileged user the app runs as (docker/entrypoint.sh drops to it). uid 1000
+# matches the usual first user on Linux hosts, so bind-mounted data/ stays editable.
+ARG APP_UID=1000
+ARG APP_GID=1000
+RUN groupadd --gid "$APP_GID" app \
+ && useradd --uid "$APP_UID" --gid app --no-create-home --home-dir /app --shell /usr/sbin/nologin app
+
 # Install Python dependencies first (layer cache optimization)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -52,7 +59,11 @@ EXPOSE 8000
 
 # Production-safe default: no --reload (docker-compose.yml adds it for development).
 # Workers: WEB_CONCURRENCY; trusted proxies for X-Forwarded-*: FORWARDED_ALLOW_IPS.
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 MPLCONFIGDIR=/tmp/matplotlib
+COPY docker/entrypoint.sh /usr/local/bin/handsonedu-entrypoint
+# Empty and owned by app, so the image also works started directly as uid 1000 without a volume.
+RUN mkdir -p /app/data && chown app:app /app/data
+ENTRYPOINT ["handsonedu-entrypoint"]
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD ["python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status == 200 else 1)"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]

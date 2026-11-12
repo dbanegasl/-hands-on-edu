@@ -269,6 +269,7 @@ services:
 
 | ID | Descripción | Fecha de resolución | Commit SHA |
 |----|-------------|---------------------|-----------|
+| TD-014 | **El contenedor corría como root.** Una vulnerabilidad en la app habría dado root dentro del contenedor y sobre `./data`. Ahora `docker/entrypoint.sh` entrega `data/` al usuario `app` (uid 1000) y ejecuta la app con `setpriv`, sin capacidades y con `no_new_privs`. Las instalaciones existentes (datos de root) se migran solas al arrancar, y `scripts/test-deploy.sh` lo comprueba en CI. | 2026-11-12 | v0.18.0 |
 | TD-006 | **WS URL hardcodeada a `localhost`** — La URL del WebSocket en el frontend estaba hardcodeada a `ws://localhost:9876/ws/analyze`, haciendo imposible el acceso desde dispositivos en la misma red o en producción. Reemplazada por una URL dinámica calculada en base a `window.location.hostname`. | 2026-04-30 | `ed62301` |
 | TD-007 | **Condiciones duplicadas en `detect_gesture()`** — Existían dos bloques `if` con la misma condición para `open_hand` en `hand_tracker.py`, causando lógica incorrecta y confusión en el mantenimiento. Consolidado en una única condición. | 2026-04-30 | `ed62301` |
 

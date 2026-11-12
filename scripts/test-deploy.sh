@@ -4,7 +4,8 @@
 #
 #   docker build -t handsonedu:ci . && scripts/test-deploy.sh handsonedu:ci
 #
-# Checks: fresh install → healthy with the expected version and migrated schema;
+# Checks: fresh install → healthy with the expected version and migrated schema,
+# running as the unprivileged app user;
 # update → hot backup of the SQLite DB; a version that does not come up as itself
 # → automatic rollback, keeping the database if the schema is unchanged and
 # restoring the pre-update backup if that version had migrated it.
@@ -67,6 +68,8 @@ docker compose exec -T hands-on-edu test -f /app/data/handsonedu.db || fail "dat
 docker compose exec -T hands-on-edu sh -c 'cat /proc/1/cmdline | tr "\0" " "' | grep -q -- --reload \
   && fail "production image runs with --reload"
 [ "$(sql 'SELECT version_num FROM alembic_version')" = "$HEAD" ] || fail "schema not migrated to $HEAD"
+[ "$(docker compose exec -T hands-on-edu awk '/^Uid:/{print $2}' /proc/1/status)" != 0 ] || fail "the app runs as root"
+[ -z "$(docker compose exec -T hands-on-edu find /app/data \! -user app)" ] || fail "data/ not owned by the app user"
 sql "INSERT INTO learners (id, display_name, created_at) VALUES ('deploytest', 'Ana', '2026-01-01')" >/dev/null
 
 echo "── 2. update (same version) makes a backup"

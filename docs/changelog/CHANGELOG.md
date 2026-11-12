@@ -15,6 +15,26 @@
 
 ---
 
+## [0.18.0] — 2026-11-12
+
+### Seguridad
+
+- **La app ya no corre como root dentro del contenedor (TD-014).**
+  - El nuevo `docker/entrypoint.sh` entrega el directorio de datos al usuario `app` (uid/gid 1000) y ejecuta la app con `setpriv`, sin capacidades y con `no_new_privs`.
+  - Arrancado directamente sin root (Kubernetes `runAsUser`), no toca permisos.
+
+### Cambiado
+
+- Las instalaciones existentes (datos creados como root) se migran solas en el primer arranque: `./data` pasa a uid 1000 en el servidor. Volver a una versión anterior sigue funcionando.
+- En desarrollo, `./data` deja de pertenecer a root y la app ya no genera archivos `__pycache__` en las carpetas montadas.
+- `scripts/test-deploy.sh` comprueba que el proceso no es root y que los datos son del usuario de la app.
+
+### Corregido
+
+- matplotlib (dependencia de MediaPipe) intentaba escribir en `/root`: la app sin privilegios usa un `HOME` escribible.
+
+---
+
 ## [0.17.0] — 2026-11-12
 
 ### Seguridad

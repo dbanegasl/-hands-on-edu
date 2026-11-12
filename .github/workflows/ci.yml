@@ -63,6 +63,8 @@ jobs:
       - name: Vendored MediaPipe JS present
         run: docker run --rm handsonedu:ci ls /app/vendor/mediapipe/vision_bundle.mjs /app/vendor/mediapipe/wasm/vision_wasm_internal.wasm /app/models/hand_landmarker.task
       - name: No secrets or data baked into the image
-        run: docker run --rm handsonedu:ci sh -c '! ls -A /app/.env /app/data /app/.git /app/tests 2>/dev/null | grep .'
+        run: docker run --rm --entrypoint sh handsonedu:ci -c 'test ! -e /app/.env && test ! -e /app/.git && test ! -e /app/tests && test -z "$(find /app/data -mindepth 1)"'
+      - name: The app does not run as root
+        run: test "$(docker run --rm handsonedu:ci id -u)" = 1000
       - name: deploy.sh — install, backup, rollback
         run: scripts/test-deploy.sh handsonedu:ci
