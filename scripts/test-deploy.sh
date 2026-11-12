@@ -70,6 +70,12 @@ docker compose exec -T hands-on-edu sh -c 'cat /proc/1/cmdline | tr "\0" " "' | 
 [ "$(sql 'SELECT version_num FROM alembic_version')" = "$HEAD" ] || fail "schema not migrated to $HEAD"
 [ "$(docker compose exec -T hands-on-edu awk '/^Uid:/{print $2}' /proc/1/status)" != 0 ] || fail "the app runs as root"
 [ -z "$(docker compose exec -T hands-on-edu find /app/data \! -user app)" ] || fail "data/ not owned by the app user"
+echo "── 1b. deploy/check-install.py against the running install"
+python3 "$ROOT/deploy/check-install.py" "http://localhost:${TEST_PORT:-19876}" --allow-http --admin-token deploy-test \
+  || fail "check-install reports failures on a correct install"
+if python3 "$ROOT/deploy/check-install.py" "http://localhost:${TEST_PORT:-19876}" --allow-http --admin-token wrong >/dev/null; then
+  fail "check-install accepted a wrong ADMIN_TOKEN"
+fi
 sql "INSERT INTO learners (id, display_name, created_at) VALUES ('deploytest', 'Ana', '2026-01-01')" >/dev/null
 
 echo "── 2. update (same version) makes a backup"

@@ -10,6 +10,7 @@ services:
       - ./app:/app/app
       - ./tests:/app/tests
       - ./scripts:/app/scripts
+      - ./deploy:/app/deploy
       - ./docs:/app/docs
       - ./alembic.ini:/app/alembic.ini
       - ./pytest.ini:/app/pytest.ini
