@@ -15,6 +15,20 @@
 
 ---
 
+## [0.11.0] — 2026-11-12
+
+### Añadido
+
+- **REQ-019** — Integración **LTI 1.3 / LTI Advantage** con Moodle (y cualquier LMS compatible):
+  - Inicio de sesión único: `/lti/login` (OIDC) y `/lti/launch` validan el `id_token` firmado por la plataforma; el estudiante entra al Aula sin crear otra cuenta.
+  - **Notas automáticas (AGS):** la mejor nota de la evaluación de la unidad llega sola al libro de calificaciones (0–100); el Aula muestra si se envió.
+  - **Deep Linking:** el docente elige en `/lti/deeplink` qué unidades agrega al curso, cada una con su columna de calificación.
+  - Claves de la herramienta en la BD y `GET /lti/jwks`; registro de plataformas (`/api/lti/platforms`, protegido con `ADMIN_TOKEN`) y página guiada `/lti/setup`.
+  - Nueva variable `PUBLIC_BASE_URL`; dependencias `PyJWT[crypto]` y `python-multipart` (requiere `docker compose up --build`).
+- El Aula abre siempre la unidad que asigna la actividad de la plataforma, aunque la ruta no haya llegado a ella.
+
+---
+
 ## [0.10.0] — 2026-11-12
 
 ### Añadido
