@@ -18,7 +18,7 @@ from app.api import learning, pages, signs, ws
 from app.config import settings
 from app.db import init_db
 
-APP_VERSION = "0.9.0"
+APP_VERSION = "0.10.0"
 
 # Python's mimetypes has no entry for .mjs on slim images; ES-module imports
 # are rejected by browsers unless served with a JavaScript MIME type.

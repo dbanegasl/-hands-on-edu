@@ -49,6 +49,7 @@ class SessionOut(BaseModel):
     ended_at: datetime | None
     score: float | None
     max_score: float | None
+    details: dict | None = None
 
 
 class AttemptIn(BaseModel):

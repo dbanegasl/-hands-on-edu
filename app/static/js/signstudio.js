@@ -211,6 +211,7 @@
     $('ss-sign-meta').textContent = s
       ? [cat ? cat.name : s.category, s.kind === 'dynamic' ? 'con movimiento' : 'estática', (s.hands || 1) + ' mano(s)'].join(' · ')
       : '';
+    renderMedia(s);
     const flags = $('ss-sign-flags');
     flags.innerHTML = '';
     if (!s) return;
@@ -218,6 +219,26 @@
     if (s.handshape) flags.appendChild(chip('Descriptor', 'ss-chip-spec'));
     if (!S.recognizer.isRecognizable(s.id)) flags.appendChild(chip('Necesita grabación', 'ss-chip-none'));
     for (const c of s.confusable || []) flags.appendChild(chip('≈ ' + glossOf(c), 'ss-chip-none', 'Se confunde con'));
+  }
+
+  /** Reference video with its AI / interpreter-validation notice (teachers see pending ones too). */
+  function renderMedia(s) {
+    const box = $('ss-media-box');
+    const video = $('ss-media');
+    const info = s ? HO.Curriculum.mediaInfo(s, { teacher: true }) : null;
+    box.hidden = !info;
+    if (!info) {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      $('ss-media-note').textContent = '';
+      return;
+    }
+    video.src = info.src;
+    if (info.poster) video.poster = info.poster; else video.removeAttribute('poster');
+    const note = $('ss-media-note');
+    note.textContent = info.notice;
+    note.classList.toggle('pending', !info.validated);
   }
 
   function renderTemplates() {

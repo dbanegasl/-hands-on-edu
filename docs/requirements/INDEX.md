@@ -34,8 +34,9 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 | [REQ-015](./REQ-015-module-fixes-ux-polish.md) | Correcciones de detección y pulido UX por módulo | Mejora | Alta | ✅ Hecho | Todos los módulos |
 | [REQ-016](./REQ-016-browser-hand-engine.md) | Detección de manos en el navegador (MediaPipe Tasks JS) | Tech-Debt | Alta | ✅ Hecho | Global / Frontend |
 | [REQ-017](./REQ-017-sign-recognition-engine.md) | Motor de reconocimiento de señas + Estudio de Señas (LSEC) | Feature | Alta | ✅ Hecho (contenido por validar) | Global / Señas |
-| [REQ-018](./REQ-018-aula-de-senas.md) | Aula de Señas: currículo, práctica y evaluación | Feature | Alta | 📋 Pendiente | Aula de Señas (nuevo) |
+| [REQ-018](./REQ-018-aula-de-senas.md) | Aula de Señas: currículo, práctica y evaluación | Feature | Alta | ✅ Hecho | Aula de Señas (nuevo) |
 | [REQ-019](./REQ-019-lti13-moodle.md) | Integración LTI 1.3 con Moodle (SSO + notas AGS) | Feature | Alta | 📋 Pendiente | Global / Integraciones |
+| [REQ-020](./REQ-020-videos-ia-validados.md) | Videos de referencia generados con IA y validados por intérprete | Feature | Alta | 🔄 En progreso (falta producir y validar) | Aula / Contenido LSEC |
 
 ---
 
@@ -55,7 +56,7 @@ Dirección de producto (2026-11-11): plataforma de referencia para la **enseñan
 
 ```
 ✅ REQ-016 (detección en navegador) → ✅ REQ-017 (motor de señas + Estudio)
-    → REQ-018 (Aula de Señas) → REQ-019 (LTI 1.3 + notas en Moodle)
+    → ✅ REQ-018 (Aula de Señas) → REQ-019 (LTI 1.3 + notas en Moodle)
     → REQ-007 (dashboard docente) → REQ-005 (persistencia de GestiEdu/AttendEye)
     → REQ-010 (clasificador ML entrenado con las plantillas grabadas) → REQ-011 (CD)
 ```

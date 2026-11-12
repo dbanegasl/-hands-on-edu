@@ -55,6 +55,27 @@ def get_learner(learner_id: str, db: Session = Depends(get_db)):
     return _get_or_404(db, Learner, learner_id, "Estudiante")
 
 
+@router.get("/learners/{learner_id}/sessions", response_model=list[SessionOut],
+            summary="Historial de sesiones de un estudiante (más recientes primero)")
+def learner_sessions(
+    learner_id: str,
+    module: str | None = Query(default=None),
+    finished: bool | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=500),
+    db: Session = Depends(get_db),
+):
+    _get_or_404(db, Learner, learner_id, "Estudiante")
+    stmt = select(ActivitySession).where(ActivitySession.learner_id == learner_id)
+    if module:
+        stmt = stmt.where(ActivitySession.module == module)
+    if finished is True:
+        stmt = stmt.where(ActivitySession.ended_at.is_not(None))
+    elif finished is False:
+        stmt = stmt.where(ActivitySession.ended_at.is_(None))
+    stmt = stmt.order_by(ActivitySession.started_at.desc()).limit(limit)
+    return db.scalars(stmt).all()
+
+
 @router.post("/sessions", response_model=SessionOut, status_code=status.HTTP_201_CREATED,
              summary="Iniciar una sesión de actividad")
 def create_session(body: SessionCreate, db: Session = Depends(get_db)):

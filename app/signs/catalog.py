@@ -6,6 +6,7 @@ teachers/linguists can review it without touching code). The schema is
 documented in `docs/sign-engine.md`.
 """
 import json
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 
@@ -28,6 +29,34 @@ DIGITS = {"thumb", "index", "middle", "ring", "pinky"}
 
 class CatalogError(ValueError):
     pass
+
+
+MEDIA_STR_KEYS = {"video", "poster", "avatar", "validated_by", "validated_at"}
+
+
+def _validate_media(code: str, sign_id: str, media) -> None:
+    """Reference video metadata. `ai_generated` is mandatory so the UI can always
+    disclose AI-generated content; `validated_at` needs `validated_by`."""
+    where = f"{code}: sign {sign_id!r} media"
+    if not isinstance(media, dict):
+        raise CatalogError(f"{where} must be an object")
+    unknown = set(media) - MEDIA_STR_KEYS - {"ai_generated"}
+    if unknown:
+        raise CatalogError(f"{where}: unknown keys {sorted(unknown)}")
+    for key in MEDIA_STR_KEYS & set(media):
+        if not isinstance(media[key], str) or not media[key].strip():
+            raise CatalogError(f"{where}: {key} must be a non-empty string")
+    if "video" not in media:
+        raise CatalogError(f"{where}: video is required")
+    if not isinstance(media.get("ai_generated"), bool):
+        raise CatalogError(f"{where}: ai_generated (true/false) is required")
+    if "validated_at" in media:
+        if "validated_by" not in media:
+            raise CatalogError(f"{where}: validated_at requires validated_by")
+        try:
+            date.fromisoformat(media["validated_at"])
+        except ValueError as exc:
+            raise CatalogError(f"{where}: validated_at must be YYYY-MM-DD") from exc
 
 
 def validate_handshape(sign_id: str, spec: dict) -> None:
@@ -78,6 +107,12 @@ def _validate(code: str, data: dict) -> dict:
         for other in sign.get("confusable", []):
             if other not in seen:
                 raise CatalogError(f"{code}: {sign['id']!r} lists unknown confusable {other!r}")
+    for sign in data.get("signs", []):
+        if sign.get("media") is not None:
+            _validate_media(code, sign["id"], sign["media"])
+    words = data.get("spelling_words", [])
+    if not isinstance(words, list) or not all(isinstance(w, str) and w.strip() for w in words):
+        raise CatalogError(f"{code}: spelling_words must be a list of non-empty strings")
     for unit in data.get("units", []):
         unknown = set(unit.get("signs", [])) - seen
         if unknown:

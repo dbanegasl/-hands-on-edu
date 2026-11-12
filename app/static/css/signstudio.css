@@ -209,6 +209,10 @@ body {
 .ss-sign-flags { display: flex; flex-wrap: wrap; gap: 4px; }
 .ss-sign-desc { font-size: 0.9rem; line-height: 1.45; }
 .ss-sign-hint { font-size: 0.85rem; color: var(--ss-accent2); margin-top: 6px; }
+.ss-media-box { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.ss-media { width: 100%; border-radius: 10px; background: #000; }
+.ss-media-note { font-size: 0.78rem; opacity: 0.8; line-height: 1.35; }
+.ss-media-note.pending { color: #fde68a; opacity: 1; }
 
 .ss-meter { height: 12px; background: var(--ss-surface2); border-radius: 999px; overflow: hidden; }
 .ss-meter-fill { height: 100%; width: 0; background: var(--ss-bad); transition: width 0.12s linear, background 0.2s; }

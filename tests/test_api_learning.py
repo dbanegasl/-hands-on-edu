@@ -122,3 +122,42 @@ class TestProgress:
     def test_progress_requires_language(self, client):
         learner = _learner(client)
         assert client.get(f"/api/learners/{learner['id']}/progress").status_code == 422
+
+
+class TestSessionHistory:
+    def test_lists_newest_first_with_filters(self, client):
+        learner = _learner(client)
+        s1 = _session(client, learner["id"], module="aula_senas")
+        client.post(f"/api/sessions/{s1['id']}/finish", json={"score": 4, "max_score": 5, "details": {"unit": "u1"}})
+        s2 = _session(client, learner["id"], module="aula_senas")
+        _session(client, learner["id"], module="gestiedu")
+
+        rows = client.get(f"/api/learners/{learner['id']}/sessions", params={"module": "aula_senas"}).json()
+        assert [r["id"] for r in rows] == [s2["id"], s1["id"]]
+        assert rows[1]["details"] == {"unit": "u1"}
+
+        done = client.get(f"/api/learners/{learner['id']}/sessions", params={"finished": True}).json()
+        assert [r["id"] for r in done] == [s1["id"]]
+        open_ = client.get(f"/api/learners/{learner['id']}/sessions", params={"finished": False}).json()
+        assert len(open_) == 2
+        assert len(client.get(f"/api/learners/{learner['id']}/sessions", params={"limit": 1}).json()) == 1
+
+    def test_unknown_learner_404(self, client):
+        assert client.get("/api/learners/nope/sessions").status_code == 404
+
+
+def test_deleting_learner_cascades(client):
+    """ORM delete of a learner removes its sessions and attempts (no orphan updates)."""
+    from sqlalchemy import func, select
+
+    from app.db import SessionLocal
+    from app.models import ActivitySession, Learner, SignAttempt
+
+    learner = _learner(client)
+    sess = _session(client, learner["id"])
+    client.post(f"/api/sessions/{sess['id']}/attempts", json={"attempts": [{"sign_id": "a", "correct": True}]})
+    with SessionLocal() as db:
+        db.delete(db.get(Learner, learner["id"]))
+        db.commit()
+        assert db.scalar(select(func.count()).select_from(ActivitySession)) == 0
+        assert db.scalar(select(func.count()).select_from(SignAttempt)) == 0
