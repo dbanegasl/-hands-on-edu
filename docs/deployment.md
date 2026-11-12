@@ -227,4 +227,4 @@ Si las notas no llegan a Moodle, el detalle de cada intento está en la tabla `l
 | Despliegue automático | Clave SSH exclusiva y restringida a `deploy.sh --from-ssh`; `known_hosts` obligatorio; entorno `production` con aprobación |
 | Video | La detección corre en el navegador: el video de los estudiantes **no** viaja al servidor (salvo que se fuerce `?engine=server`) |
 | Datos personales | Se guarda el nombre que envía Moodle y los resultados de práctica. Informa a las familias según la normativa de protección de datos (Ecuador: LOPDP) |
-| Pendiente conocido | Los endpoints de progreso aún se autorizan por el id del estudiante (TD-013) |
+| Datos de estudiantes | Cada perfil local tiene un token secreto guardado en su navegador; con Moodle manda el token de lanzamiento de ese estudiante. Sin credencial: 401. Borrar los datos del navegador hace perder el acceso a sus perfiles locales (los datos quedan en el servidor y en el panel docente) |

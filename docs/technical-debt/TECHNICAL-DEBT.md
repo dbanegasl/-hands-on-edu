@@ -242,12 +242,26 @@ services:
 | Campo | Detalle |
 |-------|---------|
 | **ID** | TD-013 |
-| **Estado** | 🔴 Pendiente |
+| **Estado** | ✅ Resuelto (v0.17.0); queda aceptado el `state` OIDC sin cookie (ver abajo) |
 | **Impacto** | Medio (privacidad) |
 | **Esfuerzo de resolución** | M |
 | **REQ relacionado** | [REQ-008](../requirements/INDEX.md), [REQ-019](../requirements/REQ-019-lti13-moodle.md) |
 
 **Descripción:** con perfiles locales, `/api/learners/{id}/*` y `/api/sessions/*` se autorizan solo por conocer el id aleatorio del estudiante. Con LTI, el token de lanzamiento ya liga la sesión al estudiante, pero los endpoints de lectura de progreso aún no lo exigen. El panel docente (`/api/panel/*`, v0.12.0) sí exige token de docente LTI o `ADMIN_TOKEN`. Además, el `state` de OIDC se valida en el servidor (un solo uso, 10 min) sin ligarlo a una cookie del navegador, porque las cookies de terceros se bloquean dentro del iframe del LMS.
+
+> **Resuelto en v0.17.0.** Los datos de un estudiante (`GET /api/learners/{id}`, `/sessions`, `/progress`, y crear o completar sus sesiones) exigen una de estas credenciales:
+>
+> 1. **Perfil local:** `POST /api/learners` entrega una sola vez un **token secreto** del perfil. La base guarda solo su SHA-256, y el navegador lo guarda junto al perfil y lo envía en `X-Learner-Token`.
+> 2. **LTI:** el token de lanzamiento de **ese** estudiante (`Authorization: Bearer`). El de otro estudiante, aunque sea docente, recibe 403.
+> 3. **`ADMIN_TOKEN`:** solo si está configurado (soporte); sin configurar no abre nada.
+>
+> Sin credencial la respuesta es 401, y con una credencial ajena, 403.
+>
+> **Perfiles creados antes de v0.17:** no tienen token. El primer navegador que lo pide (`POST /api/learners/{id}/claim`, automático en el Aula y en los juegos) lo recibe. Después responde 409, y un navegador que ya no tiene acceso descarta ese perfil y crea uno nuevo. Es la misma exposición que había antes, pero solo hasta el primer uso tras actualizar.
+>
+> Pruebas: `tests/test_learner_auth.py`. El resto de pruebas usa un cliente que se comporta como el navegador dueño del perfil (`conftest.py`, `_Device`).
+>
+> **Aceptado:** el `state` de OIDC sigue sin ligarse a una cookie (un solo uso, 10 min en el servidor), por el bloqueo de cookies de terceros en el iframe del LMS.
 
 ---
 

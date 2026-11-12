@@ -49,7 +49,7 @@ Guía para administradores: [docs/moodle-integration.md](../moodle-integration.m
 - [ ] Prueba con un Moodle 4.x real (hoy: 40 tests con plataforma simulada + E2E en navegador con un LMS simulado).
 - [ ] *Dynamic Registration* (pegar una URL en Moodle en lugar de copiar datos a mano).
 - [ ] NRPS (lista del curso) para el panel docente (REQ-007).
-- [ ] Ligar el `state` a una cookie del navegador cuando el LMS abre en ventana nueva (hoy el `state` es de un solo uso en el servidor; ver TD-013).
+- [ ] Ligar el `state` a una cookie del navegador cuando el LMS abre en ventana nueva (hoy el `state` es de un solo uso en el servidor; aceptado en TD-013).
 
 ---
 

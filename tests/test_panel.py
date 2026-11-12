@@ -44,7 +44,7 @@ def _session(client, token=None, learner_id=None, activity="quiz:u1", attempts=(
     sess = client.post("/api/sessions", headers=headers, json={
         "learner_id": learner_id, "module": "aula_senas", "activity": activity, "language": "lsec"}).json()
     if attempts:
-        r = client.post(f"/api/sessions/{sess['id']}/attempts", json={"attempts": [
+        r = client.post(f"/api/sessions/{sess['id']}/attempts", headers=headers, json={"attempts": [
             {"sign_id": s, "correct": ok, "response_ms": 900} for s, ok in attempts]})
         assert r.status_code == 201
     if score is not None:
