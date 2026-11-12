@@ -1,0 +1,18 @@
+# Production override: immutable image (no source mounts, no --reload), port bound
+# to localhost for the HTTPS reverse proxy, persistent data only.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Guide: docs/deployment.md
+
+services:
+  hands-on-edu:
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000",
+              "--workers", "2", "--proxy-headers", "--forwarded-allow-ips", "*"]
+    ports: !override
+      - "127.0.0.1:${HOST_PORT:-9876}:8000"
+    volumes: !override
+      - ./data:/app/data
+    environment:
+      - APP_ENV=production
+    restart: always

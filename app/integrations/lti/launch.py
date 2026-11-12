@@ -26,6 +26,8 @@ CLAIM = "https://purl.imsglobal.org/spec/lti/claim/"
 AGS_CLAIM = "https://purl.imsglobal.org/spec/lti-ags/claim/endpoint"
 DL_CLAIM = "https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings"
 AGS_SCOPE_SCORE = "https://purl.imsglobal.org/spec/lti-ags/scope/score"
+NRPS_CLAIM = "https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice"
+NRPS_SCOPE = "https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly"
 
 MSG_RESOURCE_LINK = "LtiResourceLinkRequest"
 MSG_DEEP_LINKING = "LtiDeepLinkingRequest"
@@ -154,6 +156,7 @@ class LaunchData:
     resource_link: dict = field(default_factory=dict)
     custom: dict = field(default_factory=dict)
     ags: dict = field(default_factory=dict)
+    nrps: dict = field(default_factory=dict)
     deep_linking: dict | None = None
     target_link_uri: str = ""
 
@@ -217,6 +220,6 @@ def validate_launch(db: Session, id_token: str, state: str) -> LaunchData:
         deployment_id=deployment_id, name=name[:120], roles=roles, is_instructor=is_instructor(roles),
         context=claims.get(CLAIM + "context") or {}, resource_link=resource_link,
         custom={k: str(v) for k, v in (claims.get(CLAIM + "custom") or {}).items()},
-        ags=claims.get(AGS_CLAIM) or {}, deep_linking=deep_linking,
+        ags=claims.get(AGS_CLAIM) or {}, nrps=claims.get(NRPS_CLAIM) or {}, deep_linking=deep_linking,
         target_link_uri=claims.get(CLAIM + "target_link_uri") or "",
     )

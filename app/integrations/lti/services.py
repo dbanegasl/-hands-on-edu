@@ -5,6 +5,7 @@ LTI Advantage services used by HandsOnEdu:
   the line item of the launch. Policy: the gradebook keeps the learner's BEST
   result for that activity (a worse retry is recorded as "skipped").
 - Deep Linking: the teacher picks which Aula unit an LMS activity opens.
+- NRPS (Names and Role Provisioning): the course roster for the teacher panel.
 """
 from __future__ import annotations
 
@@ -21,7 +22,7 @@ from sqlalchemy.orm import Session
 
 from app import config
 from app.integrations.lti import keys
-from app.integrations.lti.launch import AGS_SCOPE_SCORE, CLAIM, http_client
+from app.integrations.lti.launch import AGS_SCOPE_SCORE, CLAIM, NRPS_SCOPE, http_client
 from app.models import ActivitySession, LtiLaunch, LtiPlatform, LtiScoreSubmission, LtiSessionLink
 
 log = logging.getLogger(__name__)
@@ -62,12 +63,48 @@ def scores_url(lineitem: str) -> str:
     return urlunsplit(parts._replace(path=parts.path.rstrip("/") + "/scores"))
 
 
+# ── NRPS course roster ───────────────────────────────────────────────────────
+
+NRPS_MEDIA_TYPE = "application/vnd.ims.lti-nrps.v2.membershipcontainer+json"
+ROSTER_TTL_S = 300
+ROSTER_MAX_PAGES = 20
+_roster_cache: dict[str, tuple[float, list[dict]]] = {}
+
+
+def fetch_roster(db: Session, platform: LtiPlatform, memberships_url: str) -> list[dict]:
+    """Active members of the course: [{user_id, name, roles, is_learner}]. Cached for 5 min."""
+    cached = _roster_cache.get(memberships_url)
+    if cached and time.time() - cached[0] < ROSTER_TTL_S:
+        return cached[1]
+    token = access_token(db, platform, NRPS_SCOPE)
+    members: list[dict] = []
+    url: str | None = memberships_url
+    with http_client() as client:
+        for _ in range(ROSTER_MAX_PAGES):
+            if not url:
+                break
+            res = client.get(url, headers={"Authorization": f"Bearer {token}", "Accept": NRPS_MEDIA_TYPE})
+            res.raise_for_status()
+            for m in res.json().get("members", []):
+                if m.get("status", "Active") != "Active" or not m.get("user_id"):
+                    continue
+                roles = [r for r in m.get("roles", []) if isinstance(r, str)]
+                name = m.get("name") or " ".join(p for p in (m.get("given_name"), m.get("family_name")) if p)
+                members.append({"user_id": str(m["user_id"]), "name": name or str(m["user_id"]),
+                                "roles": roles, "is_learner": any(r == "Learner" or r.endswith("#Learner") for r in roles)})
+            url = res.links.get("next", {}).get("url")
+    _roster_cache[memberships_url] = (time.time(), members)
+    return members
+
+
 # ── AGS score publishing ─────────────────────────────────────────────────────
 
 def gradable(launch: LtiLaunch, sess: ActivitySession) -> str | None:
     """Reason the session is NOT sent, or None if it should be."""
     if not launch.ags_lineitem or AGS_SCOPE_SCORE not in (launch.ags_scopes or []):
         return "La actividad de la plataforma no tiene calificación"
+    if launch.is_instructor:
+        return "Las evaluaciones del docente no se envían al libro de calificaciones"
     if not (sess.activity or "").startswith(GRADED_ACTIVITY_PREFIX):
         return "Solo las evaluaciones se califican"
     unit = (launch.custom or {}).get("unit")

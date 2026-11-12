@@ -113,24 +113,13 @@ docker compose up --build
 
 ## 🎓 Integración con Moodle
 
-HandsOnEdu se conecta con Moodle mediante su **REST API** para:
+HandsOnEdu es una herramienta **LTI 1.3 / LTI Advantage** (Moodle 4.x, Canvas, Blackboard, Brightspace…):
 
-- ✅ Registrar resultados de evaluaciones gestuales como calificaciones
-- ✅ Marcar actividades como completadas automáticamente
-- ✅ Obtener información de cursos y estudiantes
+- ✅ El estudiante entra desde su curso con un clic, sin otra cuenta (OIDC + `id_token` firmado)
+- ✅ La mejor nota de cada evaluación llega sola al libro de calificaciones (AGS)
+- ✅ El docente elige qué unidad abre cada actividad (Deep Linking)
 
-**Configuración requerida en Moodle:**
-
-1. Ir a `Administración del sitio > Plugins > Servicios web > Activar servicios web`
-2. Habilitar protocolo REST
-3. Crear un usuario de servicio y generar token
-4. Configurar en `.env`:
-   ```env
-   MOODLE_URL=https://tu-moodle.universidad.edu
-   MOODLE_TOKEN=tu_token_aqui
-   ```
-
-Ver [docs/moodle-integration.md](docs/moodle-integration.md) para instrucciones detalladas.
+Probado de punta a punta con Moodle 4.5.4. Prueba local en 30 minutos: `docker compose -f docker-compose.yml -f docker-compose.moodle.yml up -d && ./scripts/moodle-dev-setup.sh` ([guía](docs/onboarding/02-moodle-local.md)). Configuración: [docs/moodle-integration.md](docs/moodle-integration.md).
 
 ---
 
@@ -138,15 +127,17 @@ Ver [docs/moodle-integration.md](docs/moodle-integration.md) para instrucciones 
 
 | Documento | Descripción |
 |-----------|-------------|
+| **[Puesta en marcha (onboarding)](docs/onboarding/README.md)** | **Ruta para instituciones: prueba local, despliegue, Moodle, contenido LSEC, docentes, problemas frecuentes** |
 | [Arquitectura del Sistema](docs/architecture.md) | Diagrama de capas, flujo WebSocket, decisiones de diseño |
 | [Protocolo WebSocket](docs/websocket-protocol.md) | Referencia completa del endpoint `/ws/analyze` |
-| [Integración con Moodle](docs/moodle-integration.md) | Configuración y funciones REST usadas |
+| [Panel docente](docs/modules/panel.md) | Progreso del curso: unidades, dominio por seña, lista NRPS, notas en Moodle, CSV |
+| [Integración con Moodle](docs/moodle-integration.md) | LTI 1.3: configuración, flujo, solución de problemas |
 | [GestiEdu](docs/modules/gestiedu.md) | Evaluaciones gestuales: flujo, tipos de pregunta, hold-to-confirm |
 | [MotivaSign](docs/modules/motivasign.md) | Aprendizaje de señas: catálogo, modos, máquina de estados |
 | [AttendEye](docs/modules/attendeye.md) | Asistencia y participación: roll call, reporte, doble WebSocket |
 | [VirtualPainter](docs/modules/virtualpainter.md) | Dibujo AR: capas canvas, modos de gesto, algoritmo de trazo |
 | [Guía de Desarrollo](docs/development-guide.md) | Cómo crear módulos, convenciones, hot-reload |
-| [Guía de Despliegue](docs/deployment.md) | Local, producción, Nginx, HTTPS/WSS |
+| [Guía de Despliegue](docs/deployment.md) | Producción con HTTPS (Caddy/Nginx), variables, copias de seguridad |
 | [API Reference](http://localhost:9876/docs) | Swagger UI *(requiere servidor activo)* |
 
 ---

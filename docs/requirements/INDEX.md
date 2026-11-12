@@ -23,7 +23,7 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 | [REQ-004](./REQ-004-undo-virtualpainter.md) | Deshacer / Rehacer en VirtualPainter | Mejora | Media | ✅ Hecho | VirtualPainter |
 | [REQ-005](./REQ-005-sqlite-persistence.md) | Persistencia de Sesiones con SQLite | Feature | Alta | 🔄 En progreso (base hecha en v0.9.0; falta conectar GestiEdu/AttendEye) | Global / Backend |
 | [REQ-006](./REQ-006-question-editor-gestiedu.md) | Editor de Preguntas para Docentes (GestiEdu) | Feature | Media | 📋 Pendiente | GestiEdu |
-| [REQ-007](./REQ-007-teacher-dashboard.md) | Dashboard del Docente | Feature | Alta | 📋 Pendiente | Global |
+| [REQ-007](./REQ-007-teacher-dashboard.md) | Panel docente (progreso del curso, lista NRPS, CSV) | Feature | Alta | ✅ Hecho (v0.12.0, Aula de Señas) | Aula / Global |
 | [REQ-008](./REQ-008-basic-auth.md) | Autenticación Básica (Roles Docente / Estudiante) | Feature | Alta | 📋 Pendiente | Global |
 | [REQ-009](./REQ-009-moodle-integration.md) | Integración Real con Moodle LMS (REST) — notas reemplazadas por REQ-019 | Feature | Baja | 📋 Pendiente | Global / Backend |
 | [REQ-010](./REQ-010-custom-ml-classifier.md) | Clasificador ML de Gestos Personalizado | Feature | Baja | 📋 Pendiente | Global / Backend |
@@ -35,7 +35,7 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 | [REQ-016](./REQ-016-browser-hand-engine.md) | Detección de manos en el navegador (MediaPipe Tasks JS) | Tech-Debt | Alta | ✅ Hecho | Global / Frontend |
 | [REQ-017](./REQ-017-sign-recognition-engine.md) | Motor de reconocimiento de señas + Estudio de Señas (LSEC) | Feature | Alta | ✅ Hecho (contenido por validar) | Global / Señas |
 | [REQ-018](./REQ-018-aula-de-senas.md) | Aula de Señas: currículo, práctica y evaluación | Feature | Alta | ✅ Hecho | Aula de Señas (nuevo) |
-| [REQ-019](./REQ-019-lti13-moodle.md) | Integración LTI 1.3 con Moodle (SSO + notas AGS) | Feature | Alta | ✅ Hecho (falta prueba con Moodle real) | Global / Integraciones |
+| [REQ-019](./REQ-019-lti13-moodle.md) | Integración LTI 1.3 con Moodle (SSO + notas AGS) | Feature | Alta | ✅ Hecho (probado con Moodle 4.5.4; falta piloto institucional) | Global / Integraciones |
 | [REQ-020](./REQ-020-videos-ia-validados.md) | Videos de referencia generados con IA y validados por intérprete | Feature | Alta | 🔄 En progreso (falta producir y validar) | Aula / Contenido LSEC |
 
 ---
@@ -57,7 +57,7 @@ Dirección de producto (2026-11-11): plataforma de referencia para la **enseñan
 ```
 ✅ REQ-016 (detección en navegador) → ✅ REQ-017 (motor de señas + Estudio)
     → ✅ REQ-018 (Aula de Señas) → ✅ REQ-019 (LTI 1.3 + notas en Moodle)
-    → REQ-007 (dashboard docente) → REQ-005 (persistencia de GestiEdu/AttendEye)
+    → ✅ REQ-007 (panel docente) → REQ-005 (persistencia de GestiEdu/AttendEye)
     → REQ-010 (clasificador ML entrenado con las plantillas grabadas) → REQ-011 (CD)
 ```
 

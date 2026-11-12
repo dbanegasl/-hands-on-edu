@@ -15,6 +15,25 @@
 
 ---
 
+## [0.12.0] — 2026-11-12
+
+### Añadido
+
+- **REQ-007** — **Panel docente** (`/panel`): progreso del curso en el Aula de Señas.
+  - Desde Moodle (docente → *📊 Panel del curso* en el Aula) muestra solo ese curso; con el token de administrador, toda la instalación.
+  - Tarjetas de resumen, estudiantes activos por semana, mapa de calor estudiante × unidad (mejor nota), señas con más dificultad, detalle por estudiante con dominio por seña y exportación CSV.
+  - **Lista del curso por LTI NRPS** (Names and Role Provisioning): aparecen también quienes nunca abrieron la actividad. Nueva tabla `lti_contexts` (se crea sola al arrancar).
+  - Estado de cada nota en la plataforma y **reintento** de envíos fallidos (`POST /api/panel/sessions/{id}/grade/retry`).
+- **Guías de puesta en marcha** en `docs/onboarding/`: prueba local con Moodle, conexión del Moodle institucional y piloto, producción de contenido LSEC con intérprete, guía para docentes y problemas frecuentes.
+- **Moodle 4.5 local para pruebas**: `docker-compose.moodle.yml` + `scripts/moodle-dev-setup.sh` (herramienta LTI, curso y usuarios listos). La integración LTI se probó de punta a punta contra Moodle 4.5.4.
+- `docker-compose.prod.yml` (imagen inmutable, 2 workers, puerto solo en localhost) y `docs/deployment.md` reescrita (HTTPS con Caddy o Nginx, variables, copias de seguridad).
+
+### Corregido
+
+- Las evaluaciones que hace un docente en modo docente ya no se envían al libro de calificaciones.
+
+---
+
 ## [0.11.0] — 2026-11-12
 
 ### Añadido

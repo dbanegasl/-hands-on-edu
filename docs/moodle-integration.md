@@ -8,9 +8,11 @@ HandsOnEdu se integra con Moodle (4.x) y con cualquier LMS compatible con **LTI 
 | La nota de cada evaluación llega sola al libro de calificaciones | Assignment and Grade Services (AGS) — se conserva la **mejor** nota |
 | El docente elige qué unidad abre cada actividad | Deep Linking |
 
+> ✅ Probado de punta a punta con **Moodle 4.5.4**. Para reproducirlo en tu equipo: [onboarding/02-moodle-local.md](./onboarding/02-moodle-local.md). Puesta en marcha completa: [onboarding/](./onboarding/README.md).
+
 ## Requisitos
 
-- HandsOnEdu accesible por **HTTPS** desde el navegador de los estudiantes y desde el servidor Moodle.
+- HandsOnEdu accesible por **HTTPS** desde el navegador de los estudiantes y desde el servidor Moodle, y Moodle accesible desde el servidor de HandsOnEdu (ver [onboarding/03 §2](./onboarding/03-moodle-institucional.md#2-conectividad-5-minutos-evita-la-mayoría-de-problemas)).
 - `PUBLIC_BASE_URL` con esa dirección pública (sin `/` final), p. ej. `PUBLIC_BASE_URL=https://senas.miescuela.edu.ec`.
 - `ADMIN_TOKEN` definido en producción (protege el registro de plataformas y las plantillas de señas).
 
@@ -35,6 +37,7 @@ Administración del sitio → Plugins → Actividades → Herramienta externa
 | Soporta Deep Linking | ✅ (URL de selección de contenido: `{PUBLIC_BASE_URL}/lti/launch`) |
 | Contenedor de lanzamiento predeterminado | **Nueva ventana** — la cámara no funciona dentro de un iframe sin permisos explícitos |
 | Servicios → IMS LTI Assignment and Grade Services | Usar este servicio para la sincronización de calificaciones y la gestión de columnas |
+| Servicios → IMS LTI Names and Role Provisioning | Usar este servicio para recuperar información de los miembros según la configuración de privacidad (lista del curso para el panel docente) |
 | Privacidad → Compartir el nombre del usuario | Siempre |
 
 ## Paso 2 · Registrar el Moodle en HandsOnEdu
@@ -73,7 +76,7 @@ Otros despliegues de la misma herramienta: `POST /api/lti/platforms/{id}/deploym
 2. HandsOnEdu muestra las unidades del Aula de Señas: elige una o varias (con calificación 0–100) o el curso completo (práctica libre, sin nota).
 3. Moodle crea una actividad por unidad con su columna en el libro de calificaciones.
 
-El estudiante abre la actividad y entra al Aula con su nombre de Moodle. La unidad asignada aparece abierta y resaltada. Al terminar la evaluación de esa unidad, el Aula muestra *✔ Nota enviada a la plataforma*. Si repite la evaluación, solo se envía cuando mejora su nota. Los docentes que abren la actividad ven todas las unidades abiertas.
+El estudiante abre la actividad y entra al Aula con su nombre de Moodle. La unidad asignada aparece abierta y resaltada. Al terminar la evaluación de esa unidad, el Aula muestra *✔ Nota enviada a la plataforma*. Si repite la evaluación, solo se envía cuando mejora su nota. Los docentes que abren la actividad ven todas las unidades abiertas, y sus evaluaciones de prueba no se envían al libro de calificaciones.
 
 ## Cómo funciona
 
@@ -101,6 +104,7 @@ Fin de la evaluación ──(6) token OAuth2 (client_credentials + JWT firmado p
 | *id_token inválido: …audience…* | El client ID registrado no es el de Moodle |
 | *Sesión de inicio LTI desconocida o ya usada* | Se recargó la página del lanzamiento: vuelve a abrir la actividad |
 | La cámara no se activa | La herramienta abre en iframe: usa *Nueva ventana* |
+| Moodle da error al *Seleccionar contenido* o al guardar la actividad | Moodle no alcanza `{PUBLIC_BASE_URL}/lti/jwks`. Si HandsOnEdu está en una IP privada o un puerto ≠ 443, revisa *Seguridad HTTP → Hosts bloqueados / Puertos permitidos por cURL* |
 | *No se pudo enviar la nota* | Revisa que AGS esté activado en la herramienta y que HandsOnEdu alcance `/mod/lti/token.php`; el detalle está en `lti_score_submissions` |
 
 ---

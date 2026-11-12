@@ -266,3 +266,6 @@ body {
   display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
   background: var(--au-surface); border: 1px solid var(--au-border); border-radius: 12px; padding: 10px 14px;
 }
+
+/* Teacher shortcut to the course panel (REQ-007) inside the LTI banner */
+.au-panel-link { display: inline-block; margin-left: 8px; padding: 4px 12px; font-size: 0.85rem; text-decoration: none; color: var(--au-text); }

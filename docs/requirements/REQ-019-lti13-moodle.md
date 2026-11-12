@@ -7,7 +7,7 @@
 | **ID** | REQ-019 |
 | **Tipo** | Feature |
 | **Prioridad** | Alta |
-| **Estado** | ✅ Hecho (v0.11.0) — falta prueba con un Moodle real |
+| **Estado** | ✅ Hecho (v0.11.0) — probado de punta a punta con Moodle 4.5.4 (`docker-compose.moodle.yml`); falta piloto en un Moodle institucional |
 | **Módulo** | Global / Integraciones |
 | **Reemplaza** | El enfoque de tokens REST de [REQ-009](./REQ-009-moodle-integration.md) para notas |
 

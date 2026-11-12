@@ -197,6 +197,21 @@ class LtiLaunch(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now)
 
 
+class LtiContext(Base):
+    """An LMS course seen in launches, with its roster service (NRPS) endpoint."""
+
+    __tablename__ = "lti_contexts"
+    __table_args__ = (UniqueConstraint("platform_id", "context_id"),)
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    platform_id: Mapped[str] = mapped_column(ForeignKey("lti_platforms.id", ondelete="CASCADE"), index=True)
+    context_id: Mapped[str] = mapped_column(String(255))
+    title: Mapped[str | None] = mapped_column(String(255))
+    label: Mapped[str | None] = mapped_column(String(120))
+    memberships_url: Mapped[str | None] = mapped_column(String(500))
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now, onupdate=_now)
+
+
 class LtiSessionLink(Base):
     """Activity session started inside an LTI launch (its grade goes back to the LMS)."""
 

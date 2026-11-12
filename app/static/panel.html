@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel docente | HandsOnEdu</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+  <link rel="stylesheet" href="/static/css/aula.css">
+  <link rel="stylesheet" href="/static/css/panel.css">
+</head>
+<body>
+  <nav class="au-nav">
+    <a href="/" class="au-logo">🖐️ HandsOnEdu</a>
+    <span class="au-module-name">📊 Panel docente</span>
+    <span id="pn-scope" class="au-lang"></span>
+    <a id="pn-back" href="/" class="au-back">← Inicio</a>
+  </nav>
+
+  <main class="pn-main">
+    <!-- Access (installation-wide view without an LMS) -->
+    <section id="pn-access" class="pn-access" hidden>
+      <h1>Panel docente</h1>
+      <p class="au-muted">Abre el panel desde tu curso de Moodle (Aula de Señas en modo docente → <em>Panel del curso</em>) o escribe el token de administrador de esta instalación para ver a todos los estudiantes.</p>
+      <form id="pn-access-form" class="pn-access-form">
+        <input id="pn-admin" class="au-input" type="password" placeholder="Token de administrador" autocomplete="off" required>
+        <button class="au-btn au-btn-primary" type="submit">Entrar</button>
+      </form>
+    </section>
+
+    <div id="pn-loading" class="pn-loading" role="status">Cargando el progreso del curso…</div>
+
+    <div id="pn-content" hidden>
+      <header class="pn-head">
+        <div>
+          <h1 id="pn-title">Curso</h1>
+          <p id="pn-sub" class="au-muted"></p>
+        </div>
+        <div class="pn-actions">
+          <button id="pn-refresh" class="au-btn au-btn-ghost" type="button">↻ Actualizar</button>
+          <button id="pn-export" class="au-btn" type="button">⬇ Exportar CSV</button>
+        </div>
+      </header>
+      <div id="pn-roster-note" class="au-banner" hidden></div>
+
+      <section class="pn-tiles" id="pn-tiles" aria-label="Resumen"></section>
+
+      <section class="pn-card" aria-labelledby="pn-h-weekly">
+        <div class="pn-card-head">
+          <h2 id="pn-h-weekly">Estudiantes activos por semana</h2>
+          <span class="au-muted pn-small">Últimas 8 semanas · pasa el cursor por una barra para ver el detalle</span>
+        </div>
+        <div id="pn-weekly" class="pn-chart"></div>
+        <details class="pn-table-view"><summary>Ver como tabla</summary><div id="pn-weekly-table"></div></details>
+      </section>
+
+      <section class="pn-card" aria-labelledby="pn-h-grid">
+        <div class="pn-card-head">
+          <h2 id="pn-h-grid">Estudiantes y unidades</h2>
+          <div class="pn-filters">
+            <input id="pn-search" class="au-input pn-search" type="search" placeholder="Buscar estudiante…" aria-label="Buscar estudiante">
+            <label class="pn-small au-muted">Ordenar
+              <select id="pn-sort" class="au-input pn-select">
+                <option value="name">Nombre</option>
+                <option value="last">Última actividad</option>
+                <option value="units">Unidades aprobadas</option>
+                <option value="mastery">Dominio medio</option>
+                <option value="inactive">Sin actividad primero</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <p class="au-muted pn-small">Cada celda es la <strong>mejor nota</strong> de la evaluación de la unidad. ✔ = aprobada (≥ <span id="pn-pass">70</span>%). Pulsa un estudiante para ver su detalle por seña.</p>
+        <div id="pn-legend" class="pn-legend" aria-hidden="true"></div>
+        <div class="pn-grid-wrap"><table id="pn-grid" class="pn-grid"></table></div>
+        <p id="pn-empty" class="pn-empty" hidden>Todavía no hay estudiantes con actividad en este curso. Cuando abran el Aula de Señas desde Moodle aparecerán aquí.</p>
+      </section>
+
+      <section class="pn-card" aria-labelledby="pn-h-signs">
+        <div class="pn-card-head">
+          <h2 id="pn-h-signs">Señas con más dificultad</h2>
+          <span class="au-muted pn-small">% de aciertos del grupo (señas con 3 intentos o más)</span>
+        </div>
+        <div id="pn-signs" class="pn-bars"></div>
+        <p class="au-muted pn-small">Si una seña bien hecha falla a menudo, grabar más plantillas en el <a href="/signstudio">Estudio de Señas</a> suele mejorar el reconocimiento.</p>
+      </section>
+    </div>
+  </main>
+
+  <!-- Learner detail -->
+  <div id="pn-drawer-bg" class="pn-drawer-bg" hidden></div>
+  <aside id="pn-drawer" class="pn-drawer" role="dialog" aria-modal="true" aria-labelledby="pn-d-name" hidden>
+    <header class="pn-drawer-head">
+      <div>
+        <h2 id="pn-d-name">Estudiante</h2>
+        <p id="pn-d-sub" class="au-muted pn-small"></p>
+      </div>
+      <button id="pn-d-close" class="au-btn au-btn-ghost" type="button" aria-label="Cerrar">✕</button>
+    </header>
+    <div id="pn-d-body" class="pn-drawer-body"></div>
+  </aside>
+
+  <div id="pn-tip" class="pn-tip" role="tooltip" hidden></div>
+  <div id="au-toast" class="au-toast" role="status" hidden></div>
+
+  <script src="/static/js/panel.js"></script>
+</body>
+</html>
