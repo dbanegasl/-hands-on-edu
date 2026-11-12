@@ -1,0 +1,23 @@
+# HandsOnEdu on a server, from the published image (no source checkout needed).
+# Put this folder in e.g. /opt/handsonedu with a .env (see .env.example) and run
+#   ./deploy.sh 0.15.0        # install / update / roll back to a version
+# Guide: docs/deployment.md
+
+name: handsonedu
+
+services:
+  hands-on-edu:
+    image: ${HANDSONEDU_IMAGE:-ghcr.io/dbanegasl/handsonedu}:${HANDSONEDU_VERSION:-latest}
+    ports:
+      - "127.0.0.1:${HOST_PORT:-9876}:8000"     # only the HTTPS reverse proxy reaches it
+    volumes:
+      - ./data:/app/data                       # SQLite: learners, templates, LTI keys
+    env_file:
+      - path: .env
+        required: true
+    environment:
+      - APP_ENV=production
+      - WEB_CONCURRENCY=${WEB_CONCURRENCY:-2}
+      - FORWARDED_ALLOW_IPS=*
+    restart: always
+    # The image defines a HEALTHCHECK on /health.

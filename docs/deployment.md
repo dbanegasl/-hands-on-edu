@@ -23,7 +23,7 @@ El código se monta en el contenedor y se recarga solo. Tests: ver `CLAUDE.md` /
 | Software | Docker 24+ con Docker Compose v2.24+ | `!override` en `docker-compose.prod.yml` necesita Compose 2.24 o posterior |
 | Dominio | p. ej. `senas.miescuela.edu.ec` | |
 | HTTPS | **Obligatorio** | Sin HTTPS los navegadores no dan acceso a la cámara; LTI también lo exige |
-| Salida a Internet | Solo para construir la imagen | Descarga el modelo y MediaPipe JS; después el sistema funciona aunque la red bloquee CDNs |
+| Salida a Internet | Para descargar la imagen (o construirla) | La imagen ya incluye el modelo y MediaPipe JS: el sistema funciona aunque la red de la institución bloquee CDNs |
 
 Equipos de los estudiantes: Chrome, Edge o Firefox recientes, cámara web, y de preferencia GPU integrada o mejor. En equipos sin GPU el motor usa la CPU automáticamente.
 
@@ -39,12 +39,30 @@ Equipos de los estudiantes: Chrome, Edge o Firefox recientes, cámara web, y de 
 
 ### Arranque
 
+**Opción A: imagen publicada (recomendada).** No hace falta clonar el repositorio ni construir nada. Cada versión se publica en `ghcr.io/dbanegasl/handsonedu`.
+
 ```bash
+sudo mkdir -p /opt/handsonedu && sudo chown "$USER" /opt/handsonedu && cd /opt/handsonedu
+base=https://raw.githubusercontent.com/dbanegasl/-hands-on-edu/main/deploy
+curl -fsSLO $base/docker-compose.yml
+curl -fsSLO $base/deploy.sh
+curl -fsSL $base/.env.example -o .env && chmod +x deploy.sh
+nano .env                                  # PUBLIC_BASE_URL, ADMIN_TOKEN (ver tabla de arriba)
+./deploy.sh 0.15.0                         # o la última versión publicada (Releases en GitHub)
+```
+
+`deploy.sh` descarga la imagen, la arranca y espera a que `/health` responda con esa versión. El servicio escucha solo en `127.0.0.1:9876`, para el proxy. Los datos quedan en `/opt/handsonedu/data`.
+
+**Opción B: construir desde el código** (para modificar el código o si el servidor no alcanza `ghcr.io`):
+
+```bash
+git clone https://github.com/dbanegasl/-hands-on-edu.git handsonedu && cd handsonedu
+cp .env.example .env && nano .env
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 curl -s http://127.0.0.1:9876/health      # {"status":"ok","version":"…"}
 ```
 
-`docker-compose.prod.yml` usa la imagen inmutable (sin montar el código ni `--reload`), arranca 2 workers y publica el puerto solo en `127.0.0.1`, para el proxy. Persisten únicamente los datos (`./data`).
+En los dos casos la imagen es inmutable: sin código montado y sin `--reload`. Arranca `WEB_CONCURRENCY` workers (2 por defecto) y persisten únicamente los datos (`./data`).
 
 ### Proxy HTTPS
 
@@ -117,24 +135,78 @@ dst = sqlite3.connect(f'/app/data/backup-{datetime.date.today()}.db')
 src.backup(dst); dst.close(); print('ok')"
 ```
 
-Programa esa copia a diario (cron) y lleva los archivos `data/backup-*.db` fuera del servidor. Para restaurar: detén el servicio, reemplaza `data/handsonedu.db` por la copia y arranca. Las plantillas también se pueden exportar a JSON desde el Estudio de Señas.
+Programa esa copia a diario (cron) y lleva los archivos `data/backup-*.db` fuera del servidor. Además, `deploy.sh` hace una copia automática antes de cada actualización en `data/backups/` (conserva las 14 últimas; `KEEP_BACKUPS`). Para restaurar: detén el servicio, reemplaza `data/handsonedu.db` por la copia y arranca. Las plantillas también se pueden exportar a JSON desde el Estudio de Señas.
 
 > Sin migraciones automáticas (TD-012): las tablas nuevas se crean al arrancar, pero un cambio de columnas en tablas existentes necesitaría una migración manual. Lee el CHANGELOG antes de actualizar.
 
 ## 4. Actualizar
 
+Lee antes el CHANGELOG de la versión (en *Releases* de GitHub), sobre todo si menciona cambios en la base de datos (TD-012).
+
+### A mano (opción A)
+
 ```bash
-cp data/handsonedu.db data/pre-update-$(date +%F).db     # copia antes de actualizar
-git pull
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-curl -s http://127.0.0.1:9876/health
+cd /opt/handsonedu
+./deploy.sh 0.16.0        # actualizar
+./deploy.sh 0.15.0        # volver a la versión anterior
 ```
+
+`deploy.sh` hace, en orden:
+
+1. Descarga la imagen. Si falla, no cambia nada.
+2. Copia la base en `data/backups/handsonedu-<fecha>-before-<versión>.db`.
+3. Cambia `HANDSONEDU_VERSION` en `.env` y reinicia.
+4. Espera a que `/health` responda **con esa versión**. Si no lo hace en 120 s (`HEALTH_TIMEOUT`), **vuelve sola a la versión anterior**, muestra los registros y termina con error.
+
+Con la opción B: `git pull && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build` (haz antes la copia del §3).
+
+### Automática al publicar una versión (entrega continua, REQ-011)
+
+Al publicar una etiqueta `vX.Y.Z` en GitHub, el workflow *Release*:
+
+1. repite todas las pruebas;
+2. publica la imagen y la *Release* con las notas;
+3. **si está configurado**, entra por SSH al servidor y ejecuta `deploy.sh X.Y.Z`.
+
+Configuración (una vez):
+
+1. **En el servidor:** instala con la opción A. El usuario que despliega debe poder usar Docker (grupo `docker`). Crea una clave solo para desplegar y **restríngela a `deploy.sh`** en `~/.ssh/authorized_keys`:
+
+   ```bash
+   ssh-keygen -t ed25519 -N '' -C handsonedu-deploy -f deploy_key       # en tu equipo
+   # en el servidor, una línea en ~/.ssh/authorized_keys:
+   command="/opt/handsonedu/deploy.sh --from-ssh",restrict ssh-ed25519 AAAA… handsonedu-deploy
+   ```
+
+   Con `--from-ssh` la clave solo puede ejecutar `deploy.sh`, que valida la versión recibida (`X.Y.Z` o `latest`).
+2. **En GitHub** (*Settings → Secrets and variables → Actions*):
+
+   | Tipo | Nombre | Valor |
+   |---|---|---|
+   | Secreto | `DEPLOY_SSH_KEY` | Contenido de `deploy_key` (privada) |
+   | Secreto | `DEPLOY_KNOWN_HOSTS` | Salida de `ssh-keyscan -H senas.miescuela.edu.ec` (comprueba la huella) |
+   | Variable | `DEPLOY_HOST` | `senas.miescuela.edu.ec`. **Sin esta variable no se despliega nada** |
+   | Variable | `DEPLOY_USER` | Usuario SSH del servidor |
+   | Variable (opcional) | `DEPLOY_PORT`, `DEPLOY_PATH` | `22`, `/opt/handsonedu` |
+   | Variable (opcional) | `PUBLIC_BASE_URL` | Para comprobar `/health` desde fuera al terminar |
+
+3. **Aprobación (recomendado):** en *Settings → Environments → production*, activa *Required reviewers*. Cada despliegue esperará a que una persona lo apruebe.
+4. **Imagen accesible:** tras la primera publicación, en *Packages → handsonedu → Package settings*, cambia la visibilidad a **Public**. Si prefieres mantenerla privada, en el servidor haz `docker login ghcr.io` con un token que tenga `read:packages`.
+
+**Revertir desde GitHub:** *Actions → Release → Run workflow*, con la versión anterior. Despliega esa versión publicada sin construir nada.
+
+### Publicar una versión (equipo de desarrollo)
+
+1. En la rama de la funcionalidad, sube `APP_VERSION` en `app/main.py` y añade la sección `## [X.Y.Z] — fecha` al CHANGELOG. La CI comprueba que estén de acuerdo.
+2. Fusiona en `main` con la CI en verde. Conviene proteger `main` en *Settings → Branches* para exigir los checks.
+3. Publica la etiqueta: `git tag vX.Y.Z && git push origin vX.Y.Z`. Si no coincide con `APP_VERSION`, el workflow se detiene antes de publicar nada.
 
 ## 5. Operación
 
 ```bash
 docker compose ps                         # estado (healthcheck cada 30 s)
 docker compose logs -f --tail=200         # registros
+grep HANDSONEDU_VERSION .env              # versión instalada (opción A)
 ```
 
 Si las notas no llegan a Moodle, el detalle de cada intento está en la tabla `lti_score_submissions` (estado `failed` con el error). Ver la sección de problemas frecuentes de [moodle-integration.md](./moodle-integration.md).
@@ -146,6 +218,8 @@ Si las notas no llegan a Moodle, el detalle de cada intento está en la tabla `l
 | HTTPS | Obligatorio (cámara y LTI) |
 | `ADMIN_TOKEN` | Definido, largo y fuera del repositorio (`.env` está en `.gitignore`) |
 | Puerto | Solo `127.0.0.1:9876`; el exterior entra por el proxy |
+| Imagen | No contiene `.env`, datos ni el historial de git (`.dockerignore`, comprobado en CI) |
+| Despliegue automático | Clave SSH exclusiva y restringida a `deploy.sh --from-ssh`; `known_hosts` obligatorio; entorno `production` con aprobación |
 | Video | La detección corre en el navegador: el video de los estudiantes **no** viaja al servidor (salvo que se fuerce `?engine=server`) |
 | Datos personales | Se guarda el nombre que envía Moodle y los resultados de práctica. Informa a las familias según la normativa de protección de datos (Ecuador: LOPDP) |
 | Pendiente conocido | Los endpoints de progreso aún se autorizan por el id del estudiante (TD-013) |

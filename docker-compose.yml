@@ -2,11 +2,15 @@ services:
   hands-on-edu:
     build: .
     container_name: hands_on_edu
+    # Development: reload on code changes (the image's default command does not).
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     ports:
       - "${HOST_PORT:-9876}:8000"
     volumes:
       - ./app:/app/app
       - ./tests:/app/tests
+      - ./scripts:/app/scripts
+      - ./docs:/app/docs
       - ./pytest.ini:/app/pytest.ini
       - ./requirements-dev.txt:/app/requirements-dev.txt
       # SQLite database (learners, sessions, attempts, sign templates)

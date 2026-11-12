@@ -7,6 +7,8 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/dbanegasl/-hands-on-edu/actions/workflows/ci.yml/badge.svg)](https://github.com/dbanegasl/-hands-on-edu/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/dbanegasl/-hands-on-edu?label=versi%C3%B3n)](https://github.com/dbanegasl/-hands-on-edu/releases)
 
 ## 🎯 Visión del Proyecto
 
@@ -137,7 +139,7 @@ Probado de punta a punta con Moodle 4.5.4. Prueba local en 30 minutos: `docker c
 | [AttendEye](docs/modules/attendeye.md) | Asistencia y participación: roll call, reporte, doble WebSocket |
 | [VirtualPainter](docs/modules/virtualpainter.md) | Dibujo AR: capas canvas, modos de gesto, algoritmo de trazo |
 | [Guía de Desarrollo](docs/development-guide.md) | Cómo crear módulos, convenciones, hot-reload |
-| [Guía de Despliegue](docs/deployment.md) | Producción con HTTPS (Caddy/Nginx), variables, copias de seguridad |
+| [Guía de Despliegue](docs/deployment.md) | Producción con HTTPS (Caddy/Nginx), imagen publicada, actualización automática y reversión, copias de seguridad |
 | [API Reference](http://localhost:9876/docs) | Swagger UI *(requiere servidor activo)* |
 
 ---

@@ -1,17 +1,79 @@
 # REQ-011 — Pipeline CI/CD con GitHub Actions
 
-> **Última actualización:** 2026-04-30
+> **Última actualización:** 2026-11-12
 
 | Campo | Valor |
 |-------|-------|
 | **ID** | REQ-011 |
 | **Tipo** | Tech-Debt |
 | **Prioridad** | Alta |
-| **Estado** | 🔄 En progreso — `ci.yml` implementado en v0.9.0 (pytest + node --test + docker build); falta `cd.yml` |
+| **Estado** | ✅ Hecho — CI en v0.9.0; entrega continua (imagen publicada, despliegue con respaldo y reversión automática) en v0.15.0 |
 | **Módulo** | Global / DevOps |
 | **Esfuerzo estimado** | M (3–5 horas) |
 
 ---
+
+## Implementación (v0.15.0)
+
+```
+git tag v0.15.0 && git push origin v0.15.0
+        │
+        ▼  .github/workflows/release.yml
+ verify ── la etiqueta coincide con APP_VERSION y hay sección en el CHANGELOG (scripts/release.py)
+   │
+ ci ────── el mismo ci.yml de cada PR (pytest ≥80 %, node --test, imagen, deploy.sh de punta a punta)
+   │
+ publish ─ construye la imagen → prueba de humo (arranca, /health con esa versión, páginas y WASM)
+   │        → ghcr.io/dbanegasl/handsonedu:{0.15.0, 0.15, latest} → GitHub Release con las notas del CHANGELOG
+   │
+ deploy ── (solo si está la variable DEPLOY_HOST; entorno «production», con aprobación opcional)
+            ssh servidor → deploy/deploy.sh 0.15.0:
+              descarga la imagen → copia de la base → cambia la versión → reinicia
+              → espera /health con la versión esperada → si falla, vuelve sola a la anterior
+```
+
+Cambios respecto a la propuesta original (abajo, como referencia histórica):
+
+| Original | Implementado | Por qué |
+|---|---|---|
+| Docker Hub con usuario y contraseña | **GitHub Container Registry** con el `GITHUB_TOKEN` del propio workflow | Ningún secreto de registro que gestionar; la imagen queda junto al código |
+| `ssh … docker-compose up -d` desde una acción de terceros | `ssh` del runner (con `known_hosts` obligatorio) que ejecuta **`deploy/deploy.sh`** en el servidor | Toda la lógica de despliegue vive en un script versionado que TI también usa a mano; la clave puede restringirse a ese único comando (`--from-ssh`) |
+| Despliegue sin red de seguridad | **Copia de la base antes de cambiar**, comprobación de `/health` **con la versión esperada** y **reversión automática** | Una versión que no arranca no deja el servicio caído |
+| Siempre despliega | El despliegue es **opcional** (variable `DEPLOY_HOST`) y pasa por el entorno `production` | Cada institución decide si actualiza sola o a mano con `./deploy.sh` |
+| — | **Ejecutar a mano** el workflow con una versión → despliega (o revierte a) una versión ya publicada sin construir nada | Reversión en un clic |
+| — | La imagen ya no arranca con `--reload` (solo el compose de desarrollo lo añade); `.dockerignore` impide copiar `.env`, `data/` o `.git` dentro de la imagen | Una imagen pública no puede llevar secretos ni datos |
+| Badge de CI | Badges de CI y de la última versión en el README | |
+
+### Archivos
+
+| Archivo | Para qué |
+|---|---|
+| `.github/workflows/ci.yml` | Se añadió: coherencia versión/CHANGELOG, `shellcheck`, validación de los compose, «sin secretos en la imagen» y `scripts/test-deploy.sh`. También es reutilizable (`workflow_call`) |
+| `.github/workflows/release.yml` | Entrega continua (diagrama de arriba) |
+| `scripts/release.py` | `check [--tag]`, `version`, `notes X.Y.Z` (solo biblioteca estándar) |
+| `deploy/docker-compose.yml`, `deploy/.env.example`, `deploy/deploy.sh` | Instalación en el servidor **sin clonar el repositorio**: solo esta carpeta y un `.env` |
+| `scripts/test-deploy.sh` | Prueba de punta a punta de `deploy.sh`: instalación, copia antes de actualizar, reversión ante una versión que no se presenta como tal, rechazo de entradas no válidas |
+| `.dockerignore` | Fuera de la imagen: `.env*`, `data/`, `.git`, `tests/`, modelos locales |
+
+### Configuración (una vez, en GitHub)
+
+Paso a paso en [deployment.md §4](../deployment.md#4-actualizar):
+
+- **Variables** (*Settings → Secrets and variables → Actions → Variables*): `DEPLOY_HOST`, `DEPLOY_USER`, opcionales `DEPLOY_PORT`, `DEPLOY_PATH` (`/opt/handsonedu`), `PUBLIC_BASE_URL`.
+- **Secretos:** `DEPLOY_SSH_KEY` (clave privada solo para desplegar) y `DEPLOY_KNOWN_HOSTS` (`ssh-keyscan -H servidor`).
+- **Entorno** `production` (*Settings → Environments*) con revisores obligatorios si se quiere aprobar cada despliegue.
+- **Paquete** `handsonedu` en GHCR: hacerlo público tras la primera publicación, o hacer `docker login ghcr.io` en el servidor.
+- **Protección de `main`:** exigir los checks de CI antes de fusionar (*Settings → Branches*). Es un ajuste del repositorio; no se puede versionar.
+
+### Pendiente
+
+- Migraciones de esquema (TD-012): `deploy.sh` copia la base antes de cada cambio, pero un cambio de columnas aún necesitaría una migración manual.
+- Imagen multiarquitectura (arm64) si alguna institución usa servidores ARM.
+- El contenedor corre como root (heredado); pasar a un usuario sin privilegios exige migrar los permisos de `data/` de las instalaciones existentes.
+
+---
+
+## Propuesta original (2026-04-30 — referencia histórica)
 
 ## Problema
 

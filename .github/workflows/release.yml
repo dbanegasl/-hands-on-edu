@@ -1,0 +1,172 @@
+# Continuous delivery (REQ-011).
+#
+# Push a tag vX.Y.Z (matching APP_VERSION and a CHANGELOG section) →
+#   1. the full CI suite runs again on the tagged commit;
+#   2. the image is built, smoke-tested and pushed to GHCR as X.Y.Z, X.Y and latest;
+#   3. a GitHub Release is created with the CHANGELOG section as notes;
+#   4. if the DEPLOY_HOST variable is set, the server is updated over SSH with
+#      deploy/deploy.sh (backup → switch → health check → automatic rollback),
+#      gated by the "production" environment (optional required reviewers).
+#
+# Run it by hand ("Run workflow") to deploy — or roll back to — an already
+# published version without building anything.
+# Guide: docs/deployment.md §4
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Published version to deploy (e.g. 0.15.0)"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/handsonedu
+
+jobs:
+  verify:
+    name: Version, tag and CHANGELOG agree
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/release.py check --tag "$GITHUB_REF_NAME"
+
+  ci:
+    name: CI
+    if: github.event_name == 'push'
+    needs: verify
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    name: Build, smoke-test and push image
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # GitHub Release
+      packages: write      # GHCR
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+      - name: Build (local, for the smoke test)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: handsonedu:release
+          build-args: |
+            VERSION=${{ steps.v.outputs.version }}
+            REVISION=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test — starts, reports the tagged version, serves the app
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          docker run -d --name smoke -p 8000:8000 -e DATABASE_URL=sqlite:// -e PUBLIC_BASE_URL=http://localhost:8000 handsonedu:release
+          for _ in $(seq 1 30); do curl -fs localhost:8000/health && break; sleep 2; done
+          test "$(curl -fs localhost:8000/health | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])')" = "$VERSION"
+          for url_path in / /aula /signstudio /panel /api/signs/lsec/catalog /lti/jwks /vendor/mediapipe/vision_bundle.mjs; do
+            curl -fs -o /dev/null "localhost:8000$url_path" || { echo "::error::$url_path failed"; docker logs smoke; exit 1; }
+          done
+          docker rm -f smoke
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.v.outputs.version }}
+            REVISION=${{ github.sha }}
+          cache-from: type=gha
+      - name: GitHub Release with CHANGELOG notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          {
+            python3 scripts/release.py notes "$VERSION"
+            echo
+            echo "---"
+            echo
+            echo "**Imagen:** \`$IMAGE:$VERSION\` · en el servidor (carpeta \`deploy/\`): \`./deploy.sh $VERSION\`"
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" --title "HandsOnEdu $VERSION" --notes-file notes.md --verify-tag
+
+  deploy:
+    name: Deploy to production
+    needs: publish
+    # After a successful publish, or on a manual run. Skipped while DEPLOY_HOST is unset.
+    if: >-
+      always() && vars.DEPLOY_HOST != '' &&
+      (needs.publish.result == 'success' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.PUBLIC_BASE_URL }}
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - name: Version to deploy
+        id: v
+        env:
+          FROM_TAG: ${{ needs.publish.outputs.version }}
+          FROM_INPUT: ${{ inputs.version }}
+        run: |
+          v="${FROM_TAG:-${FROM_INPUT#v}}"
+          [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::invalid version '$v'"; exit 1; }
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - name: Deploy over SSH (deploy.sh backs up, checks health and rolls back)
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          HOST: ${{ vars.DEPLOY_HOST }}
+          USER: ${{ vars.DEPLOY_USER }}
+          PORT: ${{ vars.DEPLOY_PORT || '22' }}
+          DIR: ${{ vars.DEPLOY_PATH || '/opt/handsonedu' }}
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          [ -n "$SSH_KEY" ] && [ -n "$KNOWN_HOSTS" ] || { echo "::error::DEPLOY_SSH_KEY and DEPLOY_KNOWN_HOSTS secrets are required"; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$USER@$HOST" "$DIR/deploy.sh $VERSION"
+      - name: Public health check
+        if: vars.PUBLIC_BASE_URL != ''
+        env:
+          URL: ${{ vars.PUBLIC_BASE_URL }}
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          got="$(curl -fsS --retry 5 --retry-delay 3 "$URL/health" | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])')"
+          echo "$URL → $got"
+          test "$got" = "$VERSION"

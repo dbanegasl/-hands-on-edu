@@ -1,5 +1,15 @@
 FROM python:3.11-slim
 
+# Filled in by the release workflow (.github/workflows/release.yml).
+ARG VERSION=dev
+ARG REVISION=unknown
+LABEL org.opencontainers.image.title="HandsOnEdu" \
+      org.opencontainers.image.description="Plataforma de enseñanza de lengua de señas (LSEC) con reconocimiento de manos en el navegador e integración LTI 1.3" \
+      org.opencontainers.image.source="https://github.com/dbanegasl/-hands-on-edu" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${REVISION}"
+
 # System dependencies required by OpenCV and MediaPipe
 RUN apt-get update && apt-get install -y \
     libgl1 \
@@ -40,4 +50,9 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Production-safe default: no --reload (docker-compose.yml adds it for development).
+# Workers: WEB_CONCURRENCY; trusted proxies for X-Forwarded-*: FORWARDED_ALLOW_IPS.
+ENV PYTHONUNBUFFERED=1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD ["python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status == 200 else 1)"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]

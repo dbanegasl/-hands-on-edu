@@ -27,7 +27,7 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 | [REQ-008](./REQ-008-basic-auth.md) | Autenticación Básica (Roles Docente / Estudiante) | Feature | Alta | 📋 Pendiente | Global |
 | [REQ-009](./REQ-009-moodle-integration.md) | Integración Real con Moodle LMS (REST) — notas reemplazadas por REQ-019 | Feature | Baja | 📋 Pendiente | Global / Backend |
 | [REQ-010](./REQ-010-custom-ml-classifier.md) | Clasificador entrenado con las plantillas de señas | Feature | Media | ✅ Hecho (v0.14.0, señas estáticas de una mano) | Motor de señas / Estudio |
-| [REQ-011](./REQ-011-cicd-github-actions.md) | Pipeline CI/CD con GitHub Actions | Tech-Debt | Alta | 🔄 En progreso (CI hecho en v0.9.0; falta CD) | Global / DevOps |
+| [REQ-011](./REQ-011-cicd-github-actions.md) | Pipeline CI/CD con GitHub Actions | Tech-Debt | Alta | ✅ Hecho (CI v0.9.0; entrega continua v0.15.0) | Global / DevOps |
 | [REQ-012](./REQ-012-airpiano-module.md) | Módulo AirPiano (Piano virtual gestual) | Feature | Media | ✅ Hecho | AirPiano (nuevo) |
 | [REQ-013](./REQ-013-detection-robustness.md) | Robustez de detección (heurística invariante + suavizado) | Tech-Debt | Alta | ✅ Hecho | Global / Backend |
 | [REQ-014](./REQ-014-shared-frontend-lib.md) | Librería frontend compartida `ho-common.js` | Tech-Debt | Alta | ✅ Hecho | Global / Frontend |
@@ -58,7 +58,7 @@ Dirección de producto (2026-11-11): plataforma de referencia para la **enseñan
 ✅ REQ-016 (detección en navegador) → ✅ REQ-017 (motor de señas + Estudio)
     → ✅ REQ-018 (Aula de Señas) → ✅ REQ-019 (LTI 1.3 + notas en Moodle)
     → ✅ REQ-007 (panel docente) → ✅ REQ-005 (persistencia de GestiEdu/MotivaSign/AttendEye)
-    → ✅ REQ-010 (clasificador entrenado con las plantillas grabadas) → REQ-011 (CD)
+    → ✅ REQ-010 (clasificador entrenado con las plantillas grabadas) → ✅ REQ-011 (entrega continua)
 ```
 
 REQ-008 (autenticación) queda cubierto mayormente por los roles de LTI 1.3. Para el uso sin LMS, `ADMIN_TOKEN` protege provisionalmente la escritura de plantillas.
