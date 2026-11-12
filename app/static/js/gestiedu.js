@@ -282,7 +282,7 @@ function updateConnBadge(status) {
 }
 
 function connectWS() {
-  socket = new HO.HandSocket({
+  socket = HO.createHandSource({
     onResult: handleResult,
     onStatus: (status) => {
       updateConnBadge(status);

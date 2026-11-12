@@ -202,7 +202,7 @@ function stopCamera() {
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 
 function connectWS() {
-  STATE.socket = new HO.HandSocket({
+  STATE.socket = HO.createHandSource({
     onResult: (data) => handleResult(data),
     onStatus: (status) => {
       STATE.connected = status === 'connected';
