@@ -102,5 +102,9 @@ Registra los problemas con: fecha, curso, estudiante (usuario de Moodle), navega
 - [ ] Copia diaria de `data/` programada y probada (restaurar al menos una vez).
 - [ ] Prueba técnica (sección 5) completa en el Moodle de producción.
 - [ ] Unidades que se van a usar revisadas por un intérprete.
-- [ ] Aviso de privacidad a estudiantes y familias: qué se guarda (nombre, resultados de práctica) y que el video **no** sale del equipo.
+- [ ] Privacidad lista según [08 · Privacidad](./08-privacidad.md):
+  - `PRIVACY_CONTROLLER` y `PRIVACY_CONTACT` configurados, visibles en `/privacidad`;
+  - plazo de conservación decidido;
+  - aviso revisado por el área jurídica y entregado a estudiantes y familias;
+  - persona que atiende las solicitudes.
 - [ ] Contacto de soporte definido para docentes (quién atiende y en qué horario).

@@ -19,11 +19,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api import attendance, learning, lti, pages, panel, signs, ws
+from app.api import attendance, learning, lti, pages, panel, privacy, signs, ws
 from app.config import settings
 from app.db import init_db
 
-APP_VERSION = "0.19.0"
+APP_VERSION = "0.20.0"
 
 # Python's mimetypes has no entry for .mjs on slim images; ES-module imports
 # are rejected by browsers unless served with a JavaScript MIME type.
@@ -66,6 +66,7 @@ app.include_router(learning.router)
 app.include_router(lti.router)
 app.include_router(panel.router)
 app.include_router(attendance.router)
+app.include_router(privacy.router)
 
 
 def _json_safe(value):

@@ -36,6 +36,9 @@ Equipos de los estudiantes: Chrome, Edge o Firefox recientes, cámara web, y de 
 | `ADMIN_TOKEN` | Cadena larga aleatoria (`openssl rand -hex 32`) | Protege el registro de plataformas LTI y la escritura de plantillas de señas. **Vacío = abierto**: no lo dejes vacío en producción |
 | `DATABASE_URL` | Por defecto SQLite en `./data` | Cualquier URL de SQLAlchemy (p. ej. PostgreSQL) si la institución lo prefiere |
 | `HOST_PORT` | `9876` | Puerto local que escucha el proxy |
+| `PRIVACY_CONTROLLER` | `Unidad Educativa San José` | Responsable de los datos, que se muestra en `/privacidad` ([08 · Privacidad](./onboarding/08-privacidad.md)) |
+| `PRIVACY_CONTACT` | `Secretaría — datos@sanjose.edu.ec` | Contacto para ejercer los derechos, que se muestra en `/privacidad` |
+| `DATA_RETENTION_DAYS` | `365` | Plazo de conservación que se anuncia y valor por defecto de `python -m app.privacy purge`. `0` = no se anuncia |
 
 ### Arranque
 
@@ -239,6 +242,7 @@ Si las notas no llegan a Moodle, el detalle de cada intento está en la tabla `l
 | `ADMIN_TOKEN` | Definido, largo y fuera del repositorio (`.env` está en `.gitignore`) |
 | Puerto | Solo `127.0.0.1:9876`; el exterior entra por el proxy |
 | Imagen | No contiene `.env`, datos ni el historial de git (`.dockerignore`, comprobado en CI) |
+| Datos personales | Sin video ni imágenes. Cada estudiante descarga o borra sus datos en `/privacidad`; la institución usa `python -m app.privacy` (find, export, delete, purge). Ver [08 · Privacidad](./onboarding/08-privacidad.md) |
 | Usuario | La app **no corre como root**: el contenedor arranca, entrega `data/` al usuario `app` (uid/gid 1000) y suelta todos los privilegios (sin capacidades, `no_new_privs`). Desde v0.18, `./data` pertenece a uid 1000 en el servidor |
 | Despliegue automático | Clave SSH exclusiva y restringida a `deploy.sh --from-ssh`; `known_hosts` obligatorio; entorno `production` con aprobación |
 | Video | La detección corre en el navegador: el video de los estudiantes **no** viaja al servidor (salvo que se fuerce `?engine=server`) |

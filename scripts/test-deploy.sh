@@ -36,6 +36,8 @@ HOST_PORT=${TEST_PORT:-19876}
 PUBLIC_BASE_URL=http://localhost:${TEST_PORT:-19876}
 ADMIN_TOKEN=deploy-test
 WEB_CONCURRENCY=1
+PRIVACY_CONTROLLER=Unidad Educativa de Prueba
+PRIVACY_CONTACT=datos@prueba.test
 EOF
 docker tag "$IMAGE" "$TEST_IMAGE:$VERSION"
 docker tag "$IMAGE" "$TEST_IMAGE:9.9.9"     # reports $VERSION, not 9.9.9 → must roll back
@@ -71,12 +73,17 @@ docker compose exec -T hands-on-edu sh -c 'cat /proc/1/cmdline | tr "\0" " "' | 
 [ "$(docker compose exec -T hands-on-edu awk '/^Uid:/{print $2}' /proc/1/status)" != 0 ] || fail "the app runs as root"
 [ -z "$(docker compose exec -T hands-on-edu find /app/data \! -user app)" ] || fail "data/ not owned by the app user"
 echo "── 1b. deploy/check-install.py against the running install"
-python3 "$ROOT/deploy/check-install.py" "http://localhost:${TEST_PORT:-19876}" --allow-http --admin-token deploy-test \
-  || fail "check-install reports failures on a correct install"
+check_out=$(python3 "$ROOT/deploy/check-install.py" "http://localhost:${TEST_PORT:-19876}" --allow-http --admin-token deploy-test) \
+  || { echo "$check_out"; fail "check-install reports failures on a correct install"; }
+echo "$check_out"
+grep -q "Aviso de privacidad con responsable" <<<"$check_out" || fail "PRIVACY_* from .env did not reach the app"
 if python3 "$ROOT/deploy/check-install.py" "http://localhost:${TEST_PORT:-19876}" --allow-http --admin-token wrong >/dev/null; then
   fail "check-install accepted a wrong ADMIN_TOKEN"
 fi
 sql "INSERT INTO learners (id, display_name, created_at) VALUES ('deploytest', 'Ana', '2026-01-01')" >/dev/null
+echo "── 1c. privacy CLI (REQ-021) in the image"
+docker compose exec -T hands-on-edu python -m app.privacy find Ana | grep -q deploytest || fail "privacy find"
+docker compose exec -T hands-on-edu python -m app.privacy export deploytest | grep -q '"display_name": "Ana"' || fail "privacy export"
 
 echo "── 2. update (same version) makes a backup"
 ./deploy.sh "$VERSION" || fail "update failed"
