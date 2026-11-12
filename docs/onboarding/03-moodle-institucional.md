@@ -58,6 +58,7 @@ Repite la prueba de [02 · Moodle local](./02-moodle-local.md#4-prueba-completa-
 - [ ] Repetir con nota menor no baja la nota.
 - [ ] El docente que abre la actividad ve todas las unidades abiertas (modo docente).
 - [ ] Un estudiante de **otro** curso no ve la actividad (control normal de Moodle).
+- [ ] El docente abre **📊 Panel del curso** desde el Aula: aparecen los estudiantes del curso (también los que no entraron, si NRPS está activo) y la nota del estudiante de prueba.
 
 ## 6. Piloto con un grupo real (2–4 semanas)
 

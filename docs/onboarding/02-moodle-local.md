@@ -69,7 +69,9 @@ Los navegadores solo dan la cámara en HTTPS o en `localhost`. Para esta prueba:
 
 ✔ En **Calificaciones** aparece la nota de Ana. Si ella repite la evaluación y saca menos, la nota no baja (se conserva la mejor).
 
-Esta misma prueba se automatizó y pasó contra Moodle 4.5.4: Deep Linking → lanzamiento del estudiante → evaluación → nota 40/100 en el libro de calificaciones.
+✔ Abre la actividad como docente → **📊 Panel del curso**: aparecen Ana (con su nota en *Números 1–5*) y Carlos Tenesaca *sin actividad*, que llega por la lista del curso (NRPS) aunque nunca abrió la actividad.
+
+Esta misma prueba se automatizó y pasó contra Moodle 4.5.4: Deep Linking → lanzamiento del estudiante → evaluación → nota 40/100 en el libro de calificaciones → panel del docente con la lista NRPS.
 
 ## 5. Qué mirar si algo falla
 

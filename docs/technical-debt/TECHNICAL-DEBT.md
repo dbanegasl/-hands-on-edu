@@ -239,7 +239,7 @@ services:
 | **Esfuerzo de resolución** | M |
 | **REQ relacionado** | [REQ-008](../requirements/INDEX.md), [REQ-019](../requirements/REQ-019-lti13-moodle.md) |
 
-**Descripción:** con perfiles locales, `/api/learners/{id}/*` y `/api/sessions/*` se autorizan solo por conocer el id aleatorio del estudiante. Con LTI, el token de lanzamiento ya liga la sesión al estudiante, pero los endpoints de lectura de progreso aún no lo exigen. Además, el `state` de OIDC se valida en el servidor (un solo uso, 10 min) sin ligarlo a una cookie del navegador, porque las cookies de terceros se bloquean dentro del iframe del LMS.
+**Descripción:** con perfiles locales, `/api/learners/{id}/*` y `/api/sessions/*` se autorizan solo por conocer el id aleatorio del estudiante. Con LTI, el token de lanzamiento ya liga la sesión al estudiante, pero los endpoints de lectura de progreso aún no lo exigen. El panel docente (`/api/panel/*`, v0.12.0) sí exige token de docente LTI o `ADMIN_TOKEN`. Además, el `state` de OIDC se valida en el servidor (un solo uso, 10 min) sin ligarlo a una cookie del navegador, porque las cookies de terceros se bloquean dentro del iframe del LMS.
 
 ---
 

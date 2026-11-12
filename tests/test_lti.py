@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 from app.integrations.lti import keys, launch as lti_launch, services
-from app.integrations.lti.launch import AGS_CLAIM, AGS_SCOPE_SCORE, CLAIM, DL_CLAIM
+from app.integrations.lti.launch import AGS_CLAIM, AGS_SCOPE_SCORE, CLAIM, DL_CLAIM, NRPS_CLAIM
 
 ISS = "https://moodle.example.edu"
 CLIENT_ID = "client-abc"
@@ -23,6 +23,7 @@ DEPLOYMENT = "1"
 LINEITEM = f"{ISS}/mod/lti/services.php/2/lineitems/7/lineitem?type_id=3"
 TOKEN_URL = f"{ISS}/mod/lti/token.php"
 JWKS_URL = f"{ISS}/mod/lti/certs.php"
+MEMBERSHIPS_URL = f"{ISS}/mod/lti/services.php/CourseSection/2/bindings/1/memberships"
 INSTRUCTOR = "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
 LEARNER = "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
 
@@ -47,6 +48,8 @@ class FakePlatform:
         self.calls = []
         self.score_status = 200
         self.jwks = {"keys": [_jwk(PLATFORM_KEY, "plat-1")]}
+        self.members = []          # NRPS roster, served 2 per page
+        self.roster_status = 200
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         self.calls.append(request)
@@ -57,10 +60,20 @@ class FakePlatform:
             return httpx.Response(200, json={"access_token": "ags-token", "token_type": "Bearer", "expires_in": 3600})
         if "/scores" in url:
             return httpx.Response(self.score_status, json={})
+        if url.startswith(MEMBERSHIPS_URL):
+            page = int(request.url.params.get("page", "0"))
+            headers = {}
+            if (page + 1) * 2 < len(self.members):
+                headers["Link"] = f'<{MEMBERSHIPS_URL}?page={page + 1}>; rel="next"'
+            return httpx.Response(self.roster_status, headers=headers,
+                                  json={"id": MEMBERSHIPS_URL, "members": self.members[page * 2:page * 2 + 2]})
         return httpx.Response(404)
 
     def scores(self):
         return [c for c in self.calls if "/scores" in str(c.url)]
+
+    def roster_requests(self):
+        return [c for c in self.calls if str(c.url).startswith(MEMBERSHIPS_URL)]
 
     def token_requests(self):
         return [c for c in self.calls if str(c.url) == TOKEN_URL]
@@ -73,6 +86,7 @@ def platform(client, monkeypatch):
     monkeypatch.setattr(services, "http_client", lambda: httpx.Client(transport=httpx.MockTransport(fake.handler)))
     lti_launch._jwks_cache.clear()
     services._token_cache.clear()
+    services._roster_cache.clear()
     r = client.post("/api/lti/platforms", json={
         "name": "Moodle de prueba", "issuer": ISS, "client_id": CLIENT_ID,
         "auth_login_url": f"{ISS}/mod/lti/auth.php", "auth_token_url": TOKEN_URL, "jwks_url": JWKS_URL,
@@ -93,7 +107,7 @@ def _login(client, **extra):
 
 
 def _id_token(nonce, *, key=PLATFORM_KEY, kid="plat-1", roles=(LEARNER,), message=lti_launch.MSG_RESOURCE_LINK,
-              custom=None, ags=True, **override):
+              custom=None, ags=True, nrps=True, **override):
     now = int(time.time())
     claims = {
         "iss": ISS, "aud": CLIENT_ID, "sub": "u-42", "iat": now, "exp": now + 300, "nonce": nonce,
@@ -111,6 +125,8 @@ def _id_token(nonce, *, key=PLATFORM_KEY, kid="plat-1", roles=(LEARNER,), messag
     else:
         claims[DL_CLAIM] = {"deep_link_return_url": f"{ISS}/mod/lti/contentitem_return.php",
                             "accept_types": ["ltiResourceLink"], "data": "opaque-123"}
+    if nrps:
+        claims[NRPS_CLAIM] = {"context_memberships_url": MEMBERSHIPS_URL, "service_versions": ["2.0"]}
     if ags:
         claims[AGS_CLAIM] = {"scope": [AGS_SCOPE_SCORE], "lineitem": LINEITEM}
     claims.update(override)

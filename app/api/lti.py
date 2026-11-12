@@ -34,6 +34,7 @@ from app.integrations.lti.launch import (
 from app.models import (
     ActivitySession,
     Learner,
+    LtiContext,
     LtiDeployment,
     LtiLaunch,
     LtiPlatform,
@@ -53,7 +54,7 @@ from app.signs.catalog import CatalogError, get_catalog
 
 router = APIRouter(tags=["lti"])
 
-INSTRUCTOR_PAGES = {"/aula", "/signstudio"}
+INSTRUCTOR_PAGES = {"/aula", "/signstudio", "/panel"}
 
 
 def _error_page(message: str, code: int = 400) -> HTMLResponse:
@@ -108,6 +109,18 @@ def _target_page(target_link_uri: str, instructor: bool) -> str:
     return "/aula"
 
 
+def _upsert_context(db: Session, data) -> None:
+    """Remember the course and its roster endpoint (the teacher panel lists its members)."""
+    ctx = db.scalars(select(LtiContext).where(
+        LtiContext.platform_id == data.platform.id, LtiContext.context_id == data.context["id"])).first()
+    if ctx is None:
+        ctx = LtiContext(platform_id=data.platform.id, context_id=data.context["id"])
+        db.add(ctx)
+    ctx.title = data.context.get("title") or ctx.title
+    ctx.label = data.context.get("label") or ctx.label
+    ctx.memberships_url = data.nrps.get("context_memberships_url") or ctx.memberships_url
+
+
 @router.post("/lti/launch", summary="Lanzamiento LTI 1.3 (id_token)")
 def lti_launch(id_token: str = Form(""), state: str = Form(""), db: Session = Depends(get_db)):
     try:
@@ -134,6 +147,8 @@ def lti_launch(id_token: str = Form(""), state: str = Form(""), db: Session = De
         deep_linking=data.deep_linking,
     )
     db.add(launch)
+    if launch.context_id:
+        _upsert_context(db, data)
     db.commit()
 
     token = keys.issue_app_token(db, learner_id=learner.id, launch_id=launch.id, instructor=data.is_instructor)

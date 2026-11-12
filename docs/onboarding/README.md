@@ -27,7 +27,7 @@ Los pasos 1–3 son técnicos y se hacen una vez. El paso 4 es el que más traba
 | Catálogo LSEC | 🟡 Borrador (`status: borrador`, señas con `validated: false`) | Un intérprete debe revisarlo antes de usarlo con estudiantes |
 | Reconocimiento | 50 señas en el catálogo; 20 se reconocen solo con descriptores (16 letras y los números 1, 2, 4 y 5). Las otras 30 necesitan plantillas grabadas por un docente o intérprete | Una unidad sin ninguna seña reconocible aparece como *Próximamente*; dentro de una unidad, las señas sin plantilla se omiten |
 | Videos de referencia | 📝 Prompts listos para 4 avatares de IA; ningún video producido ni validado aún | Las lecciones se muestran sin video hasta que se produzcan y validen |
-| Panel docente | En desarrollo (REQ-007) | Por ahora el progreso se ve en el libro de calificaciones de Moodle |
+| Panel docente | ✅ `/panel` (REQ-007): progreso por estudiante, unidad y seña; lista del curso por NRPS; CSV | Activa NRPS en la herramienta de Moodle para ver también a quien no ha entrado |
 
 ## Requisitos mínimos, de un vistazo
 

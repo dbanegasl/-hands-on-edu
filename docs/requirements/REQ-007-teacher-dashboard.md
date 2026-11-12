@@ -1,14 +1,14 @@
 # REQ-007 — Dashboard del Docente
 
-> **Última actualización:** 2026-04-30
+> **Última actualización:** 2026-11-12
 
 | Campo | Valor |
 |-------|-------|
 | **ID** | REQ-007 |
 | **Tipo** | Feature |
 | **Prioridad** | Alta |
-| **Estado** | 📋 Pendiente |
-| **Módulo** | Global |
+| **Estado** | ✅ Hecho (v0.12.0) para el Aula de Señas — ver [docs/modules/panel.md](../modules/panel.md) |
+| **Módulo** | Aula de Señas (`/panel`) |
 | **Esfuerzo estimado** | L (8–15 horas) |
 
 ---
@@ -148,6 +148,27 @@ app/api/dashboard.py            ← endpoints de datos para el dashboard
 |-----------|------|
 | REQ-005 (SQLite) | **Bloqueante** — sin persistencia no hay datos que mostrar |
 | REQ-008 (autenticación) | Recomendado — para proteger el dashboard en producción |
+
+---
+
+## Implementación (v0.12.0, 2026-11-12)
+
+El alcance se reorientó a la dirección del producto (curso de LSEC integrado con Moodle por LTI, REQ-019):
+
+| Propuesta original | Implementado |
+|---|---|
+| `/dashboard` protegido con PIN | `/panel`, con dos accesos: **docente desde Moodle** (lanzamiento LTI con rol de docente → solo su curso) o **token de administrador** (toda la instalación) |
+| Cards por módulo (GestiEdu, MotivaSign, AttendEye) | Tarjetas del Aula de Señas. Los módulos de gestos aún no guardan sesiones (REQ-005) |
+| Historial de sesiones con filtros | Mapa de calor estudiante × unidad (mejor nota) con búsqueda y orden; detalle por estudiante con sus actividades y dominio por seña |
+| Gráfica semanal con Chart.js (CDN) | Barras SVG propias (sin CDN: la instalación funciona sin salida a Internet), con tooltip y vista de tabla |
+| Exportar CSV | `GET /api/panel/export.csv` |
+| — | **Lista del curso por NRPS** (incluye a quien nunca abrió la actividad) |
+| — | **Estado de las notas en Moodle** y reintento de envíos fallidos |
+| — | Señas con más dificultad del grupo |
+
+Probado contra Moodle 4.5.4 (`docker-compose.moodle.yml`): lanzamiento del docente → *Panel del curso* → lista NRPS con el estudiante sin actividad → detalle → CSV.
+
+**Pendiente:** resúmenes de los módulos de gestos (depende de REQ-005) y filtros por fecha.
 
 ---
 

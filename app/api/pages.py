@@ -16,6 +16,7 @@ PAGES = {
     "/testing": "testing.html",
     "/signstudio": "signstudio.html",
     "/aula": "aula.html",
+    "/panel": "panel.html",
 }
 
 

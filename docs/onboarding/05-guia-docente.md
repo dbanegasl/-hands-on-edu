@@ -37,6 +37,20 @@ Al abrir la actividad desde Moodle como docente, entra en **modo docente**:
 - ve también los videos **pendientes de validación** (los estudiantes no);
 - puede hacer la evaluación para probarla: su resultado **no** se envía al libro de calificaciones.
 
+## El panel del curso
+
+En el modo docente, el banner del Aula tiene el botón **📊 Panel del curso**. Muestra solo a los estudiantes de ese curso:
+
+| Qué ve | Para qué sirve |
+|---|---|
+| **Tarjetas**: estudiantes, activos en 7 días, mejor nota media, tiempo de práctica, notas no enviadas | Saber de un vistazo si el grupo está practicando |
+| **Estudiantes y unidades**: la mejor nota de cada evaluación (✔ = aprobada) | Ver quién va atrasado. Ordene por *Sin actividad primero* para encontrar a quien no ha empezado |
+| **Señas con más dificultad** del grupo | Elegir qué reforzar en la próxima clase |
+| **Detalle** (pulse un estudiante): dominio de cada seña y lista de actividades | Preparar una tutoría. Si una nota no llegó a Moodle, use **↻ Reintentar** |
+| **⬇ Exportar CSV** | Informes para coordinación (se abre en Excel) |
+
+Si el administrador de Moodle activó la *lista de participantes* (NRPS), también aparecen los estudiantes que **nunca abrieron** la actividad, marcados *sin actividad*. Las prácticas que usted hace en modo docente no cuentan.
+
 Para grabar plantillas o probar el reconocimiento de cualquier seña, use el **Estudio de Señas** (pídale el enlace a TI). Detalles en [04 · Contenido LSEC](./04-contenido-lsec.md#3-grabar-plantillas-docente-o-intérprete-que-signa).
 
 ## Recomendaciones para la clase
@@ -55,4 +69,4 @@ Para grabar plantillas o probar el reconocimiento de cualquier seña, use el **E
 | La actividad se abrió dentro de Moodle y no hay cámara | La herramienta debe abrir en *Nueva ventana*. Avise al administrador de Moodle |
 | Una unidad dice *Próximamente* | Sus señas aún no tienen grabaciones. Se activa cuando alguien graba plantillas en el Estudio de Señas |
 | ¿Puedo cambiar la nota? | Sí, en Moodle, como cualquier otra calificación. Si el estudiante vuelve a hacer la evaluación y mejora, la nota se actualiza |
-| ¿Dónde veo el detalle por seña de cada estudiante? | En el panel docente (en desarrollo). Por ahora, en el libro de calificaciones se ve la nota por unidad |
+| ¿Dónde veo el detalle por seña de cada estudiante? | En el **Panel del curso** → pulse el nombre del estudiante |

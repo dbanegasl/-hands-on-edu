@@ -121,13 +121,20 @@
     const where = [l.context_title, l.resource_link_title].filter(Boolean).join(' · ');
     let text = '🎓 Conectado desde ' + (l.platform || 'tu plataforma educativa') + (where ? ': ' + where : '') + '.';
     if (unit) text += ' Actividad: ' + unit.unit.title + '.';
-    if (l.graded) {
+    if (l.graded && !l.is_instructor) {
       text += unit
         ? ' Tu mejor nota en la evaluación de esta unidad se envía al libro de calificaciones.'
         : ' Tu mejor nota en las evaluaciones se envía al libro de calificaciones.';
     }
-    if (l.is_instructor) text += ' Modo docente: todas las unidades están abiertas.';
+    if (l.is_instructor) text += ' Modo docente: todas las unidades están abiertas y tus evaluaciones no se califican.';
     el.textContent = text;
+    if (l.is_instructor) {
+      const link = document.createElement('a');
+      link.className = 'au-btn au-btn-ghost au-panel-link';
+      link.href = '/panel';
+      link.textContent = '📊 Panel del curso';
+      el.append(' ', link);
+    }
   }
 
   async function syncGrade(sessionId) {

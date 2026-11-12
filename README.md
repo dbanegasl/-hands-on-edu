@@ -130,6 +130,7 @@ Probado de punta a punta con Moodle 4.5.4. Prueba local en 30 minutos: `docker c
 | **[Puesta en marcha (onboarding)](docs/onboarding/README.md)** | **Ruta para instituciones: prueba local, despliegue, Moodle, contenido LSEC, docentes, problemas frecuentes** |
 | [Arquitectura del Sistema](docs/architecture.md) | Diagrama de capas, flujo WebSocket, decisiones de diseño |
 | [Protocolo WebSocket](docs/websocket-protocol.md) | Referencia completa del endpoint `/ws/analyze` |
+| [Panel docente](docs/modules/panel.md) | Progreso del curso: unidades, dominio por seña, lista NRPS, notas en Moodle, CSV |
 | [Integración con Moodle](docs/moodle-integration.md) | LTI 1.3: configuración, flujo, solución de problemas |
 | [GestiEdu](docs/modules/gestiedu.md) | Evaluaciones gestuales: flujo, tipos de pregunta, hold-to-confirm |
 | [MotivaSign](docs/modules/motivasign.md) | Aprendizaje de señas: catálogo, modos, máquina de estados |
