@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elegir actividad | HandsOnEdu</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤟</text></svg>">
+  <link rel="stylesheet" href="/static/css/aula.css">
+</head>
+<body>
+  <nav class="au-nav">
+    <span class="au-logo">🖐️ HandsOnEdu</span>
+    <span class="au-module-name">🔗 Agregar actividad del Aula de Señas</span>
+    <span id="dl-context" class="au-lang"></span>
+  </nav>
+
+  <section class="au-screen active">
+    <div class="au-form-page">
+      <h1>¿Qué quieres que abra esta actividad?</h1>
+      <p class="au-muted">Cada unidad que elijas se agrega a tu curso como una actividad. Con <strong>calificación</strong>, la mejor nota de la evaluación de la unidad llega sola al libro de calificaciones.</p>
+
+      <div id="dl-error" class="au-banner" hidden></div>
+
+      <form id="dl-form" hidden>
+        <label class="au-check au-check-card">
+          <input type="checkbox" id="dl-course">
+          <span><strong>Aula de Señas completa</strong><small>La ruta entera, sin calificación: para práctica libre.</small></span>
+        </label>
+
+        <h2 class="au-form-h2">Unidades</h2>
+        <div id="dl-units" class="au-check-list"></div>
+
+        <label class="au-check">
+          <input type="checkbox" id="dl-graded" checked>
+          <span>Crear calificación (0–100) para cada unidad</span>
+        </label>
+
+        <div class="au-row">
+          <button id="dl-submit" class="au-btn au-btn-primary" type="submit" disabled>Agregar al curso ▶</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <form id="dl-return" method="post" hidden><input type="hidden" name="JWT" id="dl-jwt"></form>
+  <div id="au-toast" class="au-toast" role="status" hidden></div>
+
+  <script src="/static/js/ho-signs.js"></script>
+  <script src="/static/js/ho-curriculum.js"></script>
+  <script src="/static/js/lti-deeplink.js"></script>
+</body>
+</html>
