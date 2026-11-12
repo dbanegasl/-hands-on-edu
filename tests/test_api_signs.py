@@ -76,6 +76,8 @@ class TestCatalogValidation:
         {"handshape": {"palm": "inside"}},
         {"handshape": {"mystery": 1}},
         {"confusable": ["ghost"]},
+        {"media": "video.mp4"},
+        {"media": {"video": 3}},
     ])
     def test_rejects_invalid_signs(self, bad):
         with pytest.raises(CatalogError):
@@ -92,6 +94,18 @@ class TestCatalogValidation:
             _validate("t", data)
         with pytest.raises(CatalogError):
             _validate("other", self._base())
+
+    @pytest.mark.parametrize("words", ["OSO", [""], [1]])
+    def test_rejects_bad_spelling_words(self, words):
+        data = self._base()
+        data["spelling_words"] = words
+        with pytest.raises(CatalogError):
+            _validate("t", data)
+
+    def test_accepts_media_and_spelling_words(self):
+        data = self._base(media={"video": "https://example.org/x.mp4"})
+        data["spelling_words"] = ["OSO"]
+        assert _validate("t", data)["spelling_words"] == ["OSO"]
 
     def test_rejects_unit_with_unknown_sign(self):
         data = self._base()

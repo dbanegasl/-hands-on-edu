@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aula de Señas | HandsOnEdu</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤟</text></svg>">
+  <link rel="stylesheet" href="/static/css/aula.css">
+</head>
+<body>
+
+  <nav class="au-nav">
+    <a href="/" class="au-logo">🖐️ HandsOnEdu</a>
+    <span class="au-module-name">🤟 Aula de Señas</span>
+    <span id="au-lang-name" class="au-lang"></span>
+    <span id="au-learner" class="au-learner" hidden></span>
+    <button id="au-btn-mute" class="au-icon-btn" title="Silenciar / activar sonido" aria-label="Silenciar o activar sonido">🔊</button>
+    <div id="au-connection" class="au-conn" hidden>⚫</div>
+    <a href="/" class="au-back">← Inicio</a>
+  </nav>
+
+  <!-- ── Perfil ───────────────────────────────────────────────────────── -->
+  <section id="screen-profile" class="au-screen active" aria-labelledby="au-profile-title">
+    <div class="au-hero">
+      <div class="au-hero-icon">🤟</div>
+      <h1 id="au-profile-title">Aprende lengua de señas con tus manos</h1>
+      <p>Practica frente a la cámara: el sistema te dice si tu seña es correcta y qué corregir. El video nunca sale de tu equipo.</p>
+      <form id="au-profile-form" class="au-profile-form">
+        <label for="au-name">¿Cómo te llamas?</label>
+        <div class="au-row">
+          <input id="au-name" class="au-input" maxlength="120" autocomplete="given-name" required placeholder="Tu nombre">
+          <button class="au-btn au-btn-primary" type="submit">Comenzar ▶</button>
+        </div>
+      </form>
+      <div id="au-profiles" class="au-profiles" hidden>
+        <p>O continúa como:</p>
+        <div id="au-profile-list" class="au-profile-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Ruta de aprendizaje ──────────────────────────────────────────── -->
+  <section id="screen-path" class="au-screen" aria-labelledby="au-path-title">
+    <header class="au-path-head">
+      <div>
+        <h1 id="au-path-title">Tu ruta de aprendizaje</h1>
+        <p id="au-path-sub" class="au-muted"></p>
+      </div>
+      <div class="au-stats">
+        <div class="au-stat"><span id="au-stat-mastered">0</span><small>señas dominadas</small></div>
+        <div class="au-stat"><span id="au-stat-units">0</span><small>unidades aprobadas</small></div>
+        <div class="au-stat"><span id="au-stat-attempts">0</span><small>intentos</small></div>
+      </div>
+    </header>
+
+    <div id="au-validation" class="au-banner" hidden></div>
+
+    <div class="au-quick">
+      <button id="au-btn-review" class="au-quick-card">
+        <span class="au-quick-icon">🔁</span>
+        <span><strong>Repaso</strong><small id="au-review-sub">Refuerza lo que más te cuesta</small></span>
+      </button>
+      <button id="au-btn-spell" class="au-quick-card">
+        <span class="au-quick-icon">🔤</span>
+        <span><strong>Deletreo</strong><small id="au-spell-sub">Deletrea palabras con el alfabeto manual</small></span>
+      </button>
+    </div>
+
+    <div id="au-units" class="au-units"></div>
+  </section>
+
+  <!-- ── Actividad (lección / evaluación / repaso / deletreo) ─────────── -->
+  <section id="screen-activity" class="au-screen" aria-labelledby="au-act-title">
+    <div class="au-act-layout">
+      <div class="au-cam">
+        <video id="au-video" autoplay playsinline muted></video>
+        <canvas id="au-canvas" width="640" height="480" aria-label="Tu cámara"></canvas>
+        <svg class="au-ring" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="au-ring-bg" cx="60" cy="60" r="52"/>
+          <circle id="au-ring-fill" class="au-ring-fill" cx="60" cy="60" r="52"/>
+        </svg>
+        <div id="au-overlay" class="au-overlay" hidden></div>
+        <div id="au-cam-status" class="au-cam-status">Activando cámara…</div>
+      </div>
+
+      <aside class="au-prompt">
+        <div class="au-act-head">
+          <span id="au-act-title" class="au-act-title"></span>
+          <button id="au-btn-exit" class="au-btn au-btn-ghost">✕ Salir</button>
+        </div>
+        <div id="au-dots" class="au-dots" aria-hidden="true"></div>
+
+        <div id="au-word" class="au-word" hidden></div>
+        <div class="au-target">
+          <div id="au-gloss" class="au-gloss">—</div>
+          <canvas id="au-ref" class="au-ref" width="160" height="160" hidden title="Referencia grabada"></canvas>
+        </div>
+        <p id="au-desc" class="au-desc"></p>
+        <p id="au-hint" class="au-hint"></p>
+        <video id="au-media" class="au-media" controls muted loop playsinline hidden></video>
+
+        <div class="au-meter" aria-hidden="true"><div id="au-meter-fill" class="au-meter-fill"></div></div>
+        <ul id="au-feedback" class="au-feedback" aria-live="polite"></ul>
+        <div id="au-timer" class="au-timer" hidden><div id="au-timer-fill"></div></div>
+
+        <div class="au-act-actions">
+          <button id="au-btn-skip" class="au-btn au-btn-ghost">Saltar ⏭</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ── Resultados ───────────────────────────────────────────────────── -->
+  <section id="screen-results" class="au-screen" aria-labelledby="au-res-title">
+    <div class="au-results">
+      <div id="au-res-grade" class="au-grade">A</div>
+      <h1 id="au-res-title">¡Excelente!</h1>
+      <p id="au-res-sub" class="au-muted"></p>
+      <ul id="au-res-items" class="au-res-items"></ul>
+      <div class="au-row au-center">
+        <button id="au-btn-again" class="au-btn">↻ Repetir</button>
+        <button id="au-btn-path" class="au-btn au-btn-primary">Volver a la ruta</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="au-toast" class="au-toast" role="status" hidden></div>
+
+  <script src="/static/js/ho-common.js"></script>
+  <script src="/static/js/ho-hands.js"></script>
+  <script src="/static/js/ho-signs.js"></script>
+  <script src="/static/js/ho-curriculum.js"></script>
+  <script src="/static/js/audio.js"></script>
+  <script src="/static/js/aula.js"></script>
+</body>
+</html>

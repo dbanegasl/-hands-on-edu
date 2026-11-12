@@ -78,6 +78,13 @@ def _validate(code: str, data: dict) -> dict:
         for other in sign.get("confusable", []):
             if other not in seen:
                 raise CatalogError(f"{code}: {sign['id']!r} lists unknown confusable {other!r}")
+    for sign in data.get("signs", []):
+        media = sign.get("media")
+        if media is not None and not (isinstance(media, dict) and all(isinstance(v, str) for v in media.values())):
+            raise CatalogError(f"{code}: sign {sign['id']!r} media must be a dict of URL strings")
+    words = data.get("spelling_words", [])
+    if not isinstance(words, list) or not all(isinstance(w, str) and w.strip() for w in words):
+        raise CatalogError(f"{code}: spelling_words must be a list of non-empty strings")
     for unit in data.get("units", []):
         unknown = set(unit.get("signs", [])) - seen
         if unknown:
