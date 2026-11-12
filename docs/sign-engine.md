@@ -1,6 +1,6 @@
 # Motor de reconocimiento de señas — HandsOnEdu
 
-> **Última actualización:** 2026-11-11 · REQ-016, REQ-017 · v0.9.0
+> **Última actualización:** 2026-11-12 · REQ-016, REQ-017, REQ-010 · v0.14.0
 
 Este documento describe cómo HandsOnEdu detecta manos y reconoce señas de una lengua de señas (hoy **LSEC — Lengua de Señas Ecuatoriana**), cómo se define el contenido y cómo se calibró el motor.
 
@@ -93,6 +93,10 @@ Compara contra un conjunto de candidatos: la misma categoría y tipo, más las s
 
 Todas las constantes están en `HO.Signs.CFG`.
 
+### 4.4 Modelo entrenado (opcional, REQ-010)
+
+`ho-signs-model.js` (`HO.SignModel`) entrena en el navegador una red pequeña (87 características → 24 ReLU → softmax) con las plantillas de las **señas estáticas de una mano**. Si hay un modelo activo (`GET /api/signs/<lang>/model`), `SignRecognizer({model})` lo combina con la puntuación de 4.2: `motor^(1−w) · p^w` (`blendModel`). La mezcla geométrica mantiene baja la puntuación de una mano lejos de toda plantilla y descriptor, aunque la red esté segura. La fuente del candidato pasa a `…+model`. Se evalúa con validación cruzada agrupada por grabación antes de publicarse y solo se recomienda si mejora. Detalle: [REQ-010](requirements/REQ-010-custom-ml-classifier.md).
+
 ## 5. Plantillas de referencia
 
 - Se graban en el **Estudio de Señas** (`/signstudio`): estáticas = 12 muestras en ~1,5 s; dinámicas = 1,2–4 s de secuencia.
@@ -121,4 +125,4 @@ Resultado actual con fotos reales: *victory* → V/2 con 1,00; *pointing_up* →
 1. **Contenido sin validar.** Las descripciones LSEC están marcadas `validated: false`. Hay que revisarlas con intérpretes y la comunidad sorda (p. ej. FENASEC; referencia: *Diccionario Oficial LSEC «Gabriel Román»*, CONADIS 2014). 30 de las 50 señas solo se reconocen con plantillas grabadas.
 2. **Sin ubicación corporal.** Muchas señas léxicas se distinguen por el lugar donde se articulan (mentón, pecho) y por rasgos no manuales. El motor solo ve manos. Siguiente paso: MediaPipe Pose/Face (Holistic) para obtener la ubicación relativa al cuerpo.
 3. **Umbral de detección 0.7** (heredado de REQ-013, contra falsos positivos con la cara). Con fotos desenfocadas la mano no se detecta con 0.7 y sí con 0.3. Conviene evaluarlo con cámaras de aula reales.
-4. **Calibración con pocos datos.** Los umbrales salen de 6 manos reales. Con las plantillas que graben los docentes se puede medir la precisión por seña y entrenar un clasificador (REQ-010).
+4. **Calibración con pocos datos.** Los umbrales salen de 6 manos reales. Con las plantillas que graben los docentes, el Estudio mide la precisión por seña y entrena un clasificador (REQ-010, §4.4); falta medirlo con grabaciones reales de varias personas.

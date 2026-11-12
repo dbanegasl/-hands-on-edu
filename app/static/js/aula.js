@@ -165,13 +165,16 @@
   // ── Boot & profile ─────────────────────────────────────────────────────────
 
   async function boot() {
-    const [catalog, templates] = await Promise.all([
+    const [catalog, templates, modelJson] = await Promise.all([
       api('/api/signs/' + LANG + '/catalog'),
       api('/api/signs/' + LANG + '/templates'),
+      // Trained classifier (REQ-010): optional, the engine works without it.
+      api('/api/signs/' + LANG + '/model').catch(() => null),
     ]);
     A.catalog = catalog;
     A.templates = templates;
-    A.recognizer = new HO.Signs.SignRecognizer({ catalog, templates });
+    const model = modelJson && HO.SignModel ? HO.SignModel.load(modelJson) : null;
+    A.recognizer = new HO.Signs.SignRecognizer({ catalog, templates, model });
     $('au-lang-name').textContent = catalog.language.short_name || catalog.language.name;
     const banner = $('au-validation');
     banner.hidden = !catalog.language.validation_note;

@@ -15,6 +15,25 @@
 
 ---
 
+## [0.14.0] — 2026-11-12
+
+### Añadido
+
+- **REQ-010** — **Modelo entrenado** con las plantillas del Estudio de Señas, para las señas estáticas de una mano (alfabeto y números).
+  - Red neuronal pequeña en JS puro (`js/ho-signs-model.js`, `HO.SignModel`): se entrena y se ejecuta en el navegador, con el mismo extractor de características para las dos cosas.
+  - Se combina con descriptores y plantillas (mezcla geométrica `HO.Signs.blendModel`); dinámicas y de dos manos sin cambios.
+  - **Evaluación antes de publicar:** validación cruzada que retiene grabaciones completas; compara la seña correcta aceptada, la seña equivocada aceptada y el acierto con y sin modelo, y solo recomienda publicar si mejora.
+  - Estudio: tarjeta *🧠 Modelo entrenado* (entrenar y evaluar, informe por seña, publicar, desactivar, aviso de grabaciones nuevas). El Aula carga el modelo activo.
+  - API: `GET /api/signs/{lang}/model` (204 si no hay), `GET/POST /api/signs/{lang}/models`, activar, desactivar, eliminar. Tabla nueva `sign_models`.
+  - CLI `scripts/train-sign-model.cjs` (mismo código, sin navegador).
+
+### Corregido
+
+- Un `NaN` en el cuerpo de una petición convertía el error de validación (422) en un 500: el manejador de validación ya no devuelve números no finitos.
+- Estudio de Señas en móvil: la barra superior desbordaba (selector de lengua) y el catálogo quedaba fijo tapando el contenido (las reglas móviles iban antes de las base).
+
+---
+
 ## [0.13.0] — 2026-11-12
 
 ### Añadido

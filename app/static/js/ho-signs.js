@@ -12,6 +12,8 @@
  *                         recorded by teachers in the Sign Studio.
  *  3. Dynamic templates — DTW over (handshape + wrist trajectory) sequences for
  *                         signs with movement (J, Z, Ñ, HOLA…).
+ *  (+) Trained model     — optional classifier for static one-hand signs
+ *                         (ho-signs-model.js, REQ-010), blended into 1–2.
  *
  * Geometry is computed on image landmarks made isotropic with the frame aspect
  * ratio (world landmarks are stored with templates for future ML use but their
@@ -403,12 +405,23 @@
     return prev[m] / (n + m);
   }
 
+  /**
+   * Blend an engine score (descriptor/kNN) with a model probability.
+   * Geometric, so a hand far from every template and spec still scores low
+   * even if the softmax is confident (a classifier has no "none" class).
+   */
+  function blendModel(base, prob, weight) {
+    if (prob == null || !(weight > 0)) return base;
+    return Math.pow(Math.max(base, 0), 1 - weight) * Math.pow(Math.max(prob, 0), weight);
+  }
+
   // ── Recognizer ─────────────────────────────────────────────────────────────
 
   /**
    * new SignRecognizer({catalog, templates})
    *   catalog   — catalog JSON (language, categories, signs…)
    *   templates — array from GET /api/signs/<lang>/templates
+   *   model     — optional runtime model from HO.SignModel.load() (REQ-010)
    */
   function SignRecognizer(opts) {
     opts = opts || {};
@@ -416,8 +429,14 @@
     this.signs = {};
     for (const s of this.catalog.signs || []) this.signs[s.id] = s;
     this._history = [];
+    this.model = opts.model || null;
     this.setTemplates(opts.templates || []);
   }
+
+  /** Install (or remove, with null) a trained model. */
+  SignRecognizer.prototype.setModel = function (model) {
+    this.model = model || null;
+  };
 
   SignRecognizer.prototype.setTemplates = function (templates) {
     this.static = {};   // sign_id → [{id, vec, hands}]
@@ -474,6 +493,19 @@
 
   /** Score one sign from one "view" (a single hand, or the two-hand pair). */
   SignRecognizer.prototype._scoreView = function (sign, view) {
+    const r = this._engineScore(sign, view);
+    const m = this.model;
+    if (!r || !m || !view.feat || m.index[sign.id] == null) return r;
+    // Model probabilities are computed once per view (single hand).
+    if (view.probs === undefined) view.probs = m.predictFeatures(view.feat);
+    if (!view.probs) return r;
+    const prob = view.probs[m.index[sign.id]];
+    return Object.assign({}, r, {
+      score: blendModel(r.score, prob, m.weight), source: r.source + '+model', engine: r.score, prob: prob,
+    });
+  };
+
+  SignRecognizer.prototype._engineScore = function (sign, view) {
     const d = this._staticDistance(sign.id, view.live);
     const tplScore = Number.isFinite(d) ? Math.exp(-((d / CFG.staticSigma) ** 2)) : null;
     const spec = sign.handshape && view.feat ? scoreSpec(view.feat, sign.handshape) : null;
@@ -608,6 +640,7 @@
     sequenceFeatures: sequenceFeatures,
     resample: resample,
     dtw: dtw,
+    blendModel: blendModel,
     SignRecognizer: SignRecognizer,
   };
 

@@ -107,14 +107,44 @@
           </label>
         </div>
       </div>
+
+      <div class="ss-card" id="ss-model-card">
+        <div class="ss-card-head">
+          <h3>🧠 Modelo entrenado</h3>
+          <span id="ss-model-chip" class="ss-chip ss-chip-none">Sin modelo</span>
+        </div>
+        <p id="ss-model-status" class="ss-help">Cargando…</p>
+        <div class="ss-io">
+          <button id="ss-btn-train" class="ss-btn ss-btn-ghost" type="button">🧠 Entrenar y evaluar</button>
+          <button id="ss-btn-model-off" class="ss-btn ss-btn-ghost" type="button" hidden>Desactivar</button>
+        </div>
+      </div>
     </aside>
   </main>
 
   <div id="ss-toast" class="ss-toast" role="status" hidden></div>
 
+  <dialog id="ss-model-dialog" class="ss-dialog" aria-labelledby="ss-md-title">
+    <div class="ss-dialog-head">
+      <h2 id="ss-md-title">🧠 Entrenar el modelo</h2>
+      <button id="ss-md-close" class="ss-btn ss-btn-icon" type="button" aria-label="Cerrar">✕</button>
+    </div>
+    <p class="ss-help">Una red neuronal pequeña aprende las señas <strong>estáticas de una mano</strong> a partir de las grabaciones y se combina con los descriptores y las plantillas. Todo ocurre en este navegador. Antes de publicarlo se evalúa con grabaciones que el modelo no ve al entrenar.</p>
+    <div id="ss-md-progress" class="ss-md-progress" hidden>
+      <div class="ss-meter"><div id="ss-md-bar" class="ss-meter-fill"></div></div>
+      <p id="ss-md-step" class="ss-help"></p>
+    </div>
+    <div id="ss-md-report"></div>
+    <div class="ss-dialog-actions">
+      <button id="ss-md-publish" class="ss-btn ss-btn-primary" type="button" hidden>Publicar modelo</button>
+      <button id="ss-md-cancel" class="ss-btn" type="button">Cerrar</button>
+    </div>
+  </dialog>
+
   <script src="/static/js/ho-common.js"></script>
   <script src="/static/js/ho-hands.js"></script>
   <script src="/static/js/ho-signs.js"></script>
+  <script src="/static/js/ho-signs-model.js"></script>
   <script src="/static/js/ho-curriculum.js"></script>
   <script src="/static/js/signstudio.js"></script>
 </body>

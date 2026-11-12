@@ -1,17 +1,77 @@
-# REQ-010 — Clasificador ML de Gestos Personalizado
+# REQ-010 — Clasificador entrenado con las plantillas de señas
 
-> **Última actualización:** 2026-04-30
+> **Última actualización:** 2026-11-12
 
 | Campo | Valor |
 |-------|-------|
 | **ID** | REQ-010 |
 | **Tipo** | Feature |
-| **Prioridad** | Baja |
-| **Estado** | 📋 Pendiente |
-| **Módulo** | Global / Backend |
+| **Prioridad** | Media |
+| **Estado** | ✅ Hecho (v0.14.0) — reformulado: clasificador de señas estáticas de una mano, entrenado y ejecutado en el navegador con las plantillas del Estudio |
+| **Módulo** | Motor de señas / Estudio de Señas / Aula |
 | **Esfuerzo estimado** | XL (15–25 horas + recolección de datos de entrenamiento) |
 
 ---
+
+## Implementación (v0.14.0)
+
+La propuesta original (más abajo, como referencia histórica) apuntaba a los gestos genéricos de `hand_tracker.py` (puño, paz…), con scikit-learn en el servidor y una página `/collect`. Con la dirección de producto de 2026-11 (plataforma de enseñanza de **LSEC**, detección en el navegador) se reformuló:
+
+| Original | Implementado | Por qué |
+|---|---|---|
+| Gestos genéricos (`fist`, `peace`…) | **Señas estáticas de una mano del catálogo** (33 de 50 en LSEC: alfabeto y números) | Es donde están los pares que se confunden (M/N, U/V/2, A/S/E) |
+| Página `/collect` + tabla `gesture_samples` | Las **plantillas del Estudio de Señas** (ya guardan landmarks crudos, REQ-017) | Ya existían y los docentes ya graban ahí |
+| scikit-learn en el servidor, `.pkl` | **Red neuronal pequeña en JS puro** (`ho-signs-model.js`), entrenada y ejecutada en el navegador | Un solo extractor de características para entrenar e inferir, sin dependencias nuevas en la imagen, el video nunca sale del equipo; el servidor solo guarda el JSON |
+| Reemplaza las heurísticas con umbral 0,85 | **Se combina** con descriptores y kNN (mezcla geométrica) | Un clasificador no tiene clase «ninguna»: sin la parte geométrica aceptaría cualquier mano. Los descriptores siguen dando la retroalimentación didáctica |
+| Meta fija «accuracy ≥ 95 %» | **Evaluación honesta antes de publicar** y publicación solo si mejora | Con pocas grabaciones la cifra depende de los datos; lo que importa es si mejora lo que ya hay |
+
+### Modelo
+
+- **Características (87):** 20 puntos canónicos (muñeca en el origen, escala de palma, espejo para la mano izquierda), flexión y alcance de cada dedo, posición lateral del pulgar, normal de la palma, dirección de los dedos y distancias entre las puntas. La orientación **no** se normaliza (es fonológica).
+- **Red:** 87 → 24 ReLU → softmax por seña. Adam, entropía cruzada con suavizado de etiquetas 0,05, pesos balanceados por clase, L2. Aumento de datos: rotación en el plano ±10° y ruido en los puntos. Semilla fija (reproducible). ~3 000 parámetros; el JSON pesa ~20–60 KB.
+- **Combinación:** `puntuación = motor^(1−w) · p^w` (`HO.Signs.blendModel`), donde *motor* es la puntuación actual (descriptor y/o kNN) y *p* la probabilidad del modelo. Si la mano está lejos de toda plantilla y descriptor, la puntuación sigue baja aunque la red esté segura. Solo afecta a las señas del modelo; las dinámicas (DTW) y las de dos manos no cambian.
+
+### Evaluación (antes de publicar)
+
+Validación cruzada **agrupada por grabación** (estratificada, hasta 5 particiones): cada grabación se prueba con un modelo que no la vio. Si se separaran cuadros sueltos, los 12 cuadros casi idénticos de una grabación estarían a ambos lados y la cifra saldría inflada. Para cada cuadro se compara el motor actual con el motor + modelo entrenado en las mismas particiones, con lo que vive el estudiante:
+
+| Métrica | Qué mide |
+|---|---|
+| **Seña correcta aceptada** | `verify()` acepta la seña que se está haciendo, compitiendo con su conjunto real de candidatas (incluidas las señas solo con descriptor de la misma categoría) |
+| **Seña equivocada aceptada** | `verify()` aceptaría *otra* seña del modelo con ese cuadro |
+| **Acierto (1.ª opción)** | La seña correcta es la primera entre las del modelo |
+
+Se prueban los pesos 0,35 / 0,5 / 0,65 / 0,8 y se elige el que maximiza *aceptadas − equivocadas aceptadas*. El modelo se **recomienda** solo si eso supera al motor actual sin perder acierto; si no, el Estudio no ofrece publicarlo. Las señas con una sola grabación quedan fuera y se listan. Limitación: si todas las grabaciones son de la misma persona, la cifra es optimista para otras personas (el informe lo avisa).
+
+### Flujo
+
+1. **Estudio de Señas → 🧠 Modelo entrenado → Entrenar y evaluar** (unos segundos; barra de progreso). Informe: las tres métricas con y sin modelo, tabla por seña (peor primero), confusiones más frecuentes y señas con una sola grabación.
+2. **Publicar modelo** (token de administrador): queda activo; el Aula y el Estudio lo cargan al abrir. Se puede **desactivar** o volver a uno anterior (API).
+3. El Estudio avisa cuando hay grabaciones nuevas o eliminadas desde el entrenamiento.
+4. Sin navegador: `node scripts/train-sign-model.cjs [--out model.json] [--publish]` ejecuta el mismo código (`--templates dataset.json` evalúa un dataset exportado).
+
+### API
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/api/signs/{lang}/model` | Pesos del modelo activo; **204** si no hay ninguno (el motor funciona sin él) |
+| `GET` | `/api/signs/{lang}/models` | Modelos publicados (sin pesos), con su informe |
+| `POST` | `/api/signs/{lang}/models` | Publicar `{model, metrics, author, activate}` (admin). Valida formato, versión de características, tamaños, números finitos y que las clases sean señas estáticas de una mano del catálogo |
+| `POST` | `/api/signs/{lang}/models/{id}/activate` | Activar uno anterior (admin) |
+| `DELETE` | `/api/signs/{lang}/model` | Desactivar (admin) |
+| `DELETE` | `/api/signs/{lang}/models/{id}` | Eliminar (admin) |
+
+Tabla nueva `sign_models` (se crea sola al arrancar).
+
+### Pruebas
+
+`tests/js/ho-signs-model.test.cjs` (características invariantes, la red aprende y es reproducible, validación del JSON, validación cruzada que retiene grabaciones enteras, señas con pocas grabaciones, mezcla en el reconocedor sin aceptar una «mano» aleatoria) y `tests/test_sign_models.py` (publicar un modelo entrenado por el código JS —`tests/fixtures/sign_model_small.json`, regenerable con `node tests/fixtures/gen_sign_model.cjs`—, activar/desactivar, validaciones, token). E2E en Chromium: entrenar, informe, publicar, reconocimiento en vivo con el modelo (`template+spec+model`), el Aula lo carga, diálogo sin desbordamiento en móvil.
+
+**Pendiente:** precisión con grabaciones reales de docentes y estudiantes (las pruebas usan grabaciones sintéticas a partir de fotos reales); señas dinámicas (hoy DTW) y de dos manos; varias personas por partición (validación por persona) cuando haya grabaciones de suficientes personas.
+
+---
+
+## Propuesta original (2026-04-30 — referencia histórica)
 
 ## Problema
 

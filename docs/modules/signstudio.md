@@ -21,6 +21,7 @@ Herramienta para docentes e intérpretes:
 | `app/static/css/signstudio.css` | Prefijo `.ss-` |
 | `app/static/js/signstudio.js` | Lógica de la página |
 | `app/static/js/ho-signs.js` | Motor de reconocimiento (ver `docs/sign-engine.md`) |
+| `app/static/js/ho-signs-model.js` | Entrenamiento, evaluación e inferencia del modelo (REQ-010) |
 
 ## Grabación
 
@@ -41,6 +42,19 @@ Atajo: **barra espaciadora** = grabar. El campo *Autor/a* se recuerda en el nave
 | `—` | Todavía no es reconocible: necesita una grabación |
 | `Sin validar` | Contenido pendiente de validación lingüística |
 
+## Modelo entrenado (REQ-010)
+
+La tarjeta **🧠 Modelo entrenado** muestra si hay un modelo activo, con cuántas grabaciones se entrenó y si hay grabaciones nuevas o eliminadas desde entonces.
+
+**Entrenar y evaluar** entrena una red pequeña en el propio navegador con las grabaciones de las señas estáticas de una mano (al menos 2 por seña). Antes la evalúa con validación cruzada por grabación y muestra:
+
+- con y sin modelo: *seña correcta aceptada*, *seña equivocada aceptada* y *acierto*;
+- la tabla por seña (peor primero), las confusiones más frecuentes y las señas que tienen una sola grabación.
+
+Solo si mejora aparece **Publicar modelo** (pide el token). El Aula y el Estudio lo usan desde ese momento, y en los candidatos en vivo la fuente aparece como `…+model`. **Desactivar** vuelve al motor sin modelo.
+
+Sin navegador: `node scripts/train-sign-model.cjs` (`--out`, `--publish`, `--templates`).
+
 ## Seguridad
 
-Si se define `ADMIN_TOKEN` en `.env`, guardar, eliminar o importar plantillas exige ese token. El Estudio lo pide la primera vez y lo guarda en `localStorage`. Leer el catálogo y las plantillas es público.
+Si se define `ADMIN_TOKEN` en `.env`, guardar, eliminar o importar plantillas exige ese token. El Estudio lo pide la primera vez y lo guarda en `localStorage`. Leer el catálogo, las plantillas y el modelo activo es público; publicar, activar o desactivar modelos exige el token.

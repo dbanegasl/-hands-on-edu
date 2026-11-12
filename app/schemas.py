@@ -120,6 +120,52 @@ class TemplateImport(BaseModel):
     templates: Annotated[list[TemplateCreate], Field(min_length=1, max_length=2000)]
 
 
+# ── Trained sign classifier (REQ-010) ─────────────────────────────────────────
+
+SIGN_MODEL_FORMAT = "handsonedu.sign-model/v1"
+FiniteFloat = Annotated[float, Field(allow_inf_nan=False)]
+MAX_MODEL_PARAMS = 200_000
+
+
+class SignModelWeights(BaseModel):
+    """Network exported by HO.SignModel (app/static/js/ho-signs-model.js)."""
+
+    model_config = ConfigDict(extra="allow")  # trained_on and future metadata are kept as-is
+
+    format: Literal["handsonedu.sign-model/v1"]
+    feature_version: Annotated[str, Field(min_length=1, max_length=40)]
+    classes: Annotated[list[Annotated[str, Field(min_length=1, max_length=64)]], Field(min_length=2, max_length=500)]
+    hidden: Annotated[int, Field(ge=2, le=256)]
+    inputs: Annotated[int, Field(ge=1, le=512)]
+    mean: list[FiniteFloat]
+    std: list[FiniteFloat]
+    W1: list[FiniteFloat]
+    b1: list[FiniteFloat]
+    W2: list[FiniteFloat]
+    b2: list[FiniteFloat]
+    weight: Annotated[float, Field(ge=0, le=1)] = 0.5
+
+
+class SignModelIn(BaseModel):
+    model: SignModelWeights
+    metrics: dict = Field(default_factory=dict)
+    author: Annotated[str | None, Field(max_length=120)] = None
+    activate: bool = True
+
+
+class SignModelOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    language: str
+    active: bool
+    author: str | None
+    classes: list[str]
+    template_count: int
+    metrics: dict
+    created_at: datetime
+
+
 # ── LTI 1.3 ─────────────────────────────────────────────────────────────────
 
 HttpUrl = Annotated[str, Field(min_length=8, max_length=500, pattern=r"^https?://\S+$")]
