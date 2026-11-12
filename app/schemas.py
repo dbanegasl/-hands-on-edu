@@ -170,3 +170,54 @@ class GradeSyncOut(BaseModel):
     score_given: float | None = None
     score_maximum: float | None = None
     detail: str | None = None
+
+
+# ── AttendEye (REQ-005) ──────────────────────────────────────────────────────
+
+AttendanceStatus = Literal["present", "absent", "skipped", "pending"]
+
+
+class AttendanceRecordIn(BaseModel):
+    student_name: Annotated[str, Field(min_length=1, max_length=120)]
+    status: AttendanceStatus = "pending"
+    marked_at: datetime | None = None
+    method: Literal["gesture", "manual"] | None = None
+    participations: Annotated[int, Field(ge=0, le=10000)] = 0
+
+
+class AttendanceIn(BaseModel):
+    mode: Literal["rollcall", "participation"]
+    class_name: Annotated[str, Field(min_length=1, max_length=120)]
+    started_at: datetime | None = None
+    ended_at: datetime | None = None
+    records: Annotated[list[AttendanceRecordIn], Field(min_length=1, max_length=300)]
+
+
+class AttendanceRecordOut(AttendanceRecordIn):
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AttendanceSummary(BaseModel):
+    id: str
+    mode: str
+    class_name: str
+    started_at: datetime
+    ended_at: datetime | None
+    total: int
+    present: int
+    absent: int
+    skipped: int
+    rate: float | None          # present / (present + absent + skipped); None in participation mode
+    participations: int
+    duration_min: float | None
+
+
+class AttendanceOut(AttendanceSummary):
+    records: list[AttendanceRecordOut]
+
+
+class AttendanceClass(BaseModel):
+    class_name: str
+    sessions: int
+    last_at: datetime
+    roster: list[str]           # names of the most recent session, in order

@@ -21,7 +21,7 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 | [REQ-002](./REQ-002-audio-feedback.md) | Feedback de Audio en GestiEdu y MotivaSign | Mejora | Media | ✅ Hecho | GestiEdu, MotivaSign |
 | [REQ-003](./REQ-003-pdf-export-attendeye.md) | Exportación PDF del Reporte de Asistencia | Mejora | Media | ✅ Hecho | AttendEye |
 | [REQ-004](./REQ-004-undo-virtualpainter.md) | Deshacer / Rehacer en VirtualPainter | Mejora | Media | ✅ Hecho | VirtualPainter |
-| [REQ-005](./REQ-005-sqlite-persistence.md) | Persistencia de Sesiones con SQLite | Feature | Alta | 🔄 En progreso (base hecha en v0.9.0; falta conectar GestiEdu/AttendEye) | Global / Backend |
+| [REQ-005](./REQ-005-sqlite-persistence.md) | Persistencia de Sesiones con SQLite | Feature | Alta | ✅ Hecho (v0.13.0: GestiEdu, MotivaSign y AttendEye guardan resultados) | Global / Backend |
 | [REQ-006](./REQ-006-question-editor-gestiedu.md) | Editor de Preguntas para Docentes (GestiEdu) | Feature | Media | 📋 Pendiente | GestiEdu |
 | [REQ-007](./REQ-007-teacher-dashboard.md) | Panel docente (progreso del curso, lista NRPS, CSV) | Feature | Alta | ✅ Hecho (v0.12.0, Aula de Señas) | Aula / Global |
 | [REQ-008](./REQ-008-basic-auth.md) | Autenticación Básica (Roles Docente / Estudiante) | Feature | Alta | 📋 Pendiente | Global |
@@ -57,7 +57,7 @@ Dirección de producto (2026-11-11): plataforma de referencia para la **enseñan
 ```
 ✅ REQ-016 (detección en navegador) → ✅ REQ-017 (motor de señas + Estudio)
     → ✅ REQ-018 (Aula de Señas) → ✅ REQ-019 (LTI 1.3 + notas en Moodle)
-    → ✅ REQ-007 (panel docente) → REQ-005 (persistencia de GestiEdu/AttendEye)
+    → ✅ REQ-007 (panel docente) → ✅ REQ-005 (persistencia de GestiEdu/MotivaSign/AttendEye)
     → REQ-010 (clasificador ML entrenado con las plantillas grabadas) → REQ-011 (CD)
 ```
 

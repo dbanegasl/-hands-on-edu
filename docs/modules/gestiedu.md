@@ -2,7 +2,7 @@
 
 ## Propósito
 
-Módulo de evaluación interactiva donde los estudiantes responden preguntas usando gestos de mano. Diseñado para educación inicial y primaria (5–10 años). El docente puede integrar los resultados con Moodle.
+Módulo de evaluación interactiva donde los estudiantes responden preguntas usando gestos de mano. Diseñado para educación inicial y primaria (5–10 años). Los resultados se guardan por estudiante y el docente los ve en el panel (REQ-005).
 
 ## URL
 
@@ -15,6 +15,7 @@ Módulo de evaluación interactiva donde los estudiantes responden preguntas usa
 | `app/static/gestiedu.html` | Estructura HTML (pantallas: idle, game, results) |
 | `app/static/css/gestiedu.css` | Estilos (paleta violeta/verde, animaciones infantiles) |
 | `app/static/js/gestiedu.js` | Motor del juego completo |
+| `app/static/js/ho-learning.js`, `css/ho-learning.css` | Compartido con MotivaSign: «¿Quién juega?», guardado de la partida e historial |
 
 ---
 
@@ -88,9 +89,12 @@ gesto incorrecto → holdStart = null, arc regresa al inicio
 
 ---
 
-## Integración Moodle
+## Resultados guardados (REQ-005)
 
-En la pantalla de resultados hay un botón "Enviar a Moodle". En la versión actual es un stub (muestra `alert`). Para activarlo, implementar la llamada a `MoodleClient.submit_grade()` en el backend y crear un endpoint REST `/api/gestiedu/submit`.
+- En la pantalla de inicio, **¿Quién juega?**: nombre del estudiante (los perfiles se comparten con el Aula de Señas y aparecen como botones). Sin nombre se juega igual, pero no se guarda.
+- Al terminar, la partida se guarda como `activity_sessions` (`module="gestiedu"`, `activity="quiz"`): aciertos / 10, nota, duración y cada respuesta en `details.answers`.
+- **📜 Mis resultados** muestra las últimas 8 partidas. El docente las ve en el panel (`/panel`, vista de instalación).
+- No se envía nota a Moodle: GestiEdu no se lanza por LTI (las notas a Moodle las envía el Aula de Señas, REQ-019).
 
 ---
 
@@ -109,6 +113,6 @@ En la pantalla de resultados hay un botón "Enviar a Moodle". En la versión act
 ## Known Limitations
 
 - Las preguntas están hardcoded en `gestiedu.js` — futuras versiones deberían cargarlas desde una API o desde Moodle.
-- No hay autenticación de estudiante — el resultado no se persiste automáticamente (stub de Moodle).
+- El estudiante se identifica solo por su nombre en el dispositivo (sin cuenta); no se lanza desde Moodle.
 - Detección de gestos limitada a los clasificadores de `hand_tracker.py` (no ML específico para dígitos).
 - Una sola sesión de cámara — no soporta múltiples estudiantes en paralelo en la misma instancia.

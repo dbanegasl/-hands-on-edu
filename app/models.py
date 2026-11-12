@@ -235,3 +235,38 @@ class LtiScoreSubmission(Base):
     http_status: Mapped[int | None] = mapped_column(Integer)
     detail: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now)
+
+
+# ── AttendEye (REQ-005): class attendance and participation ────────────────────
+
+class AttendanceSession(Base):
+    """One roll call or participation session of a class (names typed by the teacher, not learner profiles)."""
+
+    __tablename__ = "attendance_sessions"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    mode: Mapped[str] = mapped_column(String(20))            # "rollcall" | "participation"
+    class_name: Mapped[str] = mapped_column(String(120), index=True)
+    started_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now)
+    ended_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now, index=True)
+
+    records: Mapped[list["AttendanceRecord"]] = relationship(
+        back_populates="attendance", cascade="all, delete-orphan", passive_deletes=True,
+        order_by="AttendanceRecord.position",
+    )
+
+
+class AttendanceRecord(Base):
+    __tablename__ = "attendance_records"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    attendance_id: Mapped[str] = mapped_column(ForeignKey("attendance_sessions.id", ondelete="CASCADE"), index=True)
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    student_name: Mapped[str] = mapped_column(String(120))
+    status: Mapped[str] = mapped_column(String(12))          # present | absent | skipped | pending
+    marked_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    method: Mapped[str | None] = mapped_column(String(10))   # gesture | manual
+    participations: Mapped[int] = mapped_column(Integer, default=0)
+
+    attendance: Mapped[AttendanceSession] = relationship(back_populates="records")

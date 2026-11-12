@@ -712,3 +712,7 @@ body {
   .ms-mode-card  { width: 100%; max-width: 300px; }
   .ms-sign-emoji { font-size: 4.5rem; }
 }
+
+/* Learner picker + saved results (REQ-005) */
+.ms-learner.ho-lp { margin: 22px auto 26px; }
+#ms-save { margin-bottom: 14px; }

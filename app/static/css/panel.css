@@ -148,3 +148,10 @@
   .pn-search { width: 100%; }
   .pn-tile-value { font-size: 1.45rem; }
 }
+
+/* Other modules (REQ-005) */
+.pn-modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.pn-module { border: 1px solid var(--au-border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pn-module h3 { font-size: 1rem; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.pn-module h3 a { font-size: 0.8rem; font-weight: 400; }
+.pn-module .pn-tile-value { font-size: 1.5rem; }

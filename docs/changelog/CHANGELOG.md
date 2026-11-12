@@ -15,6 +15,27 @@
 
 ---
 
+## [0.13.0] — 2026-11-12
+
+### Añadido
+
+- **REQ-005** — Los módulos de gestos **guardan sus resultados**.
+  - **GestiEdu** y **MotivaSign**: «¿Quién juega?» en la pantalla de inicio (perfiles compartidos con el Aula de Señas), partida guardada al terminar y **📜 Mis resultados**. MotivaSign guarda cada seña del desafío y la práctica libre.
+  - **AttendEye**: historial por clase (tablas nuevas `attendance_sessions` y `attendance_records`, se crean solas al arrancar). La lista se guarda al terminar (registra si cada estudiante se marcó por gesto o a mano), la participación con *Guardar y terminar*; reutilizar la última lista de la clase, historial con CSV y borrado. API `/api/attendance` protegida con el token de administrador.
+  - **Panel docente** (vista de instalación): tarjeta *Otros módulos* y partidas de los juegos en el detalle del estudiante.
+- Helper compartido `js/ho-learning.js` (`HO.Learning`) + `css/ho-learning.css`, con pruebas en `tests/js/ho-learning.test.cjs`.
+
+### Cambiado
+
+- GestiEdu: el botón «Enviar a Moodle» (era un aviso sin efecto) pasa a ser *Mis resultados*.
+- Los CSV del panel y de asistencia usan la zona horaria del navegador (`tz`) en lugar de UTC.
+
+### Corregido
+
+- AttendEye: la pantalla de resultados se veía debajo de la de configuración (la regla `display: flex` anulaba la ocultación).
+
+---
+
 ## [0.12.0] — 2026-11-12
 
 ### Añadido

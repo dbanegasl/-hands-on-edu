@@ -2,7 +2,7 @@
 
 ## Propósito
 
-Herramienta para docentes que permite tomar asistencia de clase mediante gestos de mano y monitorear la participación de estudiantes en tiempo real. Genera un reporte de texto exportable.
+Herramienta para docentes que permite tomar asistencia de clase mediante gestos de mano y monitorear la participación de estudiantes en tiempo real. Genera un reporte de texto, PDF y CSV, y guarda un **historial por clase** (REQ-005).
 
 ## URL
 
@@ -15,6 +15,7 @@ Herramienta para docentes que permite tomar asistencia de clase mediante gestos 
 | `app/static/attendeye.html` | 4 pantallas: setup, roll call, participación, resultados |
 | `app/static/css/attendeye.css` | Tema navy/sky-blue profesional, layout 3 columnas |
 | `app/static/js/attendeye.js` | Motor con 2 instancias WebSocket independientes |
+| `app/api/attendance.py` | API del historial de asistencia (token de administrador) |
 
 ---
 
@@ -75,6 +76,16 @@ El botón "Exportar" crea un archivo `.txt` descargable con el contenido del rep
 
 ---
 
+## Historial (REQ-005)
+
+- La **lista de asistencia** se guarda sola al terminar (tablas `attendance_sessions` / `attendance_records`), con el estado, la hora y si se marcó **por gesto** (mano sostenida) o **a mano** (botones). Si falla, la pantalla ofrece *Reintentar*. Botón **⬇ CSV**.
+- En **Participación**, **💾 Guardar y terminar** guarda las intervenciones por estudiante; *Salir sin guardar* pide confirmación si hubo intervenciones.
+- En la configuración: el nombre de la clase sugiere las clases guardadas, **Usar la lista guardada de esta clase** recupera sus nombres y **📚 Historial de asistencia** lista las sesiones con CSV y borrado.
+- Es un dato personal: la API (`/api/attendance`) exige `X-Admin-Token` cuando `ADMIN_TOKEN` está definido; la página lo pide una vez.
+- El panel docente (vista de instalación) resume la asistencia media y la participación.
+
+---
+
 ## Instancias WebSocket
 
 AttendEye usa **dos instancias WebSocket separadas** (una por modo), con sus propios elementos `<video>` y `<canvas>`:
@@ -111,6 +122,5 @@ José Martínez, Sofía Herrera, David Morales, Isabella Flores, Miguel Ángel R
 ## Known Limitations
 
 - Diseñado para uso con una sola cámara compartida — no soporta multi-cámara ni identificación de rostro por nombre.
-- El reporte es texto plano — no genera PDF ni CSV automáticamente (puede copiarse manualmente).
-- No hay persistencia de sesiones — al recargar la página se pierde el historial.
+- Los estudiantes son nombres escritos por el docente, no perfiles: el historial es por clase y no se cruza con el progreso de cada estudiante en otros módulos.
 - Modo participación no tiene autenticación: cualquier clic del docente registra participación (no auto-detección por nombre).

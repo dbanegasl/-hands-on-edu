@@ -35,6 +35,9 @@ let phase            = 'idle'; // idle | reading | detecting | confirming | feed
 
 let holdStart        = null;
 let readingTimer     = null;
+let rollStartedAt    = null;   // Date, for the saved session (REQ-005)
+let savedAttendance  = null;   // last saved session {id, ...} (CSV download)
+let knownClasses     = [];     // [{class_name, sessions, last_at, roster}]
 
 // Roll call webcam/WS
 let videoEl, canvasEl, ctx, stream, socket, animFrame;
@@ -68,7 +71,7 @@ function initStudents(rosterText, classNameVal) {
       const initials = parts.length >= 2
         ? (parts[0][0] + parts[1][0]).toUpperCase()
         : name.slice(0, 2).toUpperCase();
-      return { name, initials, status: 'pending', time: null };
+      return { name, initials, status: 'pending', time: null, markedAt: null, method: null };
     });
 
   participationCounts = {};
@@ -173,6 +176,7 @@ async function startRollCall() {
   }
 
   mode = 'rollcall';
+  rollStartedAt = new Date();
   phase = 'idle';
   currentStudentIdx = 0;
   holdStart = null;
@@ -260,8 +264,8 @@ function showStudent(idx) {
   }, READING_DELAY);
 }
 
-/** Mark a student present / absent / skipped and advance. */
-function markStudent(idx, status) {
+/** Mark a student present / absent / skipped and advance (method: 'gesture' | 'manual'). */
+function markStudent(idx, status, method = 'manual') {
   if (idx >= students.length) return;
 
   // Guard: prevent double-mark from button + gesture race
@@ -271,6 +275,8 @@ function markStudent(idx, status) {
 
   students[idx].status = status;
   students[idx].time   = new Date().toLocaleTimeString();
+  students[idx].markedAt = new Date().toISOString();
+  students[idx].method   = method;
 
   // Update sidebar badge
   const badgeEl = document.getElementById(`ae-roster-badge-${idx}`);
@@ -323,7 +329,7 @@ function startRCLoop() {
       const progress = Math.min((Date.now() - holdStart) / HOLD_TIME, 1);
       setHoldRing(progress, true);
       if (progress >= 1) {
-        markStudent(currentStudentIdx, 'present');
+        markStudent(currentStudentIdx, 'present', 'gesture');
       }
     }
   }
@@ -470,6 +476,7 @@ function finishRollCall() {
   if (btnPDF) btnPDF.disabled = (totalCount === 0);
 
   showScreen('results');
+  saveRollCall();
 }
 
 /** Stop roll call: cancel animation, close WS, stop media. */
@@ -661,6 +668,156 @@ function stopParticipation() {
   lastRaiseGesture = null;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+//  SAVED SESSIONS (REQ-005)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const L = HO.Learning;
+
+function setMsg(el, text, kind) {
+  el.className = el.className.replace(/\s*\b(ok|warn)\b/g, '') + (kind ? ' ' + kind : '');
+  el.textContent = text;
+  el.hidden = !text;
+}
+
+async function saveRollCall() {
+  const status = document.getElementById('ae-save');
+  const btnCsv = document.getElementById('ae-btn-csv');
+  btnCsv.hidden = true;
+  savedAttendance = null;
+  if (!students.length) return;
+  setMsg(status, 'Guardando la asistencia…');
+  try {
+    savedAttendance = await L.request('/api/attendance', { admin: true, body: {
+      mode: 'rollcall', class_name: className,
+      started_at: (rollStartedAt || new Date()).toISOString(), ended_at: new Date().toISOString(),
+      records: students.map(s => ({
+        student_name: s.name, status: s.status, marked_at: s.markedAt, method: s.method,
+      })),
+    } });
+    setMsg(status, 'Asistencia guardada en el historial.', 'ok');
+    btnCsv.hidden = false;
+  } catch (err) {
+    setMsg(status, `No se pudo guardar la asistencia: ${err.message}`, 'warn');
+    const retry = document.createElement('button');
+    retry.className = 'ae-btn ae-btn-ghost ae-btn-sm';
+    retry.textContent = 'Reintentar';
+    retry.addEventListener('click', saveRollCall);
+    status.append(retry);
+  }
+}
+
+async function saveParticipation() {
+  const started = sessionStart ? new Date(sessionStart) : new Date();
+  stopParticipation();
+  const msg = document.getElementById('ae-setup-msg');
+  showScreen('setup');
+  setMsg(msg, 'Guardando la participación…');
+  try {
+    await L.request('/api/attendance', { admin: true, body: {
+      mode: 'participation', class_name: className,
+      started_at: started.toISOString(), ended_at: new Date().toISOString(),
+      records: students.map(s => ({ student_name: s.name, participations: participationCounts[s.name] || 0 })),
+    } });
+    const total = Object.values(participationCounts).reduce((a, b) => a + b, 0);
+    setMsg(msg, `Participación de «${className}» guardada (${total} intervenciones).`, 'ok');
+    loadClasses();
+    if (!document.getElementById('ae-history').hidden) renderHistory();
+  } catch (err) {
+    setMsg(msg, `No se pudo guardar la participación: ${err.message}`, 'warn');
+  }
+}
+
+async function downloadCsv(id) {
+  try {
+    const res = await L.request(`/api/attendance/${encodeURIComponent(id)}/export.csv?tz=${-new Date().getTimezoneOffset()}`,
+      { admin: true, raw: true });
+    const name = (/filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') || '') || [])[1] || 'asistencia.csv';
+    const url = URL.createObjectURL(await res.blob());
+    const a = Object.assign(document.createElement('a'), { href: url, download: name });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (err) {
+    alert('No se pudo descargar el CSV: ' + err.message);
+  }
+}
+
+/** Fill the class-name suggestions; never prompts for the token on page load. */
+async function loadClasses() {
+  try {
+    knownClasses = await L.request('/api/attendance/classes', { admin: true, prompt: false });
+  } catch (_) {
+    knownClasses = [];
+  }
+  const dl = document.getElementById('ae-classes');
+  dl.replaceChildren(...knownClasses.map(c => Object.assign(document.createElement('option'), { value: c.class_name })));
+  updateLastRosterButton();
+}
+
+function savedClass() {
+  const name = document.getElementById('ae-class-name').value.trim();
+  return knownClasses.find(c => c.class_name === name) || null;
+}
+
+function updateLastRosterButton() {
+  const c = savedClass();
+  const btn = document.getElementById('ae-btn-last-roster');
+  btn.hidden = !c;
+  if (c) btn.textContent = `📋 Usar la lista guardada de «${c.class_name}» (${c.roster.length})`;
+}
+
+async function renderHistory() {
+  const box = document.getElementById('ae-history');
+  box.hidden = false;
+  box.replaceChildren(Object.assign(document.createElement('p'), { className: 'ae-empty', textContent: 'Cargando…' }));
+  let rows;
+  try {
+    rows = await L.request('/api/attendance?limit=30', { admin: true });
+  } catch (err) {
+    box.firstChild.textContent = 'No se pudo cargar el historial: ' + err.message;
+    return;
+  }
+  if (!rows.length) {
+    box.firstChild.textContent = 'Todavía no hay sesiones guardadas.';
+    return;
+  }
+  const fmt = new Intl.DateTimeFormat('es-EC', { dateStyle: 'short', timeStyle: 'short' });
+  const el = (tag, text, cls) => Object.assign(document.createElement(tag), { textContent: text, className: cls || '' });
+  const table = document.createElement('table');
+  const head = document.createElement('tr');
+  ['Fecha', 'Clase', 'Tipo', 'Resultado', ''].forEach(h => head.append(el('th', h)));
+  table.append(head);
+  for (const r of rows) {
+    const tr = document.createElement('tr');
+    const result = r.mode === 'rollcall'
+      ? `📋 ${r.present}/${r.total} · ${r.rate == null ? '—' : Math.round(r.rate * 100) + ' %'}`
+      : `🙋 ${r.participations} interv.`;
+    tr.append(el('td', fmt.format(new Date(r.started_at))), el('td', r.class_name),
+      el('td', r.mode === 'rollcall' ? 'Lista' : 'Participación'), el('td', result, 'num'));
+    const act = el('td', '', 'act');
+    const csv = el('button', '⬇ CSV', 'ae-btn ae-btn-ghost ae-btn-sm');
+    csv.addEventListener('click', () => downloadCsv(r.id));
+    const del = el('button', '🗑', 'ae-btn ae-btn-ghost ae-btn-sm');
+    del.title = del.ariaLabel = 'Eliminar';
+    del.addEventListener('click', async () => {
+      if (!confirm(`¿Eliminar la sesión de «${r.class_name}» del ${fmt.format(new Date(r.started_at))}?`)) return;
+      try {
+        await L.request(`/api/attendance/${encodeURIComponent(r.id)}`, { admin: true, method: 'DELETE' });
+        renderHistory();
+        loadClasses();
+      } catch (err) {
+        alert('No se pudo eliminar: ' + err.message);
+      }
+    });
+    act.append(csv, del);
+    tr.append(act);
+    table.append(tr);
+  }
+  box.replaceChildren(table);
+}
+
 // ── Reset to setup ────────────────────────────────────────────────────────────
 
 function resetToSetup() {
@@ -670,6 +827,7 @@ function resetToSetup() {
   students = [];
   participationCounts = {};
   showScreen('setup');
+  loadClasses();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -874,6 +1032,17 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-participation').addEventListener('click', startParticipation);
 
   // ── Roll call controls ───────────────────────────────────────────────────────
+  document.getElementById('ae-class-name').addEventListener('input', updateLastRosterButton);
+  document.getElementById('ae-btn-last-roster').addEventListener('click', () => {
+    const c = savedClass();
+    if (c) document.getElementById('ae-roster-input').value = c.roster.join('\n');
+  });
+  document.getElementById('ae-btn-history').addEventListener('click', () => {
+    const box = document.getElementById('ae-history');
+    if (box.hidden) renderHistory(); else box.hidden = true;
+  });
+  loadClasses();
+
   document.getElementById('ae-btn-present').addEventListener('click', () => {
     markStudent(currentStudentIdx, 'present');
   });
@@ -889,9 +1058,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ── Participation controls ───────────────────────────────────────────────────
+  document.getElementById('ae-btn-save-part').addEventListener('click', saveParticipation);
   document.getElementById('ae-btn-exit-part').addEventListener('click', () => {
+    const total = Object.values(participationCounts).reduce((a, b) => a + b, 0);
+    if (total && !confirm('¿Salir sin guardar la participación registrada?')) return;
     stopParticipation();
     showScreen('setup');
+  });
+  document.getElementById('ae-btn-csv').addEventListener('click', () => {
+    if (savedAttendance) downloadCsv(savedAttendance.id);
   });
 
   // ── Results screen ───────────────────────────────────────────────────────────

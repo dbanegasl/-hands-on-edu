@@ -106,4 +106,13 @@ La pantalla de resultados muestra una grilla con cada seña del desafío y si fu
 - Varias señas comparten el mismo gesto detectado (ej: `stop`, `hola`, `adios` → todas `open_hand`). En modo Desafío solo una de ellas aparece por vez, pero el clasificador no distingue entre señas del mismo gesto.
 - El catálogo es una aproximación de señas básicas universales / LSE, no un estándar certificado.
 - No hay síntesis de voz para pronunciar el nombre de la seña.
-- No hay persistencia de progreso — al recargar la página se pierde el historial de aprendizaje.
+- El estudiante se identifica solo por su nombre en el dispositivo (sin cuenta); no se lanza desde Moodle.
+
+---
+
+## Resultados guardados (REQ-005)
+
+- **¿Quién juega?** en la pantalla de inicio (perfiles compartidos con el Aula de Señas y GestiEdu). Sin nombre no se guarda.
+- **Desafío**: sesión `module="motivasign"`, `activity="challenge"`, `language="gestos"` con aciertos / 10, nota y un `sign_attempts` por seña (con tiempo de respuesta). **📜 Mis resultados** lista los últimos desafíos.
+- **Aprender**: sesión de práctica (`activity="learn"`) creada con el primer acierto y cerrada al salir del modo o de la página; guarda las señas logradas. No cuenta en las medias del panel.
+- El docente ve las partidas en el panel (`/panel`, vista de instalación).
