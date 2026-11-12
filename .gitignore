@@ -29,3 +29,7 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Runtime data (SQLite) and vendored JS (downloaded at image build time)
+data/
+vendor/

@@ -36,7 +36,7 @@ def _patch_tracker(result):
     """Patch the tracker factory so every connection's detect() returns `result`."""
     mock_tracker = MagicMock()
     mock_tracker.detect.return_value = result
-    return patch("app.main._new_tracker", return_value=mock_tracker)
+    return patch("app.api.ws._new_tracker", return_value=mock_tracker)
 
 
 # ── /health ───────────────────────────────────────────────────────────────────
@@ -57,12 +57,14 @@ class TestHealthEndpoint:
 class TestHtmlRoutes:
     @pytest.mark.parametrize("path", [
         "/", "/gestiedu", "/motivasign", "/attendeye", "/virtualpainter", "/airpiano", "/testing",
+        "/signstudio",
     ])
     def test_returns_200(self, client, path):
         assert client.get(path).status_code == 200
 
     @pytest.mark.parametrize("path", [
         "/", "/gestiedu", "/motivasign", "/attendeye", "/virtualpainter", "/airpiano", "/testing",
+        "/signstudio",
     ])
     def test_content_type_html(self, client, path):
         r = client.get(path)
@@ -143,6 +145,35 @@ class TestWebSocketAnalyze:
                 data = json.loads(ws.receive_text())
 
         assert "error" in data or "hands_detected" in data
+
+    def test_malformed_json_keeps_connection_open(self, client, black_frame_b64):
+        """A bad message yields an error reply but the socket stays usable."""
+        with _patch_tracker(_mock_result()):
+            with client.websocket_connect("/ws/analyze") as ws:
+                ws.send_text("not json")
+                assert json.loads(ws.receive_text())["error"] == "invalid_payload"
+                ws.send_text(json.dumps({"nope": 1}))
+                assert json.loads(ws.receive_text())["error"] == "invalid_payload"
+                ws.send_text(json.dumps({"frame": black_frame_b64}))
+                assert json.loads(ws.receive_text())["hands_detected"] == 0
+
+    def test_oversized_frame_rejected(self, client):
+        with _patch_tracker(_mock_result()):
+            with client.websocket_connect("/ws/analyze") as ws:
+                ws.send_text(json.dumps({"frame": "A" * 2_000_004}))
+                assert json.loads(ws.receive_text())["error"] == "invalid_payload"
+
+    def test_response_includes_engine_and_aspect(self, client, black_frame_b64):
+        result = _mock_result(
+            hand_landmarks=[open_hand_landmarks()],
+            handedness=[[_category("Right", 0.9)]],
+        )
+        with _patch_tracker(result):
+            with client.websocket_connect("/ws/analyze") as ws:
+                ws.send_text(json.dumps({"frame": black_frame_b64}))
+                data = json.loads(ws.receive_text())
+        assert data["engine"] == "server"
+        assert data["hands"][0]["aspect"] == pytest.approx(640 / 480, abs=1e-3)
 
     def test_multiple_frames_same_connection(self, client, black_frame_b64):
         """Server handles a burst of frames on one connection (rate guard may cache)."""

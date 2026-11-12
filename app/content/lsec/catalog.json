@@ -1,0 +1,961 @@
+{
+  "language": {
+    "code": "lsec",
+    "name": "Lengua de Señas Ecuatoriana",
+    "short_name": "LSEC",
+    "country": "EC",
+    "locale": "es-EC",
+    "version": "0.1.0",
+    "status": "borrador",
+    "validation_note": "Contenido en borrador. Las descripciones de configuración manual siguen el alfabeto manual latinoamericano y deben ser validadas por intérpretes de LSEC y la comunidad sorda (p. ej. FENASEC) antes de su uso en aula. Las señas marcadas como pendientes se reconocen únicamente con plantillas grabadas por un docente.",
+    "references": [
+      "Diccionario Oficial de Lengua de Señas Ecuatoriana «Gabriel Román» (CONADIS, 2014)"
+    ]
+  },
+  "categories": [
+    {
+      "id": "dactilologia",
+      "name": "Alfabeto dactilológico",
+      "icon": "🔤",
+      "order": 1,
+      "description": "Deletreo manual de las letras del alfabeto."
+    },
+    {
+      "id": "numeros",
+      "name": "Números",
+      "icon": "🔢",
+      "order": 2,
+      "description": "Números del 1 al 10."
+    },
+    {
+      "id": "saludos",
+      "name": "Saludos y cortesía",
+      "icon": "👋",
+      "order": 3,
+      "description": "Vocabulario básico de interacción."
+    }
+  ],
+  "units": [
+    {
+      "id": "u1",
+      "title": "Vocales",
+      "category": "dactilologia",
+      "signs": [
+        "a",
+        "e",
+        "i",
+        "o",
+        "u"
+      ]
+    },
+    {
+      "id": "u2",
+      "title": "Consonantes I",
+      "category": "dactilologia",
+      "signs": [
+        "b",
+        "c",
+        "d",
+        "f",
+        "l"
+      ]
+    },
+    {
+      "id": "u3",
+      "title": "Consonantes II",
+      "category": "dactilologia",
+      "signs": [
+        "r",
+        "s",
+        "v",
+        "w",
+        "x",
+        "y"
+      ]
+    },
+    {
+      "id": "u4",
+      "title": "Consonantes III",
+      "category": "dactilologia",
+      "signs": [
+        "g",
+        "h",
+        "k",
+        "m",
+        "n",
+        "p",
+        "q",
+        "t"
+      ]
+    },
+    {
+      "id": "u5",
+      "title": "Letras con movimiento",
+      "category": "dactilologia",
+      "signs": [
+        "ch",
+        "j",
+        "ll",
+        "enie",
+        "rr",
+        "z"
+      ]
+    },
+    {
+      "id": "u6",
+      "title": "Números 1–5",
+      "category": "numeros",
+      "signs": [
+        "num_1",
+        "num_2",
+        "num_3",
+        "num_4",
+        "num_5"
+      ]
+    },
+    {
+      "id": "u7",
+      "title": "Números 6–10",
+      "category": "numeros",
+      "signs": [
+        "num_6",
+        "num_7",
+        "num_8",
+        "num_9",
+        "num_10"
+      ]
+    },
+    {
+      "id": "u8",
+      "title": "Saludos y cortesía",
+      "category": "saludos",
+      "signs": [
+        "hola",
+        "adios",
+        "buenos_dias",
+        "gracias",
+        "por_favor",
+        "si",
+        "no",
+        "bien",
+        "mal",
+        "nombre"
+      ]
+    }
+  ],
+  "signs": [
+    {
+      "id": "a",
+      "gloss": "A",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Puño cerrado con el pulgar estirado al costado del índice.",
+      "hint": "Cierra el puño y deja el pulgar pegado al lado del índice.",
+      "validated": false,
+      "handshape": {
+        "index": "curled",
+        "middle": "curled",
+        "ring": "curled",
+        "pinky": "curled",
+        "thumb": "side",
+        "palm": "forward"
+      },
+      "confusable": [
+        "s",
+        "e"
+      ]
+    },
+    {
+      "id": "b",
+      "gloss": "B",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Cuatro dedos extendidos y juntos; el pulgar doblado sobre la palma.",
+      "hint": "Mano plana, dedos juntos hacia arriba, pulgar cruzado en la palma.",
+      "validated": false,
+      "handshape": {
+        "index": "extended",
+        "middle": "extended",
+        "ring": "extended",
+        "pinky": "extended",
+        "thumb": "across",
+        "together": [
+          [
+            "index_tip",
+            "middle_tip"
+          ],
+          [
+            "middle_tip",
+            "ring_tip"
+          ],
+          [
+            "ring_tip",
+            "pinky_tip"
+          ]
+        ],
+        "palm": "forward",
+        "fingers": "up"
+      },
+      "confusable": [
+        "num_4"
+      ]
+    },
+    {
+      "id": "c",
+      "gloss": "C",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Dedos y pulgar curvados formando la letra C, vista de lado.",
+      "hint": "Curva la mano como si sostuvieras un vaso.",
+      "validated": false,
+      "handshape": {
+        "index": "bent",
+        "middle": "bent",
+        "ring": "bent",
+        "pinky": "bent",
+        "apart": [
+          [
+            "thumb_tip",
+            "index_tip"
+          ]
+        ],
+        "palm": "side"
+      },
+      "confusable": [
+        "o"
+      ]
+    },
+    {
+      "id": "ch",
+      "gloss": "CH",
+      "category": "dactilologia",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Configuración de C con movimiento lateral corto.",
+      "hint": "Haz la C y muévela hacia un lado.",
+      "validated": false,
+      "motion": "Desplazamiento lateral"
+    },
+    {
+      "id": "d",
+      "gloss": "D",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Índice extendido hacia arriba; medio, anular y meñique curvados tocando la punta del pulgar.",
+      "hint": "Levanta el índice y forma un círculo con el pulgar y los otros dedos.",
+      "validated": false,
+      "handshape": {
+        "index": "extended",
+        "middle": "not_extended",
+        "ring": "not_extended",
+        "pinky": "not_extended",
+        "touch": [
+          [
+            "thumb_tip",
+            "middle_tip"
+          ]
+        ],
+        "palm": "forward",
+        "fingers": "up"
+      },
+      "confusable": [
+        "num_1"
+      ]
+    },
+    {
+      "id": "e",
+      "gloss": "E",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Los cuatro dedos doblados en gancho sobre el pulgar recogido.",
+      "hint": "Dobla las puntas de los dedos hacia la palma, encima del pulgar.",
+      "validated": false,
+      "handshape": {
+        "index": "bent",
+        "middle": "bent",
+        "ring": "bent",
+        "pinky": "bent",
+        "thumb": "across",
+        "palm": "forward"
+      },
+      "confusable": [
+        "a",
+        "s",
+        "o"
+      ]
+    },
+    {
+      "id": "f",
+      "gloss": "F",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pulgar e índice se tocan formando un círculo; medio, anular y meñique extendidos.",
+      "hint": "Une pulgar e índice en círculo y estira los otros tres dedos.",
+      "validated": false,
+      "handshape": {
+        "index": "not_extended",
+        "middle": "extended",
+        "ring": "extended",
+        "pinky": "extended",
+        "touch": [
+          [
+            "thumb_tip",
+            "index_tip"
+          ]
+        ],
+        "palm": "forward"
+      }
+    },
+    {
+      "id": "g",
+      "gloss": "G",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "h",
+      "gloss": "H",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "i",
+      "gloss": "I",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Meñique extendido hacia arriba; los demás dedos cerrados y el pulgar sobre ellos.",
+      "hint": "Cierra el puño y levanta solo el meñique.",
+      "validated": false,
+      "handshape": {
+        "index": "curled",
+        "middle": "curled",
+        "ring": "curled",
+        "pinky": "extended",
+        "thumb": "across",
+        "palm": "forward"
+      },
+      "confusable": [
+        "y"
+      ]
+    },
+    {
+      "id": "j",
+      "gloss": "J",
+      "category": "dactilologia",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Configuración de I trazando una J en el aire con el meñique.",
+      "hint": "Haz la I y dibuja una J con el meñique.",
+      "validated": false,
+      "motion": "Trazo en forma de J"
+    },
+    {
+      "id": "k",
+      "gloss": "K",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "l",
+      "gloss": "L",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Índice hacia arriba y pulgar estirado hacia el lado formando una L.",
+      "hint": "Forma una L con el índice y el pulgar.",
+      "validated": false,
+      "handshape": {
+        "index": "extended",
+        "middle": "curled",
+        "ring": "curled",
+        "pinky": "curled",
+        "thumb": "extended",
+        "palm": "forward",
+        "fingers": "up"
+      }
+    },
+    {
+      "id": "ll",
+      "gloss": "LL",
+      "category": "dactilologia",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Configuración de L con movimiento.",
+      "hint": "Haz la L y muévela.",
+      "validated": false,
+      "motion": "Movimiento de la configuración L"
+    },
+    {
+      "id": "m",
+      "gloss": "M",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false,
+      "confusable": [
+        "n"
+      ]
+    },
+    {
+      "id": "n",
+      "gloss": "N",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false,
+      "confusable": [
+        "m"
+      ]
+    },
+    {
+      "id": "enie",
+      "gloss": "Ñ",
+      "category": "dactilologia",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Configuración de N con movimiento.",
+      "hint": "Haz la N y muévela.",
+      "validated": false,
+      "motion": "Movimiento ondulante"
+    },
+    {
+      "id": "o",
+      "gloss": "O",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Todos los dedos curvados tocando la punta del pulgar formando una O.",
+      "hint": "Junta las puntas de los dedos con el pulgar formando un círculo.",
+      "validated": false,
+      "handshape": {
+        "index": "bent",
+        "middle": "bent",
+        "ring": "bent",
+        "pinky": "bent",
+        "touch": [
+          [
+            "thumb_tip",
+            "index_tip"
+          ]
+        ],
+        "palm": "side"
+      },
+      "confusable": [
+        "c",
+        "e"
+      ]
+    },
+    {
+      "id": "p",
+      "gloss": "P",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "q",
+      "gloss": "Q",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "r",
+      "gloss": "R",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Índice y medio extendidos y cruzados; los demás dedos cerrados.",
+      "hint": "Cruza el dedo medio sobre el índice.",
+      "validated": false,
+      "handshape": {
+        "index": "extended",
+        "middle": "extended",
+        "ring": "curled",
+        "pinky": "curled",
+        "thumb": "across",
+        "crossed": [
+          "index",
+          "middle"
+        ],
+        "palm": "forward"
+      },
+      "confusable": [
+        "u",
+        "v"
+      ]
+    },
+    {
+      "id": "rr",
+      "gloss": "RR",
+      "category": "dactilologia",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Configuración de R con movimiento.",
+      "hint": "Haz la R y muévela.",
+      "validated": false,
+      "motion": "Movimiento de la configuración R"
+    },
+    {
+      "id": "s",
+      "gloss": "S",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Puño cerrado con el pulgar cruzado por delante de los dedos.",
+      "hint": "Cierra el puño y cruza el pulgar por delante.",
+      "validated": false,
+      "handshape": {
+        "index": "curled",
+        "middle": "curled",
+        "ring": "curled",
+        "pinky": "curled",
+        "thumb": "across",
+        "palm": "forward"
+      },
+      "confusable": [
+        "a",
+        "e"
+      ]
+    },
+    {
+      "id": "t",
+      "gloss": "T",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "u",
+      "gloss": "U",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Índice y medio extendidos y juntos hacia arriba.",
+      "hint": "Levanta índice y medio pegados.",
+      "validated": false,
+      "handshape": {
+        "index": "extended",
+        "middle": "extended",
+        "ring": "curled",
+        "pinky": "curled",
+        "thumb": "across",
+        "together": [
+          [
+            "index_tip",
+            "middle_tip"
+          ]
+        ],
+        "palm": "forward",
+        "fingers": "up"
+      },
+      "confusable": [
+        "v",
+        "r"
+      ]
+    },
+    {
+      "id": "v",
+      "gloss": "V",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Índice y medio extendidos y separados en V.",
+      "hint": "Levanta índice y medio separados en V.",
+      "validated": false,
+      "handshape": {
+        "index": "extended",
+        "middle": "extended",
+        "ring": "curled",
+        "pinky": "curled",
+        "thumb": "across",
+        "apart": [
+          [
+            "index_tip",
+            "middle_tip"
+          ]
+        ],
+        "palm": "forward",
+        "fingers": "up"
+      },
+      "confusable": [
+        "u",
+        "num_2"
+      ]
+    },
+    {
+      "id": "w",
+      "gloss": "W",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Índice, medio y anular extendidos y separados; el pulgar sujeta al meñique.",
+      "hint": "Levanta tres dedos separados.",
+      "validated": false,
+      "handshape": {
+        "index": "extended",
+        "middle": "extended",
+        "ring": "extended",
+        "pinky": "curled",
+        "apart": [
+          [
+            "index_tip",
+            "middle_tip"
+          ],
+          [
+            "middle_tip",
+            "ring_tip"
+          ]
+        ],
+        "palm": "forward",
+        "fingers": "up"
+      }
+    },
+    {
+      "id": "x",
+      "gloss": "X",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Índice doblado en gancho; los demás dedos cerrados.",
+      "hint": "Dobla el índice como un gancho.",
+      "validated": false,
+      "handshape": {
+        "index": "bent",
+        "middle": "curled",
+        "ring": "curled",
+        "pinky": "curled"
+      }
+    },
+    {
+      "id": "y",
+      "gloss": "Y",
+      "category": "dactilologia",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pulgar y meñique extendidos; los demás dedos cerrados.",
+      "hint": "Estira solo el pulgar y el meñique.",
+      "validated": false,
+      "handshape": {
+        "index": "curled",
+        "middle": "curled",
+        "ring": "curled",
+        "pinky": "extended",
+        "thumb": "extended"
+      },
+      "confusable": [
+        "i"
+      ]
+    },
+    {
+      "id": "z",
+      "gloss": "Z",
+      "category": "dactilologia",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Índice extendido trazando una Z en el aire.",
+      "hint": "Dibuja una Z con el dedo índice.",
+      "validated": false,
+      "motion": "Trazo en forma de Z"
+    },
+    {
+      "id": "num_1",
+      "gloss": "1",
+      "category": "numeros",
+      "kind": "static",
+      "hands": 1,
+      "description": "Índice extendido hacia arriba; los demás dedos cerrados.",
+      "hint": "Levanta solo el índice.",
+      "validated": false,
+      "handshape": {
+        "index": "extended",
+        "middle": "curled",
+        "ring": "curled",
+        "pinky": "curled",
+        "thumb": "folded",
+        "fingers": "up"
+      },
+      "confusable": [
+        "d"
+      ]
+    },
+    {
+      "id": "num_2",
+      "gloss": "2",
+      "category": "numeros",
+      "kind": "static",
+      "hands": 1,
+      "description": "Índice y medio extendidos y separados.",
+      "hint": "Levanta índice y medio.",
+      "validated": false,
+      "handshape": {
+        "index": "extended",
+        "middle": "extended",
+        "ring": "curled",
+        "pinky": "curled",
+        "thumb": "folded",
+        "apart": [
+          [
+            "index_tip",
+            "middle_tip"
+          ]
+        ],
+        "fingers": "up"
+      },
+      "confusable": [
+        "v"
+      ]
+    },
+    {
+      "id": "num_3",
+      "gloss": "3",
+      "category": "numeros",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "num_4",
+      "gloss": "4",
+      "category": "numeros",
+      "kind": "static",
+      "hands": 1,
+      "description": "Cuatro dedos extendidos y separados; el pulgar recogido.",
+      "hint": "Levanta cuatro dedos y guarda el pulgar.",
+      "validated": false,
+      "handshape": {
+        "index": "extended",
+        "middle": "extended",
+        "ring": "extended",
+        "pinky": "extended",
+        "thumb": "across",
+        "apart": [
+          [
+            "index_tip",
+            "middle_tip"
+          ],
+          [
+            "ring_tip",
+            "pinky_tip"
+          ]
+        ],
+        "fingers": "up"
+      },
+      "confusable": [
+        "b"
+      ]
+    },
+    {
+      "id": "num_5",
+      "gloss": "5",
+      "category": "numeros",
+      "kind": "static",
+      "hands": 1,
+      "description": "Mano abierta con los cinco dedos extendidos y separados.",
+      "hint": "Abre toda la mano.",
+      "validated": false,
+      "handshape": {
+        "index": "extended",
+        "middle": "extended",
+        "ring": "extended",
+        "pinky": "extended",
+        "thumb": "extended",
+        "apart": [
+          [
+            "index_tip",
+            "middle_tip"
+          ],
+          [
+            "ring_tip",
+            "pinky_tip"
+          ]
+        ],
+        "fingers": "up"
+      }
+    },
+    {
+      "id": "num_6",
+      "gloss": "6",
+      "category": "numeros",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "num_7",
+      "gloss": "7",
+      "category": "numeros",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "num_8",
+      "gloss": "8",
+      "category": "numeros",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "num_9",
+      "gloss": "9",
+      "category": "numeros",
+      "kind": "static",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "num_10",
+      "gloss": "10",
+      "category": "numeros",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "hola",
+      "gloss": "HOLA",
+      "category": "saludos",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "adios",
+      "gloss": "ADIÓS",
+      "category": "saludos",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "buenos_dias",
+      "gloss": "BUENOS DÍAS",
+      "category": "saludos",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "gracias",
+      "gloss": "GRACIAS",
+      "category": "saludos",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "por_favor",
+      "gloss": "POR FAVOR",
+      "category": "saludos",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "si",
+      "gloss": "SÍ",
+      "category": "saludos",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "no",
+      "gloss": "NO",
+      "category": "saludos",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "bien",
+      "gloss": "BIEN",
+      "category": "saludos",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "mal",
+      "gloss": "MAL",
+      "category": "saludos",
+      "kind": "dynamic",
+      "hands": 1,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    },
+    {
+      "id": "nombre",
+      "gloss": "NOMBRE",
+      "category": "saludos",
+      "kind": "dynamic",
+      "hands": 2,
+      "description": "Pendiente de documentar con intérprete LSEC.",
+      "hint": "Grabar plantilla de referencia en el Estudio de Señas.",
+      "validated": false
+    }
+  ]
+}
