@@ -115,6 +115,22 @@ class SignTemplate(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now)
 
 
+class SignModel(Base):
+    """Classifier trained in the browser on the templates (REQ-010); at most one active per language."""
+
+    __tablename__ = "sign_models"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    language: Mapped[str] = mapped_column(String(16), index=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    author: Mapped[str | None] = mapped_column(String(120))
+    classes: Mapped[list] = mapped_column(JSON)          # sign ids
+    template_count: Mapped[int] = mapped_column(Integer, default=0)
+    metrics: Mapped[dict] = mapped_column(JSON, default=dict)   # cross-validation report
+    model: Mapped[dict] = mapped_column(JSON)            # weights (handsonedu.sign-model/v1)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now)
+
+
 # ── LTI 1.3 ─────────────────────────────────────────────────────────────────
 
 

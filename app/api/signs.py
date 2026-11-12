@@ -1,12 +1,20 @@
-"""Sign-language catalogs and teacher-recorded reference templates."""
+"""Sign-language catalogs, teacher-recorded reference templates and trained models (REQ-010)."""
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from fastapi.responses import Response
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_admin
 from app.db import get_db
-from app.models import SignTemplate
-from app.schemas import TemplateCreate, TemplateImport, TemplateOut
+from app.models import SignModel, SignTemplate
+from app.schemas import (
+    MAX_MODEL_PARAMS,
+    SignModelIn,
+    SignModelOut,
+    TemplateCreate,
+    TemplateImport,
+    TemplateOut,
+)
 from app.signs.catalog import available_languages, get_catalog
 
 router = APIRouter(prefix="/api", tags=["señas"])
@@ -88,3 +96,100 @@ def delete_template(language: str, template_id: str, db: Session = Depends(get_d
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Plantilla no encontrada")
     db.delete(tpl)
     db.commit()
+
+
+# ── Trained classifier (REQ-010) ────────────────────────────────────────────
+# Training and inference run in the browser (ho-signs-model.js); the server
+# validates the network's shape, stores versions and serves the active one.
+
+
+def _check_model(body: SignModelIn, catalog: dict) -> None:
+    m = body.model
+    c, h, d = len(m.classes), m.hidden, m.inputs
+    sizes = {"mean": d, "std": d, "W1": h * d, "b1": h, "W2": c * h, "b2": c}
+    for name, n in sizes.items():
+        if len(getattr(m, name)) != n:
+            raise HTTPException(422, f"Tamaño incorrecto en {name}: {len(getattr(m, name))} (se esperaba {n})")
+    if h * d + c * h > MAX_MODEL_PARAMS:
+        raise HTTPException(422, "Modelo demasiado grande")
+    if len(set(m.classes)) != c:
+        raise HTTPException(422, "Clases repetidas en el modelo")
+    static_one_hand = {s["id"] for s in catalog.get("signs", []) if s.get("kind") == "static" and s.get("hands", 1) == 1}
+    unknown = [x for x in m.classes if x not in static_one_hand]
+    if unknown:
+        raise HTTPException(422, f"El modelo solo puede incluir señas estáticas de una mano del catálogo: {', '.join(unknown[:5])}")
+
+
+def _deactivate_all(db: Session, language: str) -> None:
+    db.execute(update(SignModel).where(SignModel.language == language, SignModel.active.is_(True)).values(active=False))
+
+
+def _model_or_404(db: Session, language: str, model_id: str) -> SignModel:
+    m = db.get(SignModel, model_id)
+    if m is None or m.language != language:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Modelo no encontrado")
+    return m
+
+
+@router.get("/signs/{language}/model", summary="Modelo entrenado activo (pesos); 204 si no hay ninguno")
+def active_model(language: str, db: Session = Depends(get_db)):
+    _catalog_or_404(language)
+    m = db.scalars(select(SignModel).where(SignModel.language == language, SignModel.active.is_(True))
+                   .order_by(SignModel.created_at.desc())).first()
+    if m is None:  # the usual case: not an error, the engine works without a model
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return {**m.model, "id": m.id, "created_at": m.created_at}
+
+
+@router.get("/signs/{language}/models", response_model=list[SignModelOut],
+            summary="Modelos publicados (sin pesos), más reciente primero")
+def list_models(language: str, db: Session = Depends(get_db)):
+    _catalog_or_404(language)
+    return db.scalars(select(SignModel).where(SignModel.language == language)
+                      .order_by(SignModel.created_at.desc())).all()
+
+
+@router.post("/signs/{language}/models", response_model=SignModelOut, status_code=status.HTTP_201_CREATED,
+             dependencies=[Depends(require_admin)], summary="Publicar un modelo entrenado en el Estudio (docente)")
+def publish_model(language: str, body: SignModelIn, db: Session = Depends(get_db)):
+    catalog = _catalog_or_404(language)
+    _check_model(body, catalog)
+    trained_on = (body.model.model_extra or {}).get("trained_on") or {}
+    if body.activate:
+        _deactivate_all(db, language)
+    m = SignModel(
+        language=language, active=body.activate, author=body.author,
+        classes=list(body.model.classes),
+        template_count=int(trained_on.get("templates") or 0) if isinstance(trained_on, dict) else 0,
+        metrics=body.metrics, model=body.model.model_dump(),
+    )
+    db.add(m)
+    db.commit()
+    return m
+
+
+@router.post("/signs/{language}/models/{model_id}/activate", response_model=SignModelOut,
+             dependencies=[Depends(require_admin)], summary="Activar un modelo publicado (p. ej. volver a uno anterior)")
+def activate_model(language: str, model_id: str, db: Session = Depends(get_db)):
+    m = _model_or_404(db, language, model_id)
+    _deactivate_all(db, language)
+    m.active = True
+    db.commit()
+    return m
+
+
+@router.delete("/signs/{language}/model", status_code=status.HTTP_204_NO_CONTENT,
+               dependencies=[Depends(require_admin)], summary="Desactivar el modelo (volver al motor sin modelo)")
+def deactivate_model(language: str, db: Session = Depends(get_db)):
+    _catalog_or_404(language)
+    _deactivate_all(db, language)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete("/signs/{language}/models/{model_id}", status_code=status.HTTP_204_NO_CONTENT,
+               dependencies=[Depends(require_admin)], summary="Eliminar un modelo publicado")
+def delete_model(language: str, model_id: str, db: Session = Depends(get_db)):
+    db.delete(_model_or_404(db, language, model_id))
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

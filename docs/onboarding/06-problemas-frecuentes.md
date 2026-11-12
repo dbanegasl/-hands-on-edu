@@ -11,6 +11,7 @@
 | *Cámara en uso* / pantalla negra | Cerrar Zoom, Teams, Meet u otras pestañas que usen la cámara |
 | Va muy lento | La insignia debe decir *🟢 Detección en tu equipo* (Aula) o *Detección en el navegador* (Estudio). Si dice *en servidor*, el navegador no pudo cargar el motor: probar en Chrome actualizado. En equipos sin GPU, cerrar otras pestañas |
 | No reconoce una seña bien hecha | Luz frontal, mano entera en el cuadro, a 50–80 cm. Si persiste con varias personas: grabar más plantillas en el Estudio. Si tiene descriptor: reportarlo con una captura |
+| Tras publicar el modelo entrenado, una seña empeoró | **Desactivar** en el Estudio (tarjeta 🧠) y revisar sus grabaciones ([07 §12](./07-entrenamiento-modelo.md#12-problemas-frecuentes)) |
 | Unidad *Próximamente* | Ninguna seña de la unidad es reconocible todavía: hay que grabar plantillas ([04 §3](./04-contenido-lsec.md#3-grabar-plantillas-docente-o-intérprete-que-signa)) |
 
 ## Entrada desde Moodle

@@ -66,6 +66,8 @@ Procedimiento por seña:
 
 Compartir: **⬇ Exportar dataset** genera un JSON con todas las plantillas; otra instalación lo carga con **⬆ Importar**. Así una institución puede aprovechar las grabaciones de otra.
 
+**Entrenar el modelo (opcional, recomendado cuando ya hay grabaciones de varias señas):** en la tarjeta **🧠 Modelo entrenado** del Estudio, *Entrenar y evaluar*. El informe dice si el modelo mejora el reconocimiento de las letras y números estáticos con grabaciones que no vio al entrenar. Si mejora, **Publicar modelo**. Repetirlo cuando se agreguen grabaciones (el Estudio avisa). Cuantas más personas distintas graben, más fiable es la cifra para los estudiantes. Paso a paso, con plan de grabación y cómo leer el informe: [07 · Grabación y entrenamiento del modelo](./07-entrenamiento-modelo.md).
+
 ## 4. Videos de referencia con IA (producción + validación)
 
 Los videos se generan con IA usando **4 avatares ficticios** con identidad ecuatoriana. Así no se usa la imagen de ningún intérprete y no hacen falta permisos de imagen. El intérprete **valida** cada video, y la plataforma lo dice siempre: *🤖 Video generado con IA · ✔ Validado por intérprete de LSEC: nombre (fecha)*.

@@ -15,6 +15,7 @@ Un curso de Lengua de Señas Ecuatoriana (LSEC) que reconoce las señas del estu
 | 3 | Conectar el Moodle institucional y hacer la prueba piloto | Admin. de Moodle + TI | [03 · Moodle institucional](./03-moodle-institucional.md) | 1 h + piloto |
 | 4 | Validar el contenido LSEC, grabar plantillas y producir videos | Equipo de contenido + intérprete | [04 · Contenido LSEC](./04-contenido-lsec.md) | Continuo |
 | 5 | Formar a los docentes | Coordinación académica | [05 · Guía para docentes](./05-guia-docente.md) | 1 sesión |
+| 6 | Grabar con varias personas y entrenar el modelo de reconocimiento | Equipo de contenido | [07 · Grabación y entrenamiento del modelo](./07-entrenamiento-modelo.md) | 15 min/persona + 5 min |
 | — | Cuando algo falla | Todos | [06 · Problemas frecuentes](./06-problemas-frecuentes.md) | — |
 
 Los pasos 1–3 son técnicos y se hacen una vez. El paso 4 es el que más trabajo lleva y **condiciona lo que se puede enseñar**: hoy el catálogo es un borrador sin validar (ver abajo).
@@ -28,6 +29,7 @@ Los pasos 1–3 son técnicos y se hacen una vez. El paso 4 es el que más traba
 | Reconocimiento | 50 señas en el catálogo; 20 se reconocen solo con descriptores (16 letras y los números 1, 2, 4 y 5). Las otras 30 necesitan plantillas grabadas por un docente o intérprete | Una unidad sin ninguna seña reconocible aparece como *Próximamente*; dentro de una unidad, las señas sin plantilla se omiten |
 | Videos de referencia | 📝 Prompts listos para 4 avatares de IA; ningún video producido ni validado aún | Las lecciones se muestran sin video hasta que se produzcan y validen |
 | Panel docente | ✅ `/panel` (REQ-007): progreso por estudiante, unidad y seña; lista del curso por NRPS; CSV | Activa NRPS en la herramienta de Moodle para ver también a quien no ha entrado |
+| Modelo entrenado | ✅ Disponible (REQ-010) para las 33 señas estáticas de una mano; **sin medir aún con grabaciones reales** | Seguir [07](./07-entrenamiento-modelo.md): grabar con 3+ personas, entrenar, publicar solo si el informe lo recomienda |
 
 ## Requisitos mínimos, de un vistazo
 
@@ -49,3 +51,4 @@ Los pasos 1–3 son técnicos y se hacen una vez. El paso 4 es el que más traba
 | **Plantilla** | Grabación de referencia de una seña hecha en el Estudio de Señas; el motor compara al estudiante con ella |
 | **Descriptor** | Descripción geométrica de una configuración de mano en el catálogo; permite reconocer sin grabaciones |
 | **Glosa** | Nombre escrito de una seña (p. ej. `HOLA`) |
+| **Modelo entrenado** | Red neuronal pequeña aprendida de las plantillas; se combina con descriptores y plantillas y solo se publica si mejora |

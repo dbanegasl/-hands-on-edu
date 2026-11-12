@@ -36,6 +36,9 @@
     lastDynamicEval: 0,
     recording: null,  // {kind, start, frames, lastSample, need, duration}
     busy: false,
+    model: null,      // active trained model, as served (REQ-010)
+    pending: null,    // {model, report} trained in this page, not yet published
+    training: false,
   };
 
   const $ = (id) => document.getElementById(id);
@@ -113,6 +116,7 @@
     S.catalog = catalog;
     S.templates = templates;
     S.recognizer = new HO.Signs.SignRecognizer({ catalog, templates });
+    await loadModel();
     const banner = $('ss-validation');
     banner.hidden = !catalog.language.validation_note;
     banner.textContent = '⚠️ ' + (catalog.language.validation_note || '');
@@ -292,6 +296,7 @@
     renderTemplates();
     renderList();
     renderDetail();
+    renderModelStatus();
     toast('✅ Plantilla guardada para «' + s.gloss + '»');
   }
 
@@ -304,6 +309,7 @@
       renderTemplates();
       renderList();
       renderDetail();
+      renderModelStatus();
       toast('Plantilla eliminada');
     } catch (err) {
       toast('No se pudo eliminar: ' + err.message, true);
@@ -338,6 +344,195 @@
       selectSign(keep);
     } catch (err) {
       toast('Importación fallida: ' + err.message, true);
+    }
+  }
+
+  // ── Trained model (REQ-010) ────────────────────────────────────────────────
+
+  const pct = (v) => (v == null ? '—' : Math.round(v * 100) + ' %');
+
+  async function loadModel() {
+    S.model = null;
+    try {
+      const res = await fetch('/api/signs/' + S.lang + '/model');
+      if (res.status === 200) S.model = await res.json();
+    } catch (_) { /* offline: engine without model */ }
+    S.recognizer.setModel(S.model ? HO.SignModel.load(S.model) : null);
+    renderModelStatus();
+  }
+
+  /** Usable recordings for the model (static one-hand signs). */
+  function usableTemplates() {
+    const g = HO.SignModel.groupTemplates(S.templates, S.catalog, 1);
+    return Object.values(g.bySign).flat();
+  }
+
+  function renderModelStatus() {
+    if (!S.catalog) return;
+    const chipEl = $('ss-model-chip');
+    const status = $('ss-model-status');
+    const off = $('ss-btn-model-off');
+    const m = S.model;
+    off.hidden = !m;
+    if (!m) {
+      chipEl.className = 'ss-chip ss-chip-none';
+      chipEl.textContent = 'Sin modelo';
+      const n = usableTemplates().length;
+      status.textContent = 'El reconocimiento usa los descriptores y las plantillas. Con grabaciones de varias señas '
+        + 'estáticas de una mano (al menos 2 por seña) puedes entrenar un modelo y ver si mejora. Grabaciones utilizables: ' + n + '.';
+      return;
+    }
+    chipEl.className = 'ss-chip ss-chip-ok';
+    chipEl.textContent = 'Activo';
+    const trained = m.trained_on || {};
+    const when = new Date(m.created_at).toLocaleString('es-EC', { dateStyle: 'medium', timeStyle: 'short' });
+    const usable = usableTemplates();
+    const newer = trained.last_template_at ? usable.filter((t) => t.created_at > trained.last_template_at).length : 0;
+    const fewer = Math.max(0, (trained.templates || 0) - usable.length);
+    let text = 'Entrenado el ' + when + ' con ' + (trained.templates || '?') + ' grabaciones de ' + m.classes.length + ' señas.';
+    if (newer || fewer) text += ' ⚠️ Desde entonces hay ' + (newer ? newer + ' grabaciones nuevas' : '') + (newer && fewer ? ' y ' : '')
+      + (fewer ? fewer + ' eliminadas' : '') + ': vuelve a entrenar para incluirlas.';
+    status.textContent = text;
+  }
+
+  function openModelDialog() {
+    const dlg = $('ss-model-dialog');
+    $('ss-md-report').replaceChildren();
+    $('ss-md-publish').hidden = true;
+    S.pending = null;
+    if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+    trainAndEvaluate();
+  }
+
+  function closeModelDialog() {
+    const dlg = $('ss-model-dialog');
+    if (typeof dlg.close === 'function') dlg.close(); else dlg.removeAttribute('open');
+  }
+
+  async function trainAndEvaluate() {
+    if (S.training) return;
+    S.training = true;
+    $('ss-btn-train').disabled = true;
+    const prog = $('ss-md-progress');
+    prog.hidden = false;
+    const bar = $('ss-md-bar');
+    const step = $('ss-md-step');
+    const setProgress = (frac, text) => { bar.style.width = Math.round(frac * 100) + '%'; step.textContent = text; };
+    setProgress(0, 'Preparando las grabaciones…');
+    try {
+      const report = await HO.SignModel.crossValidate(S.templates, S.catalog, {}, (p) => {
+        const frac = ((p.fold - 1) + p.epoch / p.epochs) / p.folds;
+        setProgress(0.85 * frac, 'Evaluando: partición ' + p.fold + ' de ' + p.folds + '…');
+      });
+      const model = await HO.SignModel.trainModel(S.templates, S.catalog, { weight: report.best.weight }, (p) => {
+        setProgress(0.85 + 0.15 * (p.epoch / p.epochs), 'Entrenando el modelo final…');
+      });
+      setProgress(1, 'Listo.');
+      S.pending = { model, report };
+      renderReport(report, model);
+    } catch (err) {
+      setProgress(0, '');
+      $('ss-md-report').replaceChildren(el('p', 'ss-md-verdict no', '⚠️ ' + err.message + '.'));
+    } finally {
+      S.training = false;
+      $('ss-btn-train').disabled = false;
+      setTimeout(() => { prog.hidden = true; }, 600);
+    }
+  }
+
+  function el(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function tile(label, before, after, higherIsBetter) {
+    const t = el('div', 'ss-md-tile');
+    const diff = after - before;
+    const good = higherIsBetter ? diff > 0 : diff < 0;
+    const b = el('b', null, pct(after));
+    const delta = el('small', Math.abs(diff) < 0.0005 ? '' : (good ? 'up' : 'down'),
+      ' (sin modelo: ' + pct(before) + ')');
+    t.append(el('span', null, label), b, delta);
+    return t;
+  }
+
+  function renderReport(r, model) {
+    const box = $('ss-md-report');
+    const authors = new Set(usableTemplates().map((t) => t.author || '')).size;
+    const verdict = r.recommended
+      ? el('p', 'ss-md-verdict ok', '✔ El modelo mejora el reconocimiento con grabaciones que no vio al entrenar. Puedes publicarlo: el Aula y este Estudio lo usarán.')
+      : el('p', 'ss-md-verdict no', 'El modelo no mejora el reconocimiento actual con estos datos, así que no se recomienda publicarlo. Graba más ejemplos (varias personas, distintas distancias e iluminación) y vuelve a entrenar.');
+    const tiles = el('div', 'ss-md-tiles');
+    tiles.append(
+      tile('Seña correcta aceptada', r.baseline.accept, r.best.accept, true),
+      tile('Seña equivocada aceptada', r.baseline.false_accept, r.best.false_accept, false),
+      tile('Acierto (1.ª opción)', r.baseline.accuracy, r.best.accuracy, true),
+    );
+    const note = el('p', 'ss-md-note',
+      'Evaluado con ' + r.frames + ' cuadros de ' + r.templates + ' grabaciones de ' + r.classes.length + ' señas, en ' + r.folds
+      + ' particiones: cada grabación se prueba con un modelo que no la vio. Peso del modelo: ' + r.best.weight + '.'
+      + (authors <= 1 ? ' Todas las grabaciones son de la misma persona: con estudiantes reales la cifra será menor.' : ''));
+
+    const table = el('table', 'ss-md-table');
+    table.append(el('caption', null, 'Por seña (peor primero)'));
+    const head = el('tr');
+    ['Seña', 'Grabaciones', 'Aceptada sin modelo', 'Con modelo'].forEach((h, i) => head.append(el('th', i ? 'num' : null, h)));
+    table.append(head);
+    r.per_sign.slice().sort((a, b) => (a.model.accept ?? 1) - (b.model.accept ?? 1)).forEach((p) => {
+      const tr = el('tr');
+      tr.append(el('td', null, glossOf(p.sign_id)), el('td', 'num', String(p.templates)),
+        el('td', 'num', pct(p.baseline.accept)), el('td', 'num', pct(p.model.accept)));
+      table.append(tr);
+    });
+    const wrap = el('div', 'ss-md-table-wrap');
+    wrap.append(table);
+
+    const parts = [verdict, tiles, note, wrap];
+    if (r.confusions.length) {
+      parts.push(el('p', 'ss-md-note', 'Confusiones más frecuentes: ' + r.confusions.slice(0, 5)
+        .map((c) => glossOf(c.true) + ' → ' + glossOf(c.predicted) + ' (' + c.count + ')').join(' · ')));
+    }
+    if (r.too_few.length) {
+      parts.push(el('p', 'ss-md-note', 'Con una sola grabación (no entran en el modelo): '
+        + r.too_few.map(glossOf).join(', ') + '. Grábalas al menos dos veces.'));
+    }
+    box.replaceChildren(...parts);
+    const pub = $('ss-md-publish');
+    pub.hidden = !r.recommended;
+    pub.disabled = false;
+    pub.textContent = 'Publicar modelo (' + model.classes.length + ' señas)';
+  }
+
+  async function publishModel() {
+    if (!S.pending) return;
+    const { model, report } = S.pending;
+    const pub = $('ss-md-publish');
+    pub.disabled = true;
+    try {
+      await api('/api/signs/' + S.lang + '/models', {
+        method: 'POST',
+        body: JSON.stringify({ model, metrics: report, author: $('ss-author').value.trim() || null }),
+      });
+      S.pending = null;
+      closeModelDialog();
+      await loadModel();
+      toast('✅ Modelo publicado: el Aula lo usará desde ahora');
+    } catch (err) {
+      pub.disabled = false;
+      toast('No se pudo publicar: ' + err.message, true);
+    }
+  }
+
+  async function deactivateModel() {
+    if (!window.confirm('¿Desactivar el modelo? El reconocimiento volverá a usar solo descriptores y plantillas.')) return;
+    try {
+      await api('/api/signs/' + S.lang + '/model', { method: 'DELETE' });
+      await loadModel();
+      toast('Modelo desactivado');
+    } catch (err) {
+      toast('No se pudo desactivar: ' + err.message, true);
     }
   }
 
@@ -545,13 +740,18 @@
     $('ss-btn-camera').addEventListener('click', startCamera);
     $('ss-btn-record').addEventListener('click', startRecording);
     $('ss-btn-export').addEventListener('click', exportDataset);
+    $('ss-btn-train').addEventListener('click', openModelDialog);
+    $('ss-btn-model-off').addEventListener('click', deactivateModel);
+    $('ss-md-publish').addEventListener('click', publishModel);
+    $('ss-md-close').addEventListener('click', closeModelDialog);
+    $('ss-md-cancel').addEventListener('click', closeModelDialog);
     $('ss-import').addEventListener('change', (e) => {
       if (e.target.files[0]) importDataset(e.target.files[0]);
       e.target.value = '';
     });
     document.addEventListener('keydown', (e) => {
       const tag = (e.target.tagName || '').toLowerCase();
-      if (e.code === 'Space' && !['input', 'select', 'textarea', 'button'].includes(tag)) {
+      if (e.code === 'Space' && !$('ss-model-dialog').open && !['input', 'select', 'textarea', 'button'].includes(tag)) {
         e.preventDefault();
         startRecording();
       }
