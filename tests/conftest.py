@@ -19,6 +19,7 @@ from unittest.mock import MagicMock, patch
 # Must be set before anything imports app.config.
 os.environ["DATABASE_URL"] = "sqlite://"
 os.environ["ADMIN_TOKEN"] = ""
+os.environ["PUBLIC_BASE_URL"] = "http://localhost:9876"
 
 import mediapipe as mp  # noqa: F401 — touch mp to ensure tasks.vision is accessible
 import pytest

@@ -308,6 +308,11 @@ class TestGradePassback:
         assert _run_quiz(client, token, 5, activity="quiz:u2")[1]["status"] == "not_graded"
         assert platform.scores() == []
 
+    def test_instructor_quiz_is_not_graded(self, client, platform):
+        _, token = _token_from(_launch(client, roles=(INSTRUCTOR,), custom={"unit": "u1"}))
+        assert _run_quiz(client, token, 5)[1]["status"] == "not_graded"
+        assert platform.scores() == []
+
     def test_activity_without_gradebook(self, client, platform):
         _, token = _token_from(_launch(client, ags=False))
         assert _run_quiz(client, token, 5)[1]["status"] == "not_graded"

@@ -68,6 +68,8 @@ def gradable(launch: LtiLaunch, sess: ActivitySession) -> str | None:
     """Reason the session is NOT sent, or None if it should be."""
     if not launch.ags_lineitem or AGS_SCOPE_SCORE not in (launch.ags_scopes or []):
         return "La actividad de la plataforma no tiene calificación"
+    if launch.is_instructor:
+        return "Las evaluaciones del docente no se envían al libro de calificaciones"
     if not (sess.activity or "").startswith(GRADED_ACTIVITY_PREFIX):
         return "Solo las evaluaciones se califican"
     unit = (launch.custom or {}).get("unit")
