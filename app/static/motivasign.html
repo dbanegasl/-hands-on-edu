@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MotivaSign | HandsOnEdu</title>
   <link rel="stylesheet" href="/static/css/motivasign.css">
+  <link rel="stylesheet" href="/static/css/ho-learning.css">
 </head>
 <body>
 
@@ -23,6 +24,7 @@
       <div class="ms-hero-emoji">🤟</div>
       <h1>MotivaSign</h1>
       <p>Aprende señas con tus manos. ¡Diviértete mientras aprendes!</p>
+      <div id="ms-learner" class="ms-learner"></div>
       <div class="ms-mode-cards">
         <div class="ms-mode-card" id="btn-aprender">
           <div class="ms-mode-icon">📖</div>
@@ -111,15 +113,19 @@
       <div class="ms-grade-badge" id="ms-grade-badge">A</div>
       <div class="ms-results-score" id="ms-results-score">10 / 10</div>
       <div class="ms-dots-grid" id="ms-dots-grid"></div>
+      <p id="ms-save" class="ho-save" role="status"></p>
       <div class="ms-results-actions">
         <button class="ms-btn ms-btn-primary" id="ms-btn-replay">🔄 Jugar de nuevo</button>
+        <button class="ms-btn ms-btn-outline" id="ms-btn-history" hidden>📜 Mis resultados</button>
         <button class="ms-btn ms-btn-outline" id="ms-btn-home">🏠 Inicio</button>
       </div>
+      <table id="ms-history" class="ho-history" hidden></table>
     </div>
   </div>
 
   <script src="/static/js/ho-common.js"></script>
   <script src="/static/js/ho-hands.js"></script>
+  <script src="/static/js/ho-learning.js"></script>
   <script src="/static/js/audio.js"></script>
   <script src="/static/js/motivasign.js"></script>
 </body>

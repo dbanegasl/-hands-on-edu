@@ -63,6 +63,14 @@ let challengeStep  = 0;          // 0-9
 let score          = 0;
 let answers        = [];         // boolean per challenge step
 
+// Saved results (REQ-005): challenge = one scored session; learn = practice
+// session started on the first success and closed when leaving the mode.
+let learnerPicker  = null;
+let recorder       = null;         // HO.Learning.Recorder of the current mode
+let signShownAt    = 0;            // when detection started for the current sign
+let savedAttempts  = [];           // [{sign_id, correct, response_ms}]
+let learnedSigns   = new Set();    // learn mode: signs done at least once
+
 let holdStart    = null;         // Date.now() when confirming started
 let holdProgress = 0;            // 0–1
 
@@ -114,6 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('ms-btn-exit').addEventListener('click',  exitGame);
   document.getElementById('ms-btn-replay').addEventListener('click', () => startGame('challenge'));
   document.getElementById('ms-btn-home').addEventListener('click',  goHome);
+  document.getElementById('ms-btn-history').addEventListener('click', toggleHistory);
+  learnerPicker = HO.Learning.LearnerPicker(document.getElementById('ms-learner'));
+  window.addEventListener('pagehide', () => finishLearnSession(true));
 
   // Mute button
   const btnMute = document.getElementById('btn-mute-audio');
@@ -137,6 +148,16 @@ function showScreen(id) {
 
 async function startGame(m) {
   stopWebcam();  // clean up any previous session
+  finishLearnSession();
+
+  recorder      = null;
+  savedAttempts = [];
+  learnedSigns  = new Set();
+  const learnerName = learnerPicker ? learnerPicker.value() : '';
+  if (learnerName && m === 'challenge') {
+    recorder = new HO.Learning.Recorder('motivasign', 'challenge', 'gestos');
+    recorder.start(learnerName);
+  }
 
   mode           = m;
   currentSignIdx = 0;
@@ -213,6 +234,7 @@ function loadSign(skipReading = false) {
 
 function enterDetecting() {
   phase = 'detecting';
+  signShownAt = Date.now();
   elStatusMsg.textContent    = '🙌 ¡Muestra la seña!';
   elGestureBadge.textContent = 'Sin mano detectada';
 
@@ -336,6 +358,11 @@ function showFeedback(correct) {
   setRingOffset(RING_CIRC);
   elHoldRing.style.display = 'none';
 
+  const sign = currentSign();
+  const attempt = { sign_id: sign.id, correct: !!correct, response_ms: Math.max(0, Date.now() - signShownAt) };
+  if (mode === 'challenge') savedAttempts.push(attempt);
+  else if (correct) recordLearnSuccess(attempt);
+
   if (correct) {
     audio.play('pop');
     elFeedback.innerHTML = '<span class="ms-fb-emoji">✅</span><span class="ms-fb-text">¡Correcto!</span>';
@@ -420,6 +447,8 @@ function showResults() {
   badge.textContent   = g.grade;
   badge.dataset.grade = g.grade;
 
+  saveChallenge(g.grade);
+
   const dotsGrid = document.getElementById('ms-dots-grid');
   dotsGrid.innerHTML = answers.map((ok, i) => {
     const label = (challengeQueue[i]?.label ?? '').replace(/</g, '&lt;');
@@ -431,12 +460,74 @@ function showResults() {
 
 function exitGame() {
   stopWebcam();
+  finishLearnSession();
   showScreen('screen-idle');
 }
 
 function goHome() {
   stopWebcam();
+  finishLearnSession();
   showScreen('screen-idle');
+}
+
+// ── Saved results (REQ-005) ───────────────────────────────────────────────────
+
+function recordLearnSuccess(attempt) {
+  savedAttempts.push(attempt);
+  learnedSigns.add(attempt.sign_id);
+  if (!recorder) {
+    const name = learnerPicker ? learnerPicker.value() : '';
+    if (!name) return;
+    recorder = new HO.Learning.Recorder('motivasign', 'learn', 'gestos');
+    recorder.start(name);
+  }
+}
+
+/** Close the practice session (learn mode) with the signs done at least once. */
+function finishLearnSession(pageClosing) {
+  if (mode !== 'learn' || !recorder || !savedAttempts.length) return;
+  const rec = recorder, attempts = savedAttempts;
+  recorder = null;
+  savedAttempts = [];
+  rec.finish({
+    score: learnedSigns.size, max_score: SIGNS.length,
+    details: { signs: [...learnedSigns] },
+  }, attempts, { keepalive: !!pageClosing });
+}
+
+async function saveChallenge(grade) {
+  const status  = document.getElementById('ms-save');
+  const btnHist = document.getElementById('ms-btn-history');
+  document.getElementById('ms-history').hidden = true;
+  btnHist.hidden = true;
+  status.className = 'ho-save';
+  if (!recorder) {
+    status.textContent = 'Escribe tu nombre en la pantalla de inicio para guardar tus resultados.';
+    return;
+  }
+  status.textContent = 'Guardando tu resultado…';
+  const items = challengeQueue.map((s, i) => ({ sign: s.id, label: s.label, correct: !!answers[i] }));
+  const res = await recorder.finish({ score, max_score: 10, details: { grade, items } }, savedAttempts);
+  if (res.saved) {
+    status.className = 'ho-save ok';
+    status.textContent = `Resultado guardado para ${res.learner.name}.`;
+    btnHist.hidden = false;
+  } else {
+    status.className = 'ho-save warn';
+    status.textContent = 'No se pudo guardar el resultado' + (res.error ? `: ${res.error.message}` : '.');
+  }
+}
+
+async function toggleHistory() {
+  const table = document.getElementById('ms-history');
+  if (!table.hidden) { table.hidden = true; return; }
+  const learner = HO.Learning.current();
+  if (!learner) return;
+  try {
+    await HO.Learning.showHistory(table, learner, 'motivasign', 'challenge');  // practice has no grade
+  } catch (err) {
+    document.getElementById('ms-save').textContent = 'No se pudo cargar el historial: ' + err.message;
+  }
 }
 
 // ── Camera initialisation ─────────────────────────────────────────────────────

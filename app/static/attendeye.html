@@ -25,7 +25,9 @@
     <!-- Class name -->
     <div class="ae-field">
       <label>Nombre de la clase</label>
-      <input type="text" id="ae-class-name" placeholder="Ej: 3ro Básica A — Matemáticas" value="Mi Clase"/>
+      <input type="text" id="ae-class-name" placeholder="Ej: 3ro Básica A — Matemáticas" value="Mi Clase" list="ae-classes" autocomplete="off"/>
+      <datalist id="ae-classes"></datalist>
+      <button type="button" class="ae-btn ae-btn-ghost ae-btn-sm ae-last-roster" id="ae-btn-last-roster" hidden>📋 Usar la lista guardada de esta clase</button>
     </div>
 
     <!-- Student roster editor -->
@@ -56,6 +58,13 @@ Miguel Ángel Reyes</textarea>
         <div class="ae-mode-desc">Monitorea quién levanta la mano en clase</div>
       </div>
     </div>
+
+    <!-- Saved sessions (REQ-005) -->
+    <p class="ae-setup-msg" id="ae-setup-msg" role="status" hidden></p>
+    <section class="ae-history">
+      <button type="button" class="ae-btn ae-btn-outline ae-btn-sm" id="ae-btn-history">📚 Historial de asistencia</button>
+      <div id="ae-history" hidden></div>
+    </section>
   </div>
 </div>
 
@@ -138,7 +147,8 @@ Miguel Ángel Reyes</textarea>
       <div class="ae-class-header" id="ae-part-class-header">Mi Clase</div>
       <!-- session timer -->
       <div class="ae-timer" id="ae-timer">00:00</div>
-      <button class="ae-btn ae-btn-ghost ae-btn-sm" id="ae-btn-exit-part">✕ Terminar</button>
+      <button class="ae-btn ae-btn-success ae-btn-sm" id="ae-btn-save-part">💾 Guardar y terminar</button>
+      <button class="ae-btn ae-btn-ghost ae-btn-sm" id="ae-btn-exit-part">✕ Salir sin guardar</button>
     </div>
 
     <!-- RIGHT: participation board -->
@@ -173,6 +183,8 @@ Miguel Ángel Reyes</textarea>
       </div>
     </div>
 
+    <p class="ae-save" id="ae-save" role="status"></p>
+
     <!-- Full attendance list -->
     <div class="ae-results-list" id="ae-results-list"></div>
 
@@ -182,6 +194,7 @@ Miguel Ángel Reyes</textarea>
       <textarea id="ae-export-text" readonly rows="5"></textarea>
       <button class="ae-btn ae-btn-primary" id="ae-btn-copy">📋 Copiar reporte</button>
       <button class="ae-btn ae-btn-success" id="ae-btn-export-pdf" disabled>📄 Exportar PDF</button>
+      <button class="ae-btn ae-btn-outline" id="ae-btn-csv" hidden>⬇ CSV</button>
     </div>
 
     <div class="ae-results-actions">
@@ -210,6 +223,7 @@ Miguel Ángel Reyes</textarea>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="/static/js/ho-common.js"></script>
 <script src="/static/js/ho-hands.js"></script>
+<script src="/static/js/ho-learning.js"></script>
 <script src="/static/js/attendeye.js"></script>
 </body>
 </html>

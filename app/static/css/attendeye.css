@@ -673,7 +673,7 @@ html, body {
 
 #screen-results {
   min-height: calc(100vh - 49px);
-  display: flex;
+  display: none;
   align-items: flex-start;
   justify-content: center;
   padding: 32px 16px;
@@ -912,4 +912,25 @@ html, body {
 /* Export button spacing */
 #ae-btn-export-pdf {
   margin-top: 8px;
+}
+
+/* ── Saved sessions (REQ-005) ───────────────────────────────────────────────── */
+.ae-last-roster { margin-top: 8px; align-self: flex-start; }
+.ae-setup-msg, .ae-save { font-size: 0.88rem; color: var(--ae-muted); margin: 10px 0 0; }
+.ae-setup-msg.ok, .ae-save.ok { color: var(--ae-success); }
+.ae-setup-msg.warn, .ae-save.warn { color: var(--ae-danger); }
+.ae-save .ae-btn { margin-left: 8px; }
+[hidden] { display: none !important; }
+.ae-history { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; width: 100%; }
+#ae-history { width: 100%; overflow-x: auto; }
+.ae-history table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.ae-history th { text-align: left; color: var(--ae-muted); font-weight: 600; padding: 6px; border-bottom: 1px solid var(--ae-border); }
+.ae-history td { padding: 6px; border-bottom: 1px solid var(--ae-surface2); vertical-align: middle; }
+.ae-history td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ae-history td.act { white-space: nowrap; text-align: right; }
+.ae-history td.act .ae-btn { margin-left: 4px; }
+.ae-history .ae-empty { color: var(--ae-muted); font-size: 0.85rem; }
+@media (max-width: 520px) {
+  .ae-history th:nth-child(3), .ae-history td:nth-child(3) { display: none; }   /* type: icon kept in the result */
+  .ae-history td.act .ae-btn { padding: 6px 8px; }
 }

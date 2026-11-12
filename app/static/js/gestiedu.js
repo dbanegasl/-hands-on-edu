@@ -100,6 +100,8 @@ let gestureEmoji, gestureName, progressFill, qNum, qTotal;
 let scoreDisplay, questionCard, qSubject, qVisual, qText, qOptions, qHint;
 let feedbackOverlay, feedbackIcon, feedbackText, feedbackDetail;
 let arcFill;
+let learnerPicker = null;
+let recorder = null;   // HO.Learning.Recorder for the current game (REQ-005)
 
 // ── WebSocket + webcam ────────────────────────────────────────────────────────
 
@@ -144,7 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Button listeners
   document.getElementById('btn-start').addEventListener('click', startGame);
   document.getElementById('btn-restart').addEventListener('click', restartGame);
-  document.getElementById('btn-moodle').addEventListener('click', showMoodleModal);
+  document.getElementById('btn-history').addEventListener('click', toggleHistory);
+  learnerPicker = HO.Learning.LearnerPicker(document.getElementById('ge-learner'));
 
   // Mute button
   const btnMute = document.getElementById('btn-mute-audio');
@@ -182,6 +185,15 @@ function startGame() {
   GAME.results       = [];
   GAME.holdStart     = null;
   GAME.currentAnswer = null;
+  GAME.startedAt     = Date.now();
+
+  // Save the game for this learner (best effort, never blocks the quiz).
+  const name = learnerPicker ? learnerPicker.value() : '';
+  recorder = null;
+  if (name) {
+    recorder = new HO.Learning.Recorder('gestiedu', 'quiz');
+    recorder.start(name);
+  }
 
   // Reset score display
   if (scoreDisplay) scoreDisplay.textContent = '0';
@@ -510,6 +522,9 @@ function submitAnswer(answer) {
     correct,
     gestureUsed: answer.emoji,
     expected:    getExpectedEmoji(q),
+    question:    q.text,
+    subject:     q.subject,
+    type:        q.type,
   });
 
   // Update live score
@@ -601,14 +616,53 @@ function showResults() {
     </div>`;
   });
   document.getElementById('answers-grid').innerHTML = gridHtml;
+  saveResult(correct, total, grade);
 }
 
-// ── Moodle (placeholder) ──────────────────────────────────────────────────────
+// ── Saved results (REQ-005) ───────────────────────────────────────────────────
 
-function showMoodleModal() {
-  const total   = QUESTIONS.length;
-  const correct = GAME.correctCount;
-  alert(`Integración con Moodle disponible próximamente.\nResultado: ${correct}/${total}`);
+async function saveResult(correct, total, grade) {
+  const status  = document.getElementById('ge-save');
+  const btnHist = document.getElementById('btn-history');
+  document.getElementById('ge-history').hidden = true;
+  btnHist.hidden = true;
+  if (!recorder) {
+    status.className = 'ho-save';
+    status.textContent = 'Escribe tu nombre antes de comenzar para guardar tus resultados.';
+    return;
+  }
+  status.className = 'ho-save';
+  status.textContent = 'Guardando tu resultado…';
+  const res = await recorder.finish({
+    score: correct, max_score: total,
+    details: {
+      grade: grade.split(' ')[0],
+      duration_s: Math.round((Date.now() - GAME.startedAt) / 1000),
+      answers: GAME.results.map((r, i) => ({
+        n: i + 1, subject: r.subject, type: r.type, question: r.question,
+        expected: r.expected, given: r.gestureUsed, correct: r.correct,
+      })),
+    },
+  });
+  if (res.saved) {
+    status.className = 'ho-save ok';
+    status.textContent = `Resultado guardado para ${res.learner.name}.`;
+    btnHist.hidden = false;
+  } else {
+    status.className = 'ho-save warn';
+    status.textContent = 'No se pudo guardar el resultado' + (res.error ? `: ${res.error.message}` : '.');
+  }
+}
+
+async function toggleHistory() {
+  const table = document.getElementById('ge-history');
+  if (!table.hidden) { table.hidden = true; return; }
+  if (!recorder || !recorder.learner) return;
+  try {
+    await HO.Learning.showHistory(table, recorder.learner, 'gestiedu');
+  } catch (err) {
+    document.getElementById('ge-save').textContent = 'No se pudo cargar el historial: ' + err.message;
+  }
 }
 
 // ── Hold arc ──────────────────────────────────────────────────────────────────

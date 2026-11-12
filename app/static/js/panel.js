@@ -280,10 +280,11 @@
         return withTip(td, () => [r.name, u.title, 'Mejor nota: ' + Math.round(v.best) + '%' + (v.passed ? ' · aprobada' : ' · no aprobada')]);
       });
       const failed = r.grades.failed;
-      const tr = el('tr', { class: r.has_activity ? null : 'inactive', tabindex: '0',
+      const active = r.has_activity || r.other_sessions > 0;
+      const tr = el('tr', { class: active ? null : 'inactive', tabindex: '0',
         'aria-label': 'Ver detalle de ' + r.name }, [
         el('td', { class: 'who', text: r.name, title: r.user_id ? 'Usuario: ' + r.user_id : null }),
-        el('td', { class: 'num', text: r.has_activity ? ago(r.last_activity) : 'sin actividad',
+        el('td', { class: 'num', text: active ? ago(r.last_activity) : 'sin actividad',
           title: r.last_activity ? fmtDateTime.format(new Date(r.last_activity)) : null }),
         el('td', { class: 'num', text: r.units_passed + ' / ' + d.units.length }),
         el('td', { class: 'num', text: r.mastery_avg == null ? '—' : Math.round(100 * r.mastery_avg) + '%' }),
@@ -408,11 +409,57 @@
       ]))),
     ]) : el('p', { class: 'au-muted', text: 'Sin actividades en este curso.' });
 
+    const others = (d.other_sessions || []).length ? el('section', null, [
+      el('h3', { text: 'Otros módulos' }),
+      el('table', { class: 'pn-sessions' }, [
+        el('thead', null, el('tr', null, ['Fecha', 'Módulo', 'Actividad', 'Resultado'].map((h) => el('th', { text: h })))),
+        el('tbody', null, d.other_sessions.map((x) => el('tr', null, [
+          el('td', { text: fmtDateTime.format(new Date(x.started_at)) }),
+          el('td', { text: x.module }),
+          el('td', { text: x.label }),
+          el('td', { class: 'num', text: x.ended_at == null ? 'sin terminar'
+            : (x.max_score ? (x.score ?? 0) + '/' + x.max_score + (x.pct == null ? '' : ' (' + Math.round(x.pct) + '%)') : '—') }),
+        ]))),
+      ]),
+    ]) : null;
+
     $('pn-d-body').replaceChildren(
       chips,
       el('section', null, [el('h3', { text: 'Dominio por seña' }),
         el('p', { class: 'au-muted pn-small', text: 'El dominio pondera más los intentos recientes; desde 80% la seña se considera dominada.' }), ...units]),
       el('section', null, [el('h3', { text: 'Actividades' }), sessions]),
+      others || '',
+    );
+  }
+
+  // ── Render: other modules (installation view only) ─────────────────────────
+  function moduleCard(name, href, value, label, notes) {
+    return el('div', { class: 'pn-module' }, [
+      el('h3', null, [name, el('a', { href, text: 'Abrir' })]),
+      el('span', { class: 'pn-tile-value', text: value }),
+      el('span', { class: 'pn-tile-label', text: label }),
+      ...notes.filter(Boolean).map((n) => el('span', { class: 'pn-tile-note', text: n })),
+    ]);
+  }
+
+  const plural = (n, one, many) => fmtInt.format(n) + ' ' + (n === 1 ? one : many);
+
+  function renderModules(m) {
+    $('pn-modules-card').hidden = !m;
+    if (!m) return;
+    const game = (x, href, what) => moduleCard(x.name, href,
+      x.avg_pct == null ? '—' : Math.round(x.avg_pct) + '%', 'acierto medio en ' + what,
+      [plural(x.sessions, 'partida', 'partidas') + ' · ' + plural(x.learners, 'estudiante', 'estudiantes'),
+        plural(x.active_7d, 'activo', 'activos') + ' en 7 días',
+        x.last_at ? 'última: ' + ago(x.last_at) : 'sin partidas guardadas']);
+    const a = m.attendeye;
+    $('pn-modules').replaceChildren(
+      game(m.gestiedu, '/gestiedu', 'cuestionarios'),
+      game(m.motivasign, '/motivasign', 'desafíos'),
+      moduleCard(a.name, '/attendeye', a.avg_rate == null ? '—' : Math.round(100 * a.avg_rate) + '%', 'asistencia media',
+        [plural(a.rollcalls, 'lista', 'listas') + ' · ' + plural(a.classes, 'clase', 'clases'),
+          plural(a.participations, 'intervención', 'intervenciones') + ' en ' + plural(a.participation_sessions, 'sesión', 'sesiones'),
+          a.last ? 'última: ' + a.last.class_name + ', ' + a.last.present + '/' + a.last.total + ' (' + ago(a.last.started_at) + ')' : null]),
     );
   }
 
@@ -425,6 +472,7 @@
     renderLegend();
     renderGrid();
     renderSigns(d.signs);
+    renderModules(d.modules);
   }
 
   async function load(quiet) {
@@ -451,7 +499,7 @@
 
   async function exportCsv() {
     try {
-      const res = await api('/api/panel/export.csv?language=lsec');
+      const res = await api('/api/panel/export.csv?language=lsec&tz=' + (-new Date().getTimezoneOffset()));
       const name = (/filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') || '') || [])[1] || 'progreso.csv';
       const url = URL.createObjectURL(await res.blob());
       const a = el('a', { href: url, download: name });

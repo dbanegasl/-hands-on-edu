@@ -20,9 +20,9 @@
 
 | Módulo | URL | Descripción | Estado |
 |--------|-----|-------------|--------|
-| 🖐️ **GestiEdu** | `/gestiedu` | Quiz interactivo donde los estudiantes responden preguntas mostrando gestos de mano (conteo de dedos, Verdadero/Falso, opciones A/B/C). Integración con Moodle para registrar calificaciones. | ✅ Disponible |
-| 🤟 **MotivaSign** | `/motivasign` | Aprendizaje de señas básicas con reconocimiento por IA. Catálogo de 15 señas con modo Aprender (libre) y modo Desafío (10 señas aleatorias con puntuación). | ✅ Disponible |
-| 👁️ **AttendEye** | `/attendeye` | Herramienta docente para tomar asistencia gestual (mano levantada = presente) y monitorear participación en tiempo real con reporte exportable. | ✅ Disponible |
+| 🖐️ **GestiEdu** | `/gestiedu` | Quiz interactivo donde los estudiantes responden preguntas mostrando gestos de mano (conteo de dedos, Verdadero/Falso, opciones A/B/C). Guarda los resultados de cada estudiante (historial y panel docente). | ✅ Disponible |
+| 🤟 **MotivaSign** | `/motivasign` | Aprendizaje de señas básicas con reconocimiento por IA. Catálogo de 15 señas con modo Aprender (libre) y modo Desafío (10 señas aleatorias con puntuación); guarda partidas y práctica por estudiante. | ✅ Disponible |
+| 👁️ **AttendEye** | `/attendeye` | Herramienta docente para tomar asistencia gestual (mano levantada = presente) y monitorear participación en tiempo real; historial por clase con CSV y PDF. | ✅ Disponible |
 | ✏️ **VirtualPainter** | `/virtualpainter` | Dibujo AR en el aire: el usuario dibuja sobre la imagen de la cámara con el dedo índice. Soporta borrador, selección de color por gesto y modo pizarrón. | ✅ Disponible |
 
 ---

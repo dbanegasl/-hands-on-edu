@@ -1,13 +1,13 @@
 # REQ-005 — Persistencia de Sesiones con SQLite
 
-> **Última actualización:** 2026-04-30
+> **Última actualización:** 2026-11-12
 
 | Campo | Valor |
 |-------|-------|
 | **ID** | REQ-005 |
 | **Tipo** | Feature |
 | **Prioridad** | Alta |
-| **Estado** | 🔄 En progreso — base implementada en v0.9.0 (SQLAlchemy 2.0, `learners`, `activity_sessions`, `sign_attempts`, `sign_templates`); falta persistir GestiEdu y AttendEye |
+| **Estado** | ✅ Hecho — base en v0.9.0 (SQLAlchemy 2.0, `learners`, `activity_sessions`, `sign_attempts`, `sign_templates`); GestiEdu, MotivaSign y AttendEye guardan sus resultados desde v0.13.0 |
 | **Módulo** | Global / Backend |
 | **Esfuerzo estimado** | L (6–10 horas) |
 
@@ -31,7 +31,48 @@ Este requisito es un **prerrequisito bloqueante** para REQ-006, REQ-007, REQ-008
 
 ---
 
-## Alcance propuesto
+## Implementación (v0.9.0 + v0.13.0)
+
+La propuesta original (más abajo, conservada como referencia histórica) se simplificó: en lugar de una tabla por módulo, **los juegos por estudiante reutilizan las tablas genéricas** del Aula y solo la asistencia, que es por clase, tiene tablas propias. SQLAlchemy 2.0 síncrono (no hizo falta async), base en `./data/` montada como volumen, tablas creadas al arrancar con `create_all` (Alembic pendiente, TD-012).
+
+| Módulo | Dónde se guarda | Qué se guarda |
+|---|---|---|
+| **GestiEdu** | `activity_sessions` (`module="gestiedu"`, `activity="quiz"`) | Aciertos / 10, nota A–D, duración y cada respuesta (`details.answers`: pregunta, materia, esperada, dada, acierto) |
+| **MotivaSign — Desafío** | `activity_sessions` (`motivasign`, `challenge`, `language="gestos"`) + `sign_attempts` | Aciertos / 10, nota, y un intento por seña con su tiempo de respuesta |
+| **MotivaSign — Aprender** | igual, `activity="learn"` | Sesión de práctica: señas logradas al menos una vez / 15 y cada acierto. Se crea con el primer acierto y se cierra al salir del modo (también al cerrar la pestaña, con `fetch keepalive`). No cuenta en las medias |
+| **AttendEye** | `attendance_sessions` + `attendance_records` (nuevas) | Lista de asistencia (estado, hora y si se marcó **por gesto o a mano**) o sesión de participación (intervenciones por estudiante), clase, inicio y fin |
+
+**Estudiantes.** GestiEdu y MotivaSign muestran «¿Quién juega?» en la pantalla de inicio. Los perfiles se comparten con el Aula de Señas (mismas claves de `localStorage`, `ho.aula.profiles` / `ho.aula.current`), así que quien ya practica en el Aula aparece como botón. Sin nombre se puede jugar igual; no se guarda nada. Guardar nunca interrumpe el juego: si falla, se avisa en la pantalla de resultados.
+
+**AttendEye** trabaja con nombres escritos por el docente (no perfiles), así que su historial es por **clase**. Es un dato personal: todos sus endpoints piden el token de administrador (`X-Admin-Token`, abierto si `ADMIN_TOKEN` no está definido); la página lo pide una vez y lo recuerda.
+
+### API nueva
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/api/attendance` | Guarda una lista (`mode="rollcall"`) o una sesión de participación (`"participation"`) con sus registros |
+| `GET` | `/api/attendance?class_name=&mode=&limit=` | Historial, más reciente primero, con totales y % de asistencia (presentes / marcados; los no marcados no cuentan) |
+| `GET` | `/api/attendance/classes` | Clases con nº de sesiones y la lista de nombres de la última (para reutilizarla) |
+| `GET` | `/api/attendance/{id}` | Detalle |
+| `GET` | `/api/attendance/{id}/export.csv?tz=-300` | CSV (UTF-8 con BOM); `tz` = minutos respecto de UTC para fechas y horas locales |
+| `DELETE` | `/api/attendance/{id}` | Elimina una sesión |
+
+GestiEdu y MotivaSign usan los endpoints que ya existían (`POST /api/learners`, `/api/sessions`, `/attempts`, `/finish`, `GET /api/learners/{id}/sessions`).
+
+### Interfaz
+
+- **GestiEdu**: el botón falso «Enviar a Moodle» se sustituyó por **📜 Mis resultados** (últimas 8 partidas). Las notas a Moodle van por LTI (REQ-019) y hoy solo las envía el Aula.
+- **MotivaSign**: «¿Quién juega?» + estado del guardado y **📜 Mis resultados** (desafíos) en la pantalla final.
+- **AttendEye**: la lista se guarda sola al terminar (con *Reintentar* si falla) y añade descarga **CSV**; la participación tiene **💾 Guardar y terminar** (y «Salir sin guardar» pide confirmación si hay intervenciones). En la configuración: sugerencias con las clases guardadas, **Usar la lista guardada de esta clase** e **📚 Historial de asistencia** con CSV y borrado por sesión.
+- **Panel docente** (vista de instalación, `/panel` con token de administrador): tarjeta **Otros módulos** con el acierto medio de GestiEdu y MotivaSign y la asistencia media de AttendEye; los estudiantes que solo usaron los juegos aparecen en la tabla y su detalle lista esas partidas. En la vista de un curso de Moodle no se muestran: esos juegos no se lanzan por LTI.
+
+### Pruebas
+
+`tests/test_attendance.py` (API de asistencia, permisos, CSV con zona horaria y resumen del panel) y `tests/js/ho-learning.test.cjs` (perfiles compartidos, notas, `Recorder` contra un `fetch` simulado). Verificado en navegador (Playwright): GestiEdu y MotivaSign guardan e historian, AttendEye guarda lista y participación, reutiliza la lista y descarga CSV, y el panel muestra los tres módulos; sin desbordamiento horizontal en móvil.
+
+---
+
+## Alcance propuesto (original, 2026-04-30 — referencia histórica)
 
 ### Base de datos
 

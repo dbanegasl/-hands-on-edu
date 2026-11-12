@@ -19,8 +19,8 @@ from datetime import datetime, timedelta, timezone
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from fastapi.responses import Response
-from sqlalchemy import or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy import func, or_, select
+from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import lti_context, require_admin
 from app.api.learning import MASTERED_THRESHOLD, compute_mastery
@@ -28,6 +28,7 @@ from app.db import get_db
 from app.integrations.lti import services as lti_services
 from app.models import (
     ActivitySession,
+    AttendanceSession,
     Learner,
     LtiContext,
     LtiLaunch,
@@ -46,6 +47,9 @@ QUIZ_PREFIX = "quiz:"
 PASS_PCT = 70.0
 PRACTICE_CAP = timedelta(hours=1)  # a session left open overnight counts as 1 h at most
 WEEKS = 8
+# Gesture modules saved per learner (REQ-005), summarised in the installation-wide view.
+OTHER_MODULES = {"gestiedu": "GestiEdu", "motivasign": "MotivaSign"}
+OTHER_ACTIVITIES = {"quiz": "Cuestionario", "challenge": "Desafío", "learn": "Práctica libre"}
 
 
 # ── Scope ────────────────────────────────────────────────────────────────────
@@ -253,6 +257,14 @@ def _rows(db: Session, scope: Scope, language: str, catalog: dict):
     roster = _roster(db, scope)
 
     learner_ids = {s.learner_id for s in sessions}
+    other_last: dict[str, tuple[int, datetime]] = {}
+    if scope.kind == "all":  # learners who only used GestiEdu / MotivaSign are listed too
+        for lid, n, last in db.execute(
+                select(ActivitySession.learner_id, func.count(ActivitySession.id), func.max(ActivitySession.ended_at))
+                .where(ActivitySession.module.in_(OTHER_MODULES), ActivitySession.ended_at.is_not(None))
+                .group_by(ActivitySession.learner_id)).all():
+            other_last[lid] = (n, last)
+        learner_ids |= set(other_last)
     by_external: dict[str, dict] = {}
     if scope.kind == "course":
         learner_ids |= _course_learner_ids(db, scope)
@@ -279,13 +291,22 @@ def _rows(db: Session, scope: Scope, language: str, catalog: dict):
         rows.append({"id": lid, "name": (member or {}).get("name") or lr.display_name,
                      "user_id": (member or {}).get("user_id") or _lms_user(lr.external_id),
                      "in_roster": member is not None,
-                     **_learner_summary(s_by.get(lid, []), a_by.get(lid, []), latest, unit_ids)})
+                     **_with_other(_learner_summary(s_by.get(lid, []), a_by.get(lid, []), latest, unit_ids),
+                                   other_last.get(lid))})
     for ext, m in by_external.items():
         if ext not in seen_external:
             rows.append({"id": None, "name": m["name"], "user_id": m["user_id"], "in_roster": True,
-                         **_learner_summary([], [], {}, unit_ids)})
+                         **_with_other(_learner_summary([], [], {}, unit_ids), None)})
     rows.sort(key=lambda r: r["name"].lower())
     return rows, sessions, attempts, roster
+
+
+def _with_other(summary: dict, other: tuple[int, datetime] | None) -> dict:
+    """Add GestiEdu/MotivaSign activity (installation view) to a learner row."""
+    summary["other_sessions"] = other[0] if other else 0
+    if other and (summary["last_activity"] is None or other[1] > summary["last_activity"]):
+        summary["last_activity"] = other[1]
+    return summary
 
 
 def _lms_user(external_id: str | None) -> str | None:
@@ -296,6 +317,39 @@ def _scope_out(scope: Scope) -> dict:
     return {"kind": scope.kind, "title": scope.title,
             "platform": scope.platform.name if scope.platform else None,
             "label": scope.context.label if scope.context else None}
+
+
+def _module_summaries(db: Session, now: datetime) -> dict:
+    from app.api.attendance import summarize  # local import: attendance depends on nothing here
+
+    week_ago = now - timedelta(days=7)
+    out: dict[str, dict] = {}
+    for module, name in OTHER_MODULES.items():
+        sessions = db.scalars(select(ActivitySession).where(
+            ActivitySession.module == module, ActivitySession.ended_at.is_not(None))).all()
+        scored = [p for s in sessions if s.activity != "learn" and (p := _pct(s)) is not None]
+        out[module] = {
+            "name": name, "sessions": len(sessions), "learners": len({s.learner_id for s in sessions}),
+            "active_7d": len({s.learner_id for s in sessions if s.ended_at >= week_ago}),
+            "scored": len(scored), "avg_pct": round(sum(scored) / len(scored), 1) if scored else None,
+            "last_at": max((s.ended_at for s in sessions), default=None),
+        }
+    att = [summarize(a) for a in db.scalars(select(AttendanceSession)
+                                            .options(selectinload(AttendanceSession.records))
+                                            .order_by(AttendanceSession.started_at.desc())).all()]
+    rollcalls = [a for a in att if a["mode"] == "rollcall"]
+    rates = [a["rate"] for a in rollcalls if a["rate"] is not None]
+    last = rollcalls[0] if rollcalls else None
+    out["attendeye"] = {
+        "name": "AttendEye", "rollcalls": len(rollcalls),
+        "participation_sessions": sum(1 for a in att if a["mode"] == "participation"),
+        "participations": sum(a["participations"] for a in att),
+        "classes": len({a["class_name"] for a in att}),
+        "avg_rate": round(sum(rates) / len(rates), 4) if rates else None,
+        "last": {"class_name": last["class_name"], "started_at": last["started_at"], "rate": last["rate"],
+                 "present": last["present"], "total": last["total"]} if last else None,
+    }
+    return out
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
@@ -330,6 +384,7 @@ def overview(language: str = Query("lsec"), scope: Scope = Depends(panel_scope),
                    "members": sum(1 for m in roster["members"] if m["is_learner"])},
         "summary": summary, "units": units, "learners": rows,
         "weekly": _weekly(sessions, now), "signs": _sign_stats(attempts, glosses),
+        "modules": _module_summaries(db, now) if scope.kind == "all" else None,
     }
 
 
@@ -369,6 +424,11 @@ def learner_detail(learner_id: str, language: str = Query("lsec"), scope: Scope 
             {"sign_id": sid, "gloss": signs_by_id.get(sid, {}).get("gloss", sid), **mastery.get(sid, {})}
             for sid in u.get("signs", [])]})
     sessions.sort(key=lambda s: s.started_at, reverse=True)
+    other = []
+    if scope.kind == "all":
+        other = db.scalars(select(ActivitySession).where(
+            ActivitySession.learner_id == learner_id, ActivitySession.module.in_(OTHER_MODULES))
+            .order_by(ActivitySession.started_at.desc()).limit(50)).all()
     return {
         "scope": _scope_out(scope),
         "learner": {"id": learner.id, "name": learner.display_name, "user_id": _lms_user(learner.external_id)},
@@ -381,6 +441,12 @@ def learner_detail(learner_id: str, language: str = Query("lsec"), scope: Scope 
             "grade": ({"status": latest[s.id].status, "score_given": latest[s.id].score_given,
                        "detail": latest[s.id].detail} if s.id in latest else None),
         } for s in sessions[:200]],
+        "other_sessions": [{
+            "id": s.id, "module": OTHER_MODULES[s.module],
+            "label": OTHER_ACTIVITIES.get(s.activity or "", s.activity or "Actividad"),
+            "started_at": s.started_at, "ended_at": s.ended_at, "score": s.score, "max_score": s.max_score,
+            "pct": _pct(s),
+        } for s in other],
     }
 
 
@@ -401,7 +467,10 @@ def retry_grade(session_id: str, scope: Scope = Depends(panel_scope), db: Sessio
 
 
 @router.get("/export.csv", summary="Exportar el progreso del curso (CSV)")
-def export_csv(language: str = Query("lsec"), scope: Scope = Depends(panel_scope), db: Session = Depends(get_db)):
+def export_csv(language: str = Query("lsec"),
+               tz: int = Query(0, ge=-840, le=840, description="Minutos al este de UTC (Ecuador: -300)"),
+               scope: Scope = Depends(panel_scope), db: Session = Depends(get_db)):
+    local = timezone(timedelta(minutes=tz))
     catalog = _catalog(language)
     rows, *_ = _rows(db, scope, language, catalog)
     units = catalog.get("units", [])
@@ -413,10 +482,10 @@ def export_csv(language: str = Query("lsec"), scope: Scope = Depends(panel_scope
     for r in rows:
         w.writerow([
             r["name"], r["user_id"] or "",
-            r["last_activity"].astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M") if r["last_activity"] else "",
+            r["last_activity"].astimezone(local).strftime("%Y-%m-%d %H:%M") if r["last_activity"] else "",
             r["sessions"], r["practice_minutes"], r["units_passed"], r["signs_mastered"],
             "" if r["mastery_avg"] is None else round(100 * r["mastery_avg"]), r["grades"]["failed"],
         ] + ["" if u["id"] not in r["units"] else f"{r['units'][u['id']]['best']:g}" for u in units])
-    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    stamp = datetime.now(local).strftime("%Y-%m-%d")
     return Response("﻿" + buf.getvalue(), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f'attachment; filename="progreso-{language}-{stamp}.csv"'})
