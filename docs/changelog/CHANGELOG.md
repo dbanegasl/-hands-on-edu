@@ -15,6 +15,28 @@
 
 ---
 
+## [0.19.0] — 2026-11-12
+
+### Añadido
+
+- **`deploy/check-install.py`: comprobación previa al piloto.** Una sola orden que revisa lo que suele fallar en la puesta en marcha y dice cómo corregirlo:
+  - HTTPS y certificado, `PUBLIC_BASE_URL` frente a la dirección real, `ADMIN_TOKEN` vacío o incorrecto, versión sin credenciales de estudiante;
+  - claves LTI;
+  - política de permisos de la cámara;
+  - tipos MIME y tamaño del motor de manos (JS, WASM, modelo);
+  - límite de subida del proxy (importar plantillas) y WebSocket;
+  - diferencia de hora.
+
+  Con `--moodle` comprueba también:
+  - que se llega a las claves y al servicio de tokens de Moodle (también desde dentro del contenedor);
+  - que la hora de los dos servidores coincide dentro de la tolerancia LTI de 60 s;
+  - que ese Moodle está registrado.
+
+  Solo usa la biblioteca estándar de Python 3.8 o superior y termina con código 1 si algo falla. `scripts/test-deploy.sh` la ejecuta en la CI contra una instalación real.
+- Onboarding 03 y guía de despliegue: la comprobación automática como primer paso. Se descarga junto a `deploy.sh`.
+
+---
+
 ## [0.18.0] — 2026-11-12
 
 ### Seguridad

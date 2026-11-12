@@ -1,6 +1,7 @@
 # HandsOnEdu on a server, from the published image (no source checkout needed).
 # Put this folder in e.g. /opt/handsonedu with a .env (see .env.example) and run
 #   ./deploy.sh 0.15.0        # install / update / roll back to a version
+#   python3 check-install.py https://senas.miescuela.edu.ec --moodle https://moodle…   # pre-pilot checks
 # Guide: docs/deployment.md
 
 name: handsonedu

@@ -20,11 +20,14 @@ node --test tests/js/*.test.cjs                                     # browser en
 docker compose exec hands-on-edu python -m tests.fixtures.gen_gesture_parity   # regenerate Python↔JS parity fixture after changing gesture heuristics
 node scripts/train-sign-model.cjs [--out m.json] [--publish]               # train + cross-validate the sign classifier from the server's templates (REQ-010)
 docker compose exec -u "$(id -u):$(id -g)" hands-on-edu alembic revision --autogenerate -m "…"   # new schema migration after changing app/models.py
+python3 deploy/check-install.py https://<host> [--moodle https://<lms>] [--allow-http]   # pre-pilot checks of an install (stdlib only)
 python3 scripts/release.py check [--tag vX.Y.Z]                             # APP_VERSION ↔ CHANGELOG ↔ tag (CI runs it)
 docker build -t handsonedu:ci . && scripts/test-deploy.sh handsonedu:ci    # end-to-end test of deploy/deploy.sh (install, backup, rollback)
 docker compose exec hands-on-edu pytest tests/test_main.py::TestHealthEndpoint::test_status_200   # single test
 docker compose exec hands-on-edu pytest --cov=app --cov-report=term-missing                        # coverage (CI enforces ≥80% overall; .github/workflows/ci.yml)
 ```
+
+With the local Moodle (`docker-compose.moodle.yml`), always recreate the app with **both** files (`docker compose -f docker-compose.yml -f docker-compose.moodle.yml up -d hands-on-edu`): plain `docker compose up` drops its `PUBLIC_BASE_URL` and `extra_hosts` and breaks LTI.
 
 Hot reload: `./app`, `./tests` and `./data` (SQLite) are volume-mounted, so Python/HTML/CSS/JS changes apply without rebuild (uvicorn `--reload` handles Python). Only `Dockerfile`, `requirements.txt`, or `docker-compose.yml` changes need a rebuild.
 

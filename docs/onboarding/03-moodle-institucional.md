@@ -16,6 +16,28 @@
 
 ## 2. Conectividad (5 minutos, evita la mayoría de problemas)
 
+**Atajo: comprobación automática.** `deploy/check-install.py` revisa en un minuto lo que suele fallar en un piloto y dice cómo corregirlo:
+
+- HTTPS y certificado;
+- `PUBLIC_BASE_URL` y `ADMIN_TOKEN`;
+- claves LTI;
+- tipos MIME del motor de manos;
+- límite de subida del proxy y WebSocket;
+- hora de los dos servidores;
+- que Moodle responda y esté registrado.
+
+Necesita Python 3.8 o superior y no requiere instalar nada más. Ejecútalo **dos veces**, desde los dos lados:
+
+```bash
+# 1. Desde el equipo de TI (lo que ven los navegadores y Moodle):
+ADMIN_TOKEN=… python3 check-install.py https://<handsonedu> --moodle https://<moodle>
+
+# 2. Desde el servidor de HandsOnEdu (lo que ve él hacia Moodle), en /opt/handsonedu:
+docker compose exec -T hands-on-edu python - https://<handsonedu> --moodle https://<moodle> < check-install.py
+```
+
+Corrige todos los ✗ antes de seguir. Los ⚠ explican qué funcionalidad afectan. La tabla siguiente es la misma comprobación hecha a mano.
+
 La integración necesita tráfico **en los dos sentidos**:
 
 | Desde | Hacia | Para qué | Cómo comprobarlo |
@@ -73,6 +95,7 @@ Registra los problemas con: fecha, curso, estudiante (usuario de Moodle), navega
 
 ## 7. Lista para salir a producción
 
+- [ ] `check-install.py` sin ✗ desde los dos lados (§2), con el Moodle de producción.
 - [ ] HTTPS válido en HandsOnEdu (sin avisos del navegador).
 - [ ] `PUBLIC_BASE_URL` definitivo. **Cambiarlo después obliga a reconfigurar la herramienta en Moodle.**
 - [ ] `ADMIN_TOKEN` definido y guardado en el gestor de contraseñas de TI.

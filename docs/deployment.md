@@ -46,6 +46,7 @@ sudo mkdir -p /opt/handsonedu && sudo chown "$USER" /opt/handsonedu && cd /opt/h
 base=https://raw.githubusercontent.com/dbanegasl/-hands-on-edu/main/deploy
 curl -fsSLO $base/docker-compose.yml
 curl -fsSLO $base/deploy.sh
+curl -fsSLO $base/check-install.py
 curl -fsSL $base/.env.example -o .env && chmod +x deploy.sh
 nano .env                                  # PUBLIC_BASE_URL, ADMIN_TOKEN (ver tabla de arriba)
 ./deploy.sh 0.15.0                         # o la última versión publicada (Releases en GitHub)
@@ -108,6 +109,14 @@ server { listen 80; server_name senas.miescuela.edu.ec; return 301 https://$host
 El frontend arma la URL del WebSocket a partir de la página (`wss://` en HTTPS): no hay nada que cambiar en el código.
 
 ### Comprobaciones después de instalar
+
+Automáticas (HTTPS, `PUBLIC_BASE_URL`, `ADMIN_TOKEN`, claves LTI, MIME del motor, límite de subida, WebSocket, hora; con `--moodle`, Moodle):
+
+```bash
+ADMIN_TOKEN=… python3 check-install.py https://<dominio> [--moodle https://<moodle>]
+```
+
+Termina con código 1 si algo falla. La lista manual equivalente:
 
 - [ ] `https://<dominio>/health` responde con la versión esperada.
 - [ ] `https://<dominio>/signstudio` pide la cámara y la insignia dice *Detección en el navegador*.
