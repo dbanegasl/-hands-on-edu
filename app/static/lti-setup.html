@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conectar con Moodle | HandsOnEdu</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤟</text></svg>">
+  <link rel="stylesheet" href="/static/css/aula.css">
+</head>
+<body>
+  <nav class="au-nav">
+    <a href="/" class="au-logo">🖐️ HandsOnEdu</a>
+    <span class="au-module-name">🔌 Conectar con Moodle (LTI 1.3)</span>
+    <a href="/" class="au-back">← Inicio</a>
+  </nav>
+
+  <section class="au-screen active">
+    <div class="au-form-page">
+      <h1>Conectar HandsOnEdu con Moodle</h1>
+      <p class="au-muted">Con LTI 1.3 los estudiantes entran desde su curso de Moodle sin crear otra cuenta y la nota de cada evaluación llega sola al libro de calificaciones.</p>
+
+      <h2 class="au-form-h2">Paso 1 · En Moodle, crea la herramienta</h2>
+      <p class="au-muted">Administración del sitio → Plugins → Actividades → Herramienta externa → <em>Gestionar herramientas</em> → <em>configurar una herramienta manualmente</em>. Copia estos datos:</p>
+      <dl id="ls-config" class="au-kv"></dl>
+      <p class="au-muted">Marca también: <em>Versión LTI</em> = LTI 1.3 · <em>Tipo de clave pública</em> = URL del conjunto de claves (keyset) · <em>Soporta Deep Linking</em> · en <em>Servicios</em>: <em>IMS LTI Assignment and Grade Services</em> = “Usar este servicio para la sincronización de calificaciones y la gestión de columnas” · <em>Privacidad</em>: compartir el nombre del usuario · <em>Contenedor de lanzamiento predeterminado</em> = <strong>Nueva ventana</strong> (la cámara no funciona dentro de un iframe).</p>
+
+      <h2 class="au-form-h2">Paso 2 · Registra tu Moodle aquí</h2>
+      <p class="au-muted">Después de guardar, en Moodle pulsa <em>Ver detalles de configuración</em> de la herramienta y copia los valores.</p>
+
+      <form id="ls-form" class="au-form">
+        <label>URL de tu Moodle <small>(rellena las direcciones automáticamente)</small>
+          <input id="ls-moodle" class="au-input" placeholder="https://moodle.miescuela.edu.ec" autocomplete="url">
+        </label>
+        <label>Nombre<input id="ls-name" class="au-input" required maxlength="120" placeholder="Moodle de mi institución"></label>
+        <label>ID de la plataforma (issuer)<input id="ls-issuer" class="au-input" required maxlength="255"></label>
+        <label>ID de cliente (client ID)<input id="ls-client" class="au-input" required maxlength="255"></label>
+        <label>ID de despliegue (deployment ID)<input id="ls-deployment" class="au-input" required maxlength="255"></label>
+        <label>URL de la solicitud de autenticación<input id="ls-auth" class="au-input" required type="url"></label>
+        <label>URL del token de acceso<input id="ls-token" class="au-input" required type="url"></label>
+        <label>URL del conjunto de claves públicas<input id="ls-jwks" class="au-input" required type="url"></label>
+        <label>Token de administrador <small>(si el servidor tiene ADMIN_TOKEN)</small>
+          <input id="ls-admin" class="au-input" type="password" autocomplete="off">
+        </label>
+        <div class="au-row"><button class="au-btn au-btn-primary" type="submit">Registrar plataforma</button></div>
+      </form>
+
+      <h2 class="au-form-h2">Plataformas registradas</h2>
+      <ul id="ls-platforms" class="au-platforms"><li class="au-muted">Cargando…</li></ul>
+
+      <h2 class="au-form-h2">Paso 3 · Usarlo en un curso</h2>
+      <p class="au-muted">En el curso: <em>Agregar una actividad</em> → la herramienta HandsOnEdu → <em>Seleccionar contenido</em> → elige las unidades. Cada unidad crea su columna de calificación (0–100) con la mejor nota del estudiante en la evaluación.</p>
+    </div>
+  </section>
+
+  <div id="au-toast" class="au-toast" role="status" hidden></div>
+  <script src="/static/js/lti-setup.js"></script>
+</body>
+</html>

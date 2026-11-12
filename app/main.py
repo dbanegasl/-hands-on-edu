@@ -14,11 +14,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from app.api import learning, pages, signs, ws
+from app.api import learning, lti, pages, signs, ws
 from app.config import settings
 from app.db import init_db
 
-APP_VERSION = "0.10.0"
+APP_VERSION = "0.11.0"
 
 # Python's mimetypes has no entry for .mjs on slim images; ES-module imports
 # are rejected by browsers unless served with a JavaScript MIME type.
@@ -58,6 +58,7 @@ app.include_router(pages.router)
 app.include_router(ws.router)
 app.include_router(signs.router)
 app.include_router(learning.router)
+app.include_router(lti.router)
 
 
 @app.get("/health", tags=["sistema"])

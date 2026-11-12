@@ -14,6 +14,7 @@
   const PARAMS = new URLSearchParams(location.search);
   const LANG = PARAMS.get('lang') || 'lsec';
   const UNLOCK_ALL = PARAMS.get('unlock') === 'all';
+  const SS_LTI = 'ho.lti.token';
   const MODULE = 'aula_senas';
   const MIN_CONFIDENCE = 0.6;
   const RING_CIRC = 2 * Math.PI * 52;
@@ -35,6 +36,8 @@
     progress: null, sessions: [], status: [], passed: new Set(),
     stream: null, source: null, anim: null, lastHands: [],
     act: null, lastWord: null,
+    teacher: UNLOCK_ALL,
+    lti: null,               // {token, launch} when opened from an LMS (LTI 1.3)
   };
   const audio = typeof AudioFeedback === 'function' ? new AudioFeedback() : null;
   const $ = (id) => document.getElementById(id);
@@ -56,7 +59,12 @@
   }
 
   async function api(path, opts) {
-    const res = await fetch(path, Object.assign({ headers: { 'Content-Type': 'application/json' } }, opts || {}));
+    const headers = { 'Content-Type': 'application/json' };
+    if (A.lti) headers.Authorization = 'Bearer ' + A.lti.token;
+    const res = await fetch(path, Object.assign({ headers: headers }, opts || {}));
+    if (res.status === 401 && A.lti) {
+      toast('Tu sesión de la plataforma expiró: vuelve a abrir la actividad desde Moodle', true);
+    }
     if (!res.ok) {
       let detail = res.statusText;
       try { const j = await res.json(); detail = typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail); } catch (_) { /* */ }
@@ -75,6 +83,78 @@
     window.scrollTo(0, 0);
   }
 
+  // ── LTI (opened from Moodle) ───────────────────────────────────────────────
+
+  /** Launch token from the URL fragment (#lti=…), kept per tab; removed from the address bar. */
+  function readLtiToken() {
+    const m = /(?:^|[#&])lti=([^&]+)/.exec(location.hash);
+    if (m) {
+      try { sessionStorage.setItem(SS_LTI, m[1]); } catch (_) { /* storage blocked */ }
+      history.replaceState(null, '', location.pathname + location.search);
+      return m[1];
+    }
+    try { return sessionStorage.getItem(SS_LTI); } catch (_) { return null; }
+  }
+
+  async function bootLti(token) {
+    A.lti = { token: token, launch: null };
+    try {
+      const me = await api('/api/lti/me');
+      A.lti.launch = me.launch;
+      A.teacher = UNLOCK_ALL || me.launch.is_instructor;
+      await selectLearner(me.learner);
+      return true;
+    } catch (err) {
+      A.lti = null;
+      try { sessionStorage.removeItem(SS_LTI); } catch (_) { /* */ }
+      if (err.status !== 401) toast('No se pudo conectar con la plataforma: ' + err.message, true);
+      return false;
+    }
+  }
+
+  function renderLtiBanner() {
+    const el = $('au-lti');
+    const l = A.lti && A.lti.launch;
+    el.hidden = !l;
+    if (!l) return;
+    const unit = l.unit && A.status.find((u) => u.unit.id === l.unit);
+    const where = [l.context_title, l.resource_link_title].filter(Boolean).join(' · ');
+    let text = '🎓 Conectado desde ' + (l.platform || 'tu plataforma educativa') + (where ? ': ' + where : '') + '.';
+    if (unit) text += ' Actividad: ' + unit.unit.title + '.';
+    if (l.graded) {
+      text += unit
+        ? ' Tu mejor nota en la evaluación de esta unidad se envía al libro de calificaciones.'
+        : ' Tu mejor nota en las evaluaciones se envía al libro de calificaciones.';
+    }
+    if (l.is_instructor) text += ' Modo docente: todas las unidades están abiertas.';
+    el.textContent = text;
+  }
+
+  async function syncGrade(sessionId) {
+    const el = $('au-res-lms');
+    el.hidden = false;
+    el.className = 'au-res-lms';
+    el.textContent = '⏳ Enviando tu nota a la plataforma…';
+    for (let i = 0; i < 6; i++) {
+      let g;
+      try { g = await api('/api/lti/sessions/' + sessionId + '/grade'); } catch (_) { break; }
+      if (g.status === 'none') { await new Promise((r) => setTimeout(r, 1000)); continue; }
+      if (g.status === 'sent') {
+        el.className = 'au-res-lms ok';
+        el.textContent = '✔ Nota enviada a la plataforma: ' + g.score_given + '/' + g.score_maximum;
+      } else if (g.status === 'skipped') {
+        el.textContent = 'ℹ️ ' + g.detail + '.';
+      } else if (g.status === 'failed') {
+        el.className = 'au-res-lms bad';
+        el.textContent = '⚠️ No se pudo enviar la nota a la plataforma. Tu resultado quedó guardado; avisa a tu docente.';
+      } else {
+        el.hidden = true;
+      }
+      return;
+    }
+    el.textContent = 'ℹ️ Tu nota se enviará a la plataforma en unos momentos.';
+  }
+
   // ── Boot & profile ─────────────────────────────────────────────────────────
 
   async function boot() {
@@ -89,6 +169,9 @@
     const banner = $('au-validation');
     banner.hidden = !catalog.language.validation_note;
     banner.textContent = '⚠️ ' + (catalog.language.validation_note || '');
+
+    const ltiToken = readLtiToken();
+    if (ltiToken && await bootLti(ltiToken)) return;
 
     renderProfiles();
     const current = lsGet(LS_CURRENT, null);
@@ -146,11 +229,18 @@
 
   async function selectLearner(learner) {
     A.learner = learner;
-    lsSet(LS_CURRENT, learner.id);
     const el = $('au-learner');
     el.hidden = false;
-    el.textContent = '👤 ' + learner.display_name;
-    el.title = 'Cambiar de perfil';
+    if (A.lti) {
+      el.textContent = '🎓 ' + learner.display_name;
+      el.title = 'Conectado desde la plataforma educativa';
+      el.style.cursor = 'default';
+    } else {
+      lsSet(LS_CURRENT, learner.id);
+      el.textContent = '👤 ' + learner.display_name;
+      el.title = 'Cambiar de perfil';
+      el.style.cursor = 'pointer';
+    }
     await goPath();
   }
 
@@ -168,14 +258,17 @@
     A.passed = C.passedUnits(sessions);
     const mastery = {};
     for (const s of progress.signs) mastery[s.sign_id] = s.mastery;
-    A.status = C.unitStatus(A.catalog, A.recognizer, mastery, A.passed, { unlockAll: UNLOCK_ALL });
+    A.status = C.unitStatus(A.catalog, A.recognizer, mastery, A.passed, { unlockAll: A.teacher, open: A.lti && A.lti.launch && A.lti.launch.unit ? [A.lti.launch.unit] : [] });
     renderPath(mastery);
     show('screen-path');
+    const focus = document.querySelector('.au-unit.focus');
+    if (focus) focus.scrollIntoView({ block: 'center' });
   }
 
   function renderPath(mastery) {
     $('au-path-sub').textContent = 'Hola, ' + A.learner.display_name + '. Practica cada unidad y aprueba su evaluación para avanzar.'
-      + (UNLOCK_ALL ? ' (Modo docente: todo desbloqueado)' : '');
+      + (A.teacher && !A.lti ? ' (Modo docente: todo desbloqueado)' : '');
+    renderLtiBanner();
     $('au-stat-mastered').textContent = String(A.progress.signs_mastered);
     $('au-stat-units').textContent = String(A.passed.size);
     $('au-stat-attempts').textContent = String(A.progress.total_attempts);
@@ -196,7 +289,8 @@
     box.innerHTML = '';
     A.status.forEach((st, i) => {
       const card = document.createElement('article');
-      card.className = 'au-unit' + (st.passed ? ' passed' : '') + (st.locked ? ' locked' : '') + (!st.playable ? ' soon' : '');
+      const focus = A.lti && A.lti.launch && A.lti.launch.unit === st.unit.id;
+      card.className = 'au-unit' + (st.passed ? ' passed' : '') + (st.locked ? ' locked' : '') + (!st.playable ? ' soon' : '') + (focus ? ' focus' : '');
       const head = document.createElement('div');
       head.className = 'au-unit-head';
       const num = document.createElement('div');
@@ -347,7 +441,7 @@
     $('au-timer').hidden = !act.cfg.timeoutMs;
     $('au-btn-skip').disabled = act.cfg.skipAfterMs > 0;
     const media = $('au-media');
-    const info = act.cfg.info ? C.mediaInfo(s, { teacher: UNLOCK_ALL }) : null;
+    const info = act.cfg.info ? C.mediaInfo(s, { teacher: A.teacher }) : null;
     const showMedia = !!(info && info.show);
     $('au-media-box').hidden = !showMedia;
     if (showMedia) {
@@ -508,7 +602,9 @@
       li.textContent = (r && r.correct ? '✔ ' : '✘ ') + sign(id).gloss;
       list.appendChild(li);
     });
+    $('au-res-lms').hidden = true;
     show('screen-results');
+    if (A.lti && act.mode === 'quiz') syncGrade(act.sessionId);
   }
 
   async function exitActivity() {
@@ -587,8 +683,10 @@
     ctx = canvas.getContext('2d');
 
     $('au-profile-form').addEventListener('submit', createProfile);
-    $('au-learner').addEventListener('click', () => { stopCamera(); A.act = null; renderProfiles(); show('screen-profile'); });
-    $('au-learner').style.cursor = 'pointer';
+    $('au-learner').addEventListener('click', () => {
+      if (A.lti) return; // identity comes from the LMS
+      stopCamera(); A.act = null; renderProfiles(); show('screen-profile');
+    });
     $('au-btn-review').addEventListener('click', () => startActivity('review'));
     $('au-btn-spell').addEventListener('click', () => startActivity('spell'));
     $('au-btn-exit').addEventListener('click', exitActivity);

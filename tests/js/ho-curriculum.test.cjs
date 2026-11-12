@@ -67,6 +67,12 @@ test('unitStatus skips non-playable units when chaining locks', () => {
   assert.equal(st.find((u) => u.unit.id === 'u6').locked, false);
 });
 
+test('unitStatus keeps units assigned by the LMS open', () => {
+  const st = C.unitStatus(CATALOG, rec(), {}, new Set(), { open: ['u6'] });
+  assert.equal(st.find((u) => u.unit.id === 'u6').locked, false);
+  assert.equal(st.find((u) => u.unit.id === 'u2').locked, true);
+});
+
 test('unitStatus averages mastery over available signs', () => {
   const st = C.unitStatus(CATALOG, rec(), { a: 1, e: 0.5, i: 0.9 }, new Set());
   const u1 = st.find((u) => u.unit.id === 'u1');

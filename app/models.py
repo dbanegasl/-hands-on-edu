@@ -8,11 +8,15 @@ ORM models.
 - SignTemplate     — reference recording of a sign made by a teacher. Raw
                      landmarks are stored (not features) so the feature
                      extractor can evolve without migrating data.
+- Lti*             — LTI 1.3 (REQ-019): tool keys, registered platforms and
+                     deployments, one-time OIDC login states, launches, the
+                     launch a session belongs to, and AGS score submissions.
+                     New tables only, so create_all works on existing DBs.
 """
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import TypeDecorator
 
@@ -108,4 +112,111 @@ class SignTemplate(Base):
     # [{t: ms, hands: [{handedness, landmarks: [[x,y,z]*21], world: [[x,y,z]*21] | null}]}]
     frames: Mapped[list] = mapped_column(JSON)
     author: Mapped[str | None] = mapped_column(String(120))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now)
+
+
+# ── LTI 1.3 ─────────────────────────────────────────────────────────────────
+
+
+class LtiKey(Base):
+    """RSA key pair of the tool: signs client assertions, deep-linking
+    responses and the app's own launch tokens; published at /lti/jwks."""
+
+    __tablename__ = "lti_keys"
+
+    kid: Mapped[str] = mapped_column(String(64), primary_key=True)
+    private_pem: Mapped[str] = mapped_column(Text)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now)
+
+
+class LtiPlatform(Base):
+    """A registered LMS (e.g. one Moodle site) — one row per issuer + client_id."""
+
+    __tablename__ = "lti_platforms"
+    __table_args__ = (UniqueConstraint("issuer", "client_id"),)
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(120))
+    issuer: Mapped[str] = mapped_column(String(255), index=True)
+    client_id: Mapped[str] = mapped_column(String(255))
+    auth_login_url: Mapped[str] = mapped_column(String(500))
+    auth_token_url: Mapped[str] = mapped_column(String(500))
+    jwks_url: Mapped[str] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now)
+
+    deployments: Mapped[list["LtiDeployment"]] = relationship(
+        back_populates="platform", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+
+class LtiDeployment(Base):
+    __tablename__ = "lti_deployments"
+    __table_args__ = (UniqueConstraint("platform_id", "deployment_id"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    platform_id: Mapped[str] = mapped_column(ForeignKey("lti_platforms.id", ondelete="CASCADE"), index=True)
+    deployment_id: Mapped[str] = mapped_column(String(255))
+
+    platform: Mapped[LtiPlatform] = relationship(back_populates="deployments")
+
+
+class LtiLoginState(Base):
+    """OIDC third-party login: one-time `state` + `nonce`, short-lived."""
+
+    __tablename__ = "lti_login_states"
+
+    state: Mapped[str] = mapped_column(String(64), primary_key=True)
+    nonce: Mapped[str] = mapped_column(String(64))
+    platform_id: Mapped[str] = mapped_column(ForeignKey("lti_platforms.id", ondelete="CASCADE"))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now)
+
+
+class LtiLaunch(Base):
+    """One validated launch: who, from which course/activity, with which grading endpoint."""
+
+    __tablename__ = "lti_launches"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    platform_id: Mapped[str] = mapped_column(ForeignKey("lti_platforms.id", ondelete="CASCADE"), index=True)
+    learner_id: Mapped[str] = mapped_column(ForeignKey("learners.id", ondelete="CASCADE"), index=True)
+    user_sub: Mapped[str] = mapped_column(String(255))
+    deployment_id: Mapped[str] = mapped_column(String(255))
+    message_type: Mapped[str] = mapped_column(String(40))
+    roles: Mapped[list] = mapped_column(JSON, default=list)
+    is_instructor: Mapped[bool] = mapped_column(Boolean, default=False)
+    context_id: Mapped[str | None] = mapped_column(String(255))
+    context_title: Mapped[str | None] = mapped_column(String(255))
+    resource_link_id: Mapped[str | None] = mapped_column(String(255))
+    resource_link_title: Mapped[str | None] = mapped_column(String(255))
+    custom: Mapped[dict | None] = mapped_column(JSON)
+    ags_lineitem: Mapped[str | None] = mapped_column(String(500))
+    ags_scopes: Mapped[list | None] = mapped_column(JSON)
+    # Deep linking request settings (return URL + opaque data), when applicable.
+    deep_linking: Mapped[dict | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now)
+
+
+class LtiSessionLink(Base):
+    """Activity session started inside an LTI launch (its grade goes back to the LMS)."""
+
+    __tablename__ = "lti_session_links"
+
+    session_id: Mapped[str] = mapped_column(ForeignKey("activity_sessions.id", ondelete="CASCADE"), primary_key=True)
+    launch_id: Mapped[str] = mapped_column(ForeignKey("lti_launches.id", ondelete="CASCADE"), index=True)
+
+
+class LtiScoreSubmission(Base):
+    """Audit of every AGS score publish (status: sent | skipped | failed)."""
+
+    __tablename__ = "lti_score_submissions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[str] = mapped_column(ForeignKey("activity_sessions.id", ondelete="CASCADE"), index=True)
+    launch_id: Mapped[str] = mapped_column(ForeignKey("lti_launches.id", ondelete="CASCADE"), index=True)
+    score_given: Mapped[float] = mapped_column(Float)
+    score_maximum: Mapped[float] = mapped_column(Float)
+    status: Mapped[str] = mapped_column(String(10))
+    http_status: Mapped[int | None] = mapped_column(Integer)
+    detail: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now)

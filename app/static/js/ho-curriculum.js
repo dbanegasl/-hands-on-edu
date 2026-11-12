@@ -72,10 +72,12 @@
    *
    * Units with no recognizable sign are "próximamente" (not playable) and do
    * not block the path. A playable unit unlocks when the previous playable
-   * unit has been passed.
+   * unit has been passed. `opts.open` lists units that are always open (e.g.
+   * the unit an LMS activity assigns), and `opts.unlockAll` opens every unit.
    */
   function unitStatus(catalog, recognizer, masteryById, passed, opts) {
     opts = opts || {};
+    const open = new Set(opts.open || []);
     const out = [];
     let prevPassed = true;
     for (const unit of catalog.units || []) {
@@ -85,7 +87,7 @@
       const mastery = ms.length ? ms.reduce((a, b) => a + b, 0) / ms.length : 0;
       const playable = available.length > 0;
       const isPassed = passed ? passed.has(unit.id) : false;
-      const locked = playable && !opts.unlockAll && !prevPassed;
+      const locked = playable && !opts.unlockAll && !open.has(unit.id) && !prevPassed;
       out.push({
         unit: unit, available: available, pending: pending, mastery: mastery,
         mastered: ms.filter((m) => m >= MASTERED).length,
