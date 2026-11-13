@@ -87,7 +87,7 @@ Repite la prueba de [02 · Moodle local](./02-moodle-local.md#4-prueba-completa-
 | Semana | Qué hacer | Qué medir |
 |---|---|---|
 | 0 | Contenido validado de 1–2 unidades ([04](./04-contenido-lsec.md)); sesión con docentes ([05](./05-guia-docente.md)) | — |
-| 1 | Clase guiada en laboratorio: todos entran desde Moodle a la Unidad 1 | ¿Cuántos activaron la cámara a la primera? ¿Equipos lentos? |
+| 1 | **Antes de la clase:** abrir `/diagnostico` en cada equipo (el enlace con la sala se copia desde el panel, tarjeta *Equipos del laboratorio*) y resolver los ✗. Después, clase guiada en el laboratorio: todos entran desde Moodle a la Unidad 1 | Panel → *Equipos del laboratorio*: **cámara a la primera**, equipos lentos o no aptos |
 | 2–3 | Práctica autónoma y evaluaciones | Notas recibidas en Moodle vs. evaluaciones hechas; señas que el sistema no reconoce bien |
 | 4 | Entrevista breve a docentes y a 3–5 estudiantes; revisión con el intérprete | Señas a regrabar o a corregir en el catálogo |
 

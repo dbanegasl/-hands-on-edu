@@ -18,6 +18,7 @@ PAGES = {
     "/aula": "aula.html",
     "/panel": "panel.html",
     "/privacidad": "privacidad.html",
+    "/diagnostico": "diagnostico.html",
 }
 
 

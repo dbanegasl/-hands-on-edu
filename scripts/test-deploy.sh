@@ -8,7 +8,9 @@
 # running as the unprivileged app user;
 # update → hot backup of the SQLite DB; a version that does not come up as itself
 # → automatic rollback, keeping the database if the schema is unchanged and
-# restoring the pre-update backup if that version had migrated it.
+# restoring the pre-update backup if that version had migrated it; going back
+# to a version older than the schema → refused with instructions, then done
+# with RESTORE_BACKUP=1 from the right backup.
 set -euo pipefail
 
 IMAGE="${1:-handsonedu:ci}"
@@ -23,7 +25,7 @@ cleanup() {
   # data/ is written by the container (root): remove it from inside one.
   docker run --rm -v "$WORK:/w" --entrypoint rm "$IMAGE" -rf /w/data >/dev/null 2>&1 || true
   rm -rf "$WORK"
-  docker rmi "$TEST_IMAGE:$VERSION" "$TEST_IMAGE:9.9.9" "$TEST_IMAGE:9.9.8" >/dev/null 2>&1 || true
+  docker rmi "$TEST_IMAGE:$VERSION" "$TEST_IMAGE:9.9.9" "$TEST_IMAGE:9.9.8" "$TEST_IMAGE:9.9.7" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 fail() { echo "✗ $*" >&2; exit 1; }
@@ -58,6 +60,12 @@ def downgrade():
 MIGRATION
 printf 'FROM %s\nCOPY 9998_deploy_test.py /app/app/migrations/versions/\n' "$IMAGE" > "$WORK/img/Dockerfile"
 docker build -q -t "$TEST_IMAGE:9.9.8" "$WORK/img" >/dev/null
+
+# 9.9.7: a healthy newer version with a schema migration (to test going back).
+mkdir -p "$WORK/img7"
+sed 's/9998/9997/g; s/deploy_test_marker/deploy_test_newer/g' "$WORK/img/9998_deploy_test.py" > "$WORK/img7/9997_newer.py"
+printf 'FROM %s\nCOPY 9997_newer.py /app/app/migrations/versions/\nRUN sed -i "s/^APP_VERSION = .*/APP_VERSION = \\"9.9.7\\"/" /app/app/main.py\n' "$IMAGE" > "$WORK/img7/Dockerfile"
+docker build -q -t "$TEST_IMAGE:9.9.7" "$WORK/img7" >/dev/null
 
 cd "$WORK"
 env_version() { sed -n 's/^HANDSONEDU_VERSION=//p' .env; }
@@ -103,7 +111,24 @@ if HEALTH_TIMEOUT=30 ./deploy.sh 9.9.8; then fail "9.9.8 should not deploy"; fi
 [ -z "$(sql "SELECT name FROM sqlite_master WHERE name='deploy_test_marker'")" ] || fail "migrated table still present"
 [ "$(sql "SELECT display_name FROM learners WHERE id='deploytest'")" = Ana ] || fail "data lost on restore"
 
-echo "── 4. bad input is rejected before touching anything"
+echo "── 4. going back to a version older than the database schema"
+./deploy.sh 9.9.7 || fail "9.9.7 should deploy"
+[ "$(sql 'SELECT version_num FROM alembic_version')" = 9997 ] || fail "9.9.7 did not migrate"
+sql "INSERT INTO learners (id, display_name, created_at) VALUES ('after797', 'Luis', '2026-01-02')" >/dev/null
+if out="$(./deploy.sh "$VERSION" 2>&1)"; then echo "$out"; fail "going back across a migration must be refused"; fi
+echo "$out" | tail -n 6
+grep -q "RESTORE_BACKUP=1" <<<"$out" || fail "no instructions to go back"
+[ "$(env_version)" = 9.9.7 ] || fail "refusal changed HANDSONEDU_VERSION"
+[ "$(sql "SELECT display_name FROM learners WHERE id='after797'")" = Luis ] || fail "refusal touched the database"
+RESTORE_BACKUP=1 ./deploy.sh "$VERSION" || fail "RESTORE_BACKUP=1 should go back"
+[ "$(sql 'SELECT version_num FROM alembic_version')" = "$HEAD" ] || fail "schema not back to $HEAD"
+[ "$(sql "SELECT display_name FROM learners WHERE id='deploytest'")" = Ana ] || fail "data from before 9.9.7 lost"
+[ -z "$(sql "SELECT id FROM learners WHERE id='after797'")" ] || fail "restored the wrong backup"
+docker compose exec -T hands-on-edu sh -c 'ls /app/data/backups/handsonedu-*-before-'"$VERSION"'.db' >/dev/null \
+  || fail "no copy of the database that was replaced"
+[ -z "$(docker compose exec -T hands-on-edu find /app/data \! -user app)" ] || fail "restored database not owned by the app user"
+
+echo "── 5. bad input is rejected before touching anything"
 if ./deploy.sh 'latest; true' 2>/dev/null; then fail "unvalidated version accepted"; fi
 
-echo "✔ deploy.sh: install, migrations, backup, rollback (with schema restore) and input validation OK"
+echo "✔ deploy.sh: install, migrations, backup, rollback (with schema restore), going back across a migration and input validation OK"

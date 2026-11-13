@@ -91,6 +91,23 @@
         </div>
         <div id="pn-modules" class="pn-modules"></div>
       </section>
+
+      <section class="pn-card" id="pn-devices-card" aria-labelledby="pn-h-devices" hidden>
+        <div class="pn-card-head">
+          <h2 id="pn-h-devices">Equipos del laboratorio</h2>
+          <span class="au-muted pn-small">Resultado del <a href="/diagnostico" target="_blank" rel="noopener">diagnóstico</a> en los últimos 7 días</span>
+        </div>
+        <div class="pn-dev-bar">
+          <label class="pn-small">Sala
+            <select id="pn-dev-room" class="au-input pn-select"><option value="">Todas</option></select>
+          </label>
+          <a id="pn-dev-open" class="au-btn au-btn-ghost" href="/diagnostico" target="_blank" rel="noopener">🩺 Abrir el diagnóstico</a>
+          <button id="pn-dev-copy" class="au-btn au-btn-ghost" type="button">Copiar enlace para los equipos</button>
+        </div>
+        <div id="pn-dev-tiles" class="pn-tiles"></div>
+        <div class="pn-grid-wrap"><table id="pn-dev-table" class="pn-dev-table"></table></div>
+        <p id="pn-dev-empty" class="au-muted" hidden>Todavía no se ha probado ningún equipo. Antes de la clase, abre el diagnóstico en cada equipo del laboratorio (con el enlace de arriba ya lleva la sala).</p>
+      </section>
     </div>
   </main>
 
@@ -110,6 +127,7 @@
   <div id="pn-tip" class="pn-tip" role="tooltip" hidden></div>
   <div id="au-toast" class="au-toast" role="status" hidden></div>
 
+  <script src="/static/js/diagnostico.js"></script>
   <script src="/static/js/panel.js"></script>
 </body>
 </html>
