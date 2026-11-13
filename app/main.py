@@ -23,7 +23,7 @@ from app.api import attendance, diagnostics, learning, lti, pages, panel, privac
 from app.config import settings
 from app.db import init_db
 
-APP_VERSION = "0.21.0"
+APP_VERSION = "0.21.1"
 
 # Python's mimetypes has no entry for .mjs on slim images; ES-module imports
 # are rejected by browsers unless served with a JavaScript MIME type.

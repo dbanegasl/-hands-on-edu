@@ -84,6 +84,8 @@ Repite la prueba de [02 · Moodle local](./02-moodle-local.md#4-prueba-completa-
 
 ## 6. Piloto con un grupo real (2–4 semanas)
 
+Todo el material está en el **[09 · Kit del piloto](./09-kit-piloto/README.md)**: calendario, guion de la clase guiada, registro de incidencias, encuestas, revisión del intérprete e informe final con criterios de éxito.
+
 | Semana | Qué hacer | Qué medir |
 |---|---|---|
 | 0 | Contenido validado de 1–2 unidades ([04](./04-contenido-lsec.md)); sesión con docentes ([05](./05-guia-docente.md)) | — |
@@ -91,7 +93,7 @@ Repite la prueba de [02 · Moodle local](./02-moodle-local.md#4-prueba-completa-
 | 2–3 | Práctica autónoma y evaluaciones | Notas recibidas en Moodle vs. evaluaciones hechas; señas que el sistema no reconoce bien |
 | 4 | Entrevista breve a docentes y a 3–5 estudiantes; revisión con el intérprete | Señas a regrabar o a corregir en el catálogo |
 
-Registra los problemas con: fecha, curso, estudiante (usuario de Moodle), navegador y equipo, y captura de pantalla.
+Registra los problemas en el [registro de incidencias](./09-kit-piloto/2-registro-incidencias.md) (`incidencias.csv`).
 
 ## 7. Lista para salir a producción
 
