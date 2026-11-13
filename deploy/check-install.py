@@ -22,6 +22,7 @@ import email.utils
 import http.client
 import json
 import os
+import re
 import socket
 import ssl
 import sys
@@ -146,6 +147,33 @@ class Report:
 
 # ── Checks ───────────────────────────────────────────────────────────────────
 
+LEGACY_ENGINE = "/vendor/mediapipe/"
+
+
+def engine_prefix(base):
+    """Where this install serves the hand engine: /vendor/mediapipe@<version>/ (≥ 0.23) or the old path."""
+    try:
+        status, _, body = fetch(base + "/static/js/ho-hands.js")
+    except Unreachable:
+        return LEGACY_ENGINE
+    m = re.search(r"MP_VERSION = '([^']+)'", body.decode("utf-8", "replace")) if status == 200 else None
+    if m and "'/vendor/mediapipe@' + MP_VERSION" in body.decode("utf-8", "replace"):
+        return "/vendor/mediapipe@{}/".format(m.group(1))
+    return LEGACY_ENGINE
+
+
+def delivery_issues(headers):
+    """What makes every lab computer download a big file again: no compression, no caching."""
+    issues = []
+    if (headers.get("Content-Encoding") or "").lower() != "gzip":
+        issues.append("sin comprimir")
+    cc = (headers.get("Cache-Control") or "").lower()
+    m = re.search(r"max-age=(\d+)", cc)
+    if "no-store" in cc or not m or int(m.group(1)) < 86400:
+        issues.append("sin caché en el navegador")
+    return issues
+
+
 def check_site(r, base, admin_token, allow_http):
     r.section("HandsOnEdu · " + base)
     if base.startswith("https://"):
@@ -248,14 +276,15 @@ def check_site(r, base, admin_token, allow_http):
     except (Unreachable, ValueError) as e:
         r.warn("No se pudo leer /api/privacy: {}".format(e))
 
+    prefix = engine_prefix(base)
     assets = [
-        ("/vendor/mediapipe/vision_bundle.mjs", "javascript", True, "módulo JS de MediaPipe"),
-        ("/vendor/mediapipe/wasm/vision_wasm_internal.wasm", "application/wasm", False, "WASM de MediaPipe"),
+        (prefix + "vision_bundle.mjs", "javascript", True, "módulo JS de MediaPipe"),
+        (prefix + "wasm/vision_wasm_internal.wasm", "application/wasm", False, "WASM de MediaPipe"),
         ("/models/hand_landmarker.task", None, True, "modelo de manos"),
     ]
     for path, ctype, required, label in assets:
         try:
-            status, headers, body = fetch(base + path, timeout=60)
+            status, headers, body = fetch(base + path, headers={"Accept-Encoding": "gzip"}, timeout=60)
         except Unreachable as e:
             r.fail("No se pudo descargar el {}: {}".format(label, e))
             continue
@@ -268,7 +297,16 @@ def check_site(r, base, admin_token, allow_http):
             fix = "El proxy está cambiando el Content-Type: no lo sobrescribas para /vendor/"
             (r.fail if required else r.warn)(msg, fix)
         else:
-            r.ok("{} ({:.1f} MB, {})".format(label[0].upper() + label[1:], len(body) / 1e6, got.split(";")[0] or "ok"))
+            size = "{:.1f} MB".format(len(body) / 1e6) if len(body) >= 1e6 else "{:.0f} KB".format(len(body) / 1e3)
+            r.ok("{} ({}, {})".format(label[0].upper() + label[1:], size, got.split(";")[0] or "ok"))
+            issues = delivery_issues(headers)
+            if issues and prefix != LEGACY_ENGINE:  # old versions get one «update» warning below
+                r.warn("El {} llega {}".format(label, " y ".join(issues)),
+                       "Con 30 equipos a la vez cada uno lo descarga entero: no quites Content-Encoding ni "
+                       "Cache-Control en el proxy (deployment.md, «Laboratorio»)")
+    if prefix == LEGACY_ENGINE:
+        r.warn("Esta versión sirve el motor sin versión en la URL: el navegador no lo guarda de forma fiable",
+               "Actualiza HandsOnEdu (≥ 0.23) antes de usar un laboratorio completo")
 
     try:
         payload = json.dumps({"padding": "x" * BODY_PROBE_BYTES}).encode()

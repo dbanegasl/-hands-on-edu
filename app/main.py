@@ -17,13 +17,14 @@ from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
 
 from app.api import attendance, diagnostics, learning, lti, pages, panel, privacy, reviews, signs, ws
 from app.config import settings
 from app.db import init_db
+from app.http_cache import IMMUTABLE, LONG, REVALIDATE, CachedStaticFiles, vendored_mediapipe_version
 
-APP_VERSION = "0.22.0"
+APP_VERSION = "0.23.0"
 
 # Python's mimetypes has no entry for .mjs on slim images; ES-module imports
 # are rejected by browsers unless served with a JavaScript MIME type.
@@ -53,11 +54,23 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# Compress pages, app JS/CSS and JSON on the fly (files precompressed at build
+# time and the cached JSON already carry Content-Encoding and are left alone).
+app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=6)
+
+app.mount("/static", CachedStaticFiles(directory="app/static", cache_control=REVALIDATE), name="static")
 # MediaPipe Tasks JS bundle + WASM (vendored at build time) and the landmark
 # model, so the in-browser engine works on school networks without CDN access.
-app.mount("/vendor", StaticFiles(directory=settings.vendor_dir, check_dir=False), name="vendor")
-app.mount("/models", StaticFiles(directory=settings.models_dir, check_dir=False), name="models")
+# The engine is served under its version so browsers keep it for a year; a
+# release with another version changes the URL (ho-hands.js MP_VERSION).
+MEDIAPIPE_VERSION = vendored_mediapipe_version(settings.vendor_dir)
+if MEDIAPIPE_VERSION:
+    app.mount(f"/vendor/mediapipe@{MEDIAPIPE_VERSION}",
+              CachedStaticFiles(directory=settings.vendor_dir / "mediapipe", cache_control=IMMUTABLE, precompressed=True),
+              name="mediapipe")
+app.mount("/vendor", CachedStaticFiles(directory=settings.vendor_dir, check_dir=False, precompressed=True), name="vendor")
+app.mount("/models", CachedStaticFiles(directory=settings.models_dir, check_dir=False, cache_control=LONG,
+                                       precompressed=True), name="models")
 
 app.include_router(pages.router)
 app.include_router(ws.router)

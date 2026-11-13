@@ -51,3 +51,27 @@ def test_report_counts_and_exit_code(capsys):
 def test_unreachable_site_fails_cleanly(capsys):
     assert ci.main(["http://127.0.0.1:9", "--allow-http"]) == 1
     assert "No se puede abrir" in capsys.readouterr().out
+
+
+def test_delivery_issues():
+    good = {"Content-Encoding": "gzip", "Cache-Control": "public, max-age=31536000, immutable"}
+    assert ci.delivery_issues(good) == []
+    assert ci.delivery_issues({"Cache-Control": "public, max-age=2592000"}) == ["sin comprimir"]
+    assert ci.delivery_issues({"Content-Encoding": "gzip"}) == ["sin caché en el navegador"]
+    assert ci.delivery_issues({"Content-Encoding": "gzip", "Cache-Control": "no-cache"}) == ["sin caché en el navegador"]
+    assert ci.delivery_issues({"Content-Encoding": "gzip", "Cache-Control": "max-age=60"}) == ["sin caché en el navegador"]
+
+
+@pytest.mark.parametrize("js, expected", [
+    ("const MP_VERSION = '0.10.35';\nconst VENDOR_BASE = '/vendor/mediapipe@' + MP_VERSION + '/';", "/vendor/mediapipe@0.10.35/"),
+    ("const MP_VERSION = '0.10.35';\nconst VENDOR_BASE = '/vendor/mediapipe/';", "/vendor/mediapipe/"),
+])
+def test_engine_prefix(monkeypatch, js, expected):
+    monkeypatch.setattr(ci, "fetch", lambda url, **kw: (200, {}, js.encode()))
+    assert ci.engine_prefix("https://x") == expected
+
+
+def test_engine_prefix_of_the_real_file(monkeypatch):
+    js = (Path(__file__).parent.parent / "app/static/js/ho-hands.js").read_bytes()
+    monkeypatch.setattr(ci, "fetch", lambda url, **kw: (200, {}, js))
+    assert ci.engine_prefix("https://x").startswith("/vendor/mediapipe@")

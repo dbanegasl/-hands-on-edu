@@ -13,6 +13,7 @@
   2. Escribe el **puesto** (PC-01, PC-02…) y resuelve todos los ✗ con la solución que muestra cada uno.
   3. Al final, la tarjeta debe mostrar **0 no aptos**.
 - [ ] Repite el diagnóstico en los equipos que tuvieron ✗ hasta que queden ✔ o ⚠. Si alguno no se puede arreglar, retíralo o márcalo como «sin cámara».
+- [ ] El diagnóstico también **deja el motor de manos guardado en cada navegador** (unos 9 MB), y mañana no se vuelve a descargar. Si los equipos se restauran al apagarse (Deep Freeze, perfiles temporales), no se conserva: con un enlace lento, que entren por grupos ([Despliegue, «Laboratorio»](../../deployment.md#laboratorio-muchos-equipos-a-la-vez)).
 - [ ] **En Moodle**, con la cuenta de un estudiante de prueba:
   - la actividad de la Unidad 1 abre en una **pestaña nueva**;
   - la unidad aparece resaltada.

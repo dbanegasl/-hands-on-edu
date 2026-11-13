@@ -15,6 +15,47 @@
 
 ---
 
+## [0.23.0] — 2026-11-13
+
+### Rendimiento: un laboratorio completo a la vez
+
+Medición: 30 equipos abriendo el Aula a la vez, con 250 plantillas (5 por seña).
+
+| | 0.22.0 | 0.23.0 |
+|---|---|---|
+| Primera vez, por equipo | 27,0 MB | **11,7 MB** |
+| Siguientes veces, por equipo | 7,4 MB | **≈ 0** |
+| 30 equipos, servidor local | 19 s (`/health` p95 1,3 s) | **2,4 s** (p95 60 ms) |
+
+### Cambiado
+
+- **Motor de manos**: se sirve en `/vendor/mediapipe@<versión>/`.
+  - El navegador lo guarda un año; una versión nueva cambia la URL.
+  - Va **comprimido desde la construcción de la imagen** (WASM de 11,2 a 3,3 MB).
+  - El modelo de manos también se comprime (7,8 a 5,8 MB) y se guarda 30 días.
+- **Plantillas, catálogo y modelo de señas**:
+  - el servidor los genera **una sola vez** por versión del contenido, aunque lleguen 30 peticiones a la vez;
+  - los envía comprimidos;
+  - con `ETag`, una visita posterior cuesta un «sin cambios» de pocos bytes.
+- **Páginas, JS y CSS**: se comprimen y se revalidan en cada visita (`no-cache` + `ETag`). Tras una actualización nadie se queda con JS antiguo en caché.
+
+### Añadido
+
+- `deploy/lab-load-test.py`: simula N equipos abriendo el Aula a la vez contra una instalación. Indica cuánto descarga cada uno, si el servidor sigue respondiendo y cuánto tardaría según la velocidad del enlace. Solo stdlib.
+- `check-install.py` avisa si el proxy quita la compresión o la caché del motor, o si la versión instalada es anterior a esta.
+- Documentación:
+  - *Despliegue → Laboratorio* (cifras y recomendaciones);
+  - guía 03;
+  - guion de la clase guiada: la víspera, el diagnóstico deja el motor en la caché;
+  - problemas frecuentes.
+
+### Actualizar
+
+- Sin cambios de base de datos.
+- La primera visita tras actualizar vuelve a descargar el motor (cambia su URL); después queda en caché.
+
+---
+
 ## [0.22.0] — 2026-11-13
 
 ### Añadido

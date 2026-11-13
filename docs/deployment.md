@@ -111,9 +111,53 @@ server { listen 80; server_name senas.miescuela.edu.ec; return 301 https://$host
 
 El frontend arma la URL del WebSocket a partir de la página (`wss://` en HTTPS): no hay nada que cambiar en el código.
 
+**No hace falta activar compresión en el proxy** (`encode` en Caddy, `gzip` en Nginx). HandsOnEdu ya envía comprimidos el motor, el modelo, las páginas y los datos. Lo que **no** debe hacer el proxy es quitar `Content-Encoding` ni cambiar `Cache-Control` o `ETag`. `check-install.py` lo comprueba (ver «Laboratorio» más abajo).
+
+### Laboratorio: muchos equipos a la vez
+
+La primera vez que un equipo abre el Aula descarga el motor de manos y el modelo (MediaPipe), las páginas y las plantillas de las señas.
+
+**Medición** con 30 equipos, 250 plantillas (5 por seña) y la imagen 0.23.0, comparada con la 0.22.0:
+
+| | 0.22.0 | 0.23.0 |
+|---|---|---|
+| Primera vez, por equipo | 27,0 MB | **11,7 MB** |
+| Siguientes veces, por equipo | 7,4 MB (las plantillas, siempre) | **≈ 0** (el navegador pregunta y el servidor responde «sin cambios») |
+| 30 equipos a la vez, servidor local | 19 s, `/health` p95 1,3 s | **2,4 s**, `/health` p95 60 ms |
+
+Cómo lo consigue:
+
+| Qué | Caché del navegador | Compresión |
+|---|---|---|
+| Motor (`/vendor/mediapipe@<versión>/`) | 1 año: la URL cambia con la versión | Comprimido al construir la imagen (11,2 → 3,3 MB) |
+| Modelo (`/models/hand_landmarker.task`) | 30 días | Comprimido al construir la imagen (7,8 → 5,8 MB) |
+| Páginas, JS y CSS de la app | Se revalidan en cada visita (304 si no cambiaron), así una actualización nunca queda oculta | Al vuelo |
+| Catálogo, plantillas y modelo de señas | Igual, con `ETag`. El servidor los genera **una sola vez** por versión del contenido, aunque lleguen 30 peticiones juntas | Comprimidos una vez |
+
+**Lo que cuesta la primera vez es la red entre los equipos y el servidor.** Con 30 equipos son ~350 MB:
+
+| Enlace del servidor | Tiempo solo de red |
+|---|---|
+| 10 Mb/s | ~5 min |
+| 50 Mb/s | ~1 min |
+| 100 Mb/s | ~30 s |
+| Red local de 1 Gb/s (servidor en el campus) | ~3 s |
+
+Recomendaciones:
+
+1. **La víspera, pasa `/diagnostico` por todos los equipos** (kit del piloto, guion de la clase). Además de comprobarlos, deja el motor y el modelo en la caché de cada navegador, y el día de la clase ya no se descargan.
+2. **Equipos que se restauran al apagarse** (Deep Freeze, perfiles temporales, modo invitado) pierden la caché: cuenta siempre con la primera descarga. Con un enlace lento, que entren por grupos de 10, o pide a TI que la carpeta del perfil del navegador no se borre.
+3. **Mide tu instalación** fuera del horario de clase, desde la red del laboratorio:
+
+```bash
+python3 lab-load-test.py https://<dominio> --pcs 30 --link-mbps 20   # lo que bajarán 30 equipos y cuánto tardaría
+```
+
+Solo usa la biblioteca estándar de Python. Muestra cuánto descarga cada equipo la primera vez y las siguientes, si el servidor sigue respondiendo durante la carga, y el tiempo estimado según la velocidad del enlace.
+
 ### Comprobaciones después de instalar
 
-Automáticas (HTTPS, `PUBLIC_BASE_URL`, `ADMIN_TOKEN`, claves LTI, MIME del motor, límite de subida, WebSocket, hora; con `--moodle`, Moodle):
+Automáticas (HTTPS, `PUBLIC_BASE_URL`, `ADMIN_TOKEN`, claves LTI, MIME, compresión y caché del motor, límite de subida, WebSocket, hora; con `--moodle`, Moodle):
 
 ```bash
 ADMIN_TOKEN=… python3 check-install.py https://<dominio> [--moodle https://<moodle>]

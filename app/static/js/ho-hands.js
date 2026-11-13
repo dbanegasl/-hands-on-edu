@@ -22,7 +22,9 @@
   'use strict';
 
   const MP_VERSION = '0.10.35';
-  const VENDOR_BASE = '/vendor/mediapipe/';
+  // Served under its version (cached for a year by the browser); a server with
+  // another version answers 404 and the CDN copy of this version is used.
+  const VENDOR_BASE = '/vendor/mediapipe@' + MP_VERSION + '/';
   const CDN_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@' + MP_VERSION + '/';
   const MODEL_LOCAL = '/models/hand_landmarker.task';
   const MODEL_CDN = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
