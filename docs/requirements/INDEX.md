@@ -1,6 +1,6 @@
 # 📋 Índice de Requisitos — HandsOnEdu
 
-> **Última actualización:** 2026-11-11
+> **Última actualización:** 2026-11-12
 
 Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos los requisitos funcionales, mejoras y deuda técnica pendientes, con su prioridad, estado y módulo asociado.
 
@@ -37,6 +37,7 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 | [REQ-018](./REQ-018-aula-de-senas.md) | Aula de Señas: currículo, práctica y evaluación | Feature | Alta | ✅ Hecho | Aula de Señas (nuevo) |
 | [REQ-019](./REQ-019-lti13-moodle.md) | Integración LTI 1.3 con Moodle (SSO + notas AGS) | Feature | Alta | ✅ Hecho (probado con Moodle 4.5.4; falta piloto institucional) | Global / Integraciones |
 | [REQ-020](./REQ-020-videos-ia-validados.md) | Videos de referencia generados con IA y validados por intérprete | Feature | Alta | 🔄 En progreso (falta producir y validar) | Aula / Contenido LSEC |
+| [REQ-021](./REQ-021-privacidad-datos.md) | Privacidad: aviso, descarga y borrado de los datos del estudiante, plazo de conservación | Feature | Alta | ✅ Hecho (v0.20.0) | Global / Aula |
 
 ---
 
@@ -59,6 +60,7 @@ Dirección de producto (2026-11-11): plataforma de referencia para la **enseñan
     → ✅ REQ-018 (Aula de Señas) → ✅ REQ-019 (LTI 1.3 + notas en Moodle)
     → ✅ REQ-007 (panel docente) → ✅ REQ-005 (persistencia de GestiEdu/MotivaSign/AttendEye)
     → ✅ REQ-010 (clasificador entrenado con las plantillas grabadas) → ✅ REQ-011 (entrega continua)
+    → ✅ REQ-021 (privacidad y derechos sobre los datos) → piloto institucional
 ```
 
 REQ-008 (autenticación) queda cubierto mayormente por los roles de LTI 1.3. Para el uso sin LMS, `ADMIN_TOKEN` protege provisionalmente la escritura de plantillas.

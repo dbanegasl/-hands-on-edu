@@ -234,6 +234,20 @@ def check_site(r, base, admin_token, allow_http):
     except Unreachable as e:
         r.fail("No se pudo abrir /aula: {}".format(e))
 
+    try:
+        status, _, body = fetch(base + "/api/privacy")
+        if status == 200:
+            info = json.loads(body)
+            missing = [name for name, key in (("PRIVACY_CONTROLLER", "controller"), ("PRIVACY_CONTACT", "contact"))
+                       if not info.get(key)]
+            if missing:
+                r.warn("El aviso /privacidad no dice quién es el responsable de los datos ni cómo contactarlo",
+                       "Define {} en .env y reinicia (docs/onboarding/08-privacidad.md)".format(" y ".join(missing)))
+            else:
+                r.ok("Aviso de privacidad con responsable y contacto ({})".format(info["controller"]))
+    except (Unreachable, ValueError) as e:
+        r.warn("No se pudo leer /api/privacy: {}".format(e))
+
     assets = [
         ("/vendor/mediapipe/vision_bundle.mjs", "javascript", True, "módulo JS de MediaPipe"),
         ("/vendor/mediapipe/wasm/vision_wasm_internal.wasm", "application/wasm", False, "WASM de MediaPipe"),

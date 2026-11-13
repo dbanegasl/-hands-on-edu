@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacidad y tus datos | HandsOnEdu</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔒</text></svg>">
+  <link rel="stylesheet" href="/static/css/privacidad.css">
+</head>
+<body>
+  <nav class="pv-nav">
+    <a href="/" class="pv-logo">🖐️ HandsOnEdu</a>
+    <span class="pv-nav-title">🔒 Privacidad</span>
+    <a href="/aula" class="pv-back">← Aula de Señas</a>
+  </nav>
+
+  <main class="pv-main">
+    <h1>Privacidad y tus datos</h1>
+    <p class="pv-lead">
+      HandsOnEdu es una herramienta para aprender lengua de señas con la cámara.
+      Aquí explicamos qué datos guarda, quién los ve y cómo puedes descargarlos o borrarlos.
+    </p>
+
+    <aside class="pv-key" aria-label="Lo más importante">
+      <strong>📷 El video nunca sale de tu equipo.</strong>
+      Las manos se detectan dentro del navegador. Al servidor solo llegan los resultados de cada ejercicio
+      (por ejemplo, «seña A: correcta»). No se guardan imágenes, video, audio ni correos electrónicos.
+    </aside>
+
+    <section aria-labelledby="pv-mine-title" class="pv-card pv-mine">
+      <h2 id="pv-mine-title">Tus datos en este equipo</h2>
+      <p id="pv-mine-empty" class="pv-muted">Este navegador no tiene perfiles de HandsOnEdu.</p>
+      <ul id="pv-mine-list" class="pv-mine-list"></ul>
+      <p id="pv-status" class="pv-status" role="status" aria-live="polite"></p>
+      <p class="pv-muted pv-small">
+        <strong>Descargar</strong> entrega un archivo con todo lo que el servidor guarda de ese perfil.
+        <strong>Borrar</strong> elimina el perfil y todos sus resultados del servidor, y no se puede deshacer.
+      </p>
+    </section>
+
+    <section aria-labelledby="pv-who-title">
+      <h2 id="pv-who-title">Responsable de los datos</h2>
+      <p id="pv-controller">
+        Tus datos los gestiona la institución educativa que te dio acceso a HandsOnEdu.
+        Para cualquier consulta sobre ellos, habla con tu docente o con la secretaría de tu institución.
+      </p>
+    </section>
+
+    <section aria-labelledby="pv-what-title">
+      <h2 id="pv-what-title">Qué se guarda</h2>
+      <table class="pv-table">
+        <thead><tr><th scope="col">Dato</th><th scope="col">Para qué</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Tu nombre: el que escribes al empezar o, si entras desde Moodle, el que envía Moodle con un identificador interno de tu cuenta</td>
+            <td>Mostrar tu progreso y, a tu docente, el del curso</td>
+          </tr>
+          <tr>
+            <td>Resultados de práctica y evaluaciones: actividad, fecha y hora, puntaje y, por cada seña, si fue correcta, la seguridad del reconocimiento y el tiempo de respuesta</td>
+            <td>Tu ruta de aprendizaje, el repaso de las señas que fallas y el panel docente</td>
+          </tr>
+          <tr>
+            <td>Si entras desde Moodle: el curso, la actividad, tu rol y las notas enviadas a Moodle</td>
+            <td>Enviar la nota de cada evaluación al libro de calificaciones</td>
+          </tr>
+          <tr>
+            <td>Pase de lista (AttendEye): los nombres que escribe el docente y quién estuvo presente o participó</td>
+            <td>El registro de asistencia de la clase</td>
+          </tr>
+          <tr>
+            <td>Grabaciones de referencia del Estudio de Señas, hechas por docentes o intérpretes: posiciones de los puntos de la mano (no imágenes) y el nombre de quien grabó</td>
+            <td>Que el sistema reconozca las señas</td>
+          </tr>
+          <tr>
+            <td>En este navegador: tus perfiles con su clave y la preferencia de sonido</td>
+            <td>Que solo este equipo pueda abrir tu progreso</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section aria-labelledby="pv-see-title">
+      <h2 id="pv-see-title">Quién lo ve</h2>
+      <ul>
+        <li><strong>Tú</strong>, desde el equipo donde creaste tu perfil o desde tu cuenta de Moodle.</li>
+        <li><strong>Tus docentes</strong>, solo de los cursos en los que estás, en el panel docente.</li>
+        <li><strong>Quien administra la plataforma en tu institución</strong>, para dar soporte.</li>
+      </ul>
+      <p>
+        Los datos se guardan en el servidor de la institución. No se venden ni se comparten con otras empresas,
+        y no se usan para publicidad. A Moodle solo se envía la nota de cada evaluación.
+      </p>
+    </section>
+
+    <section aria-labelledby="pv-time-title">
+      <h2 id="pv-time-title">Cuánto tiempo</h2>
+      <p id="pv-retention">Mientras uses la plataforma, o hasta que pidas borrarlos.</p>
+    </section>
+
+    <section aria-labelledby="pv-rights-title">
+      <h2 id="pv-rights-title">Tus derechos</h2>
+      <ul>
+        <li><strong>Conocer y descargar</strong> tus datos: botón «Descargar» de arriba.</li>
+        <li><strong>Borrarlos</strong>: botón «Borrar» de arriba. Las notas que ya llegaron a Moodle se gestionan en Moodle, con tu institución.</li>
+        <li><strong>Corregirlos o hacer cualquier otra consulta</strong>: escribe al contacto de privacidad de tu institución.</li>
+      </ul>
+      <p id="pv-contact" class="pv-muted">Si perdiste el acceso a tu perfil (por ejemplo, porque borraste los datos del navegador), tu institución puede descargarlo o borrarlo por ti.</p>
+      <p class="pv-muted pv-small">Si eres menor de edad, tu madre, padre o representante puede hacer estas solicitudes contigo.</p>
+    </section>
+  </main>
+
+  <script src="/static/js/privacidad.js"></script>
+</body>
+</html>

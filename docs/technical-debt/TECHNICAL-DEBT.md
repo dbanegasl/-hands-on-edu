@@ -57,7 +57,7 @@ Las 10 preguntas de evaluación de GestiEdu están definidas como un array de ob
 | Campo | Detalle |
 |-------|---------|
 | **ID** | TD-003 |
-| **Estado** | 🔴 Pendiente |
+| **Estado** | 🟡 Mitigado: identidad y roles por LTI 1.3 (REQ-019), `ADMIN_TOKEN` para administrar, credencial por estudiante (TD-013, v0.17), aviso y derechos sobre los datos (REQ-021, v0.20). Falta un inicio de sesión propio para uso sin LMS (REQ-008) |
 | **Impacto** | Alto |
 | **Esfuerzo de resolución** | L (8–12 horas) |
 | **REQ relacionado** | [REQ-008](../requirements/REQ-008-basic-auth.md) |
@@ -78,7 +78,7 @@ No existe ningún sistema de autenticación o autorización. Cualquier persona q
 | Campo | Detalle |
 |-------|---------|
 | **ID** | TD-004 |
-| **Estado** | 🟡 Parcial (REQ-005 base en v0.9.0: progreso de señas y plantillas persisten; GestiEdu/AttendEye aún no) |
+| **Estado** | ✅ Resuelto (REQ-005: v0.9.0 progreso de señas y plantillas; v0.13.0 GestiEdu, MotivaSign y AttendEye) |
 | **Impacto** | Alto |
 | **Esfuerzo de resolución** | L (6–10 horas) |
 | **REQ relacionado** | [REQ-005](../requirements/REQ-005-sqlite-persistence.md) |

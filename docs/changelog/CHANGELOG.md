@@ -15,6 +15,31 @@
 
 ---
 
+## [0.20.0] — 2026-11-12
+
+### Añadido
+
+- **Privacidad y derechos sobre los datos (REQ-021)**, requisito del piloto institucional.
+  - **Página `/privacidad`**, enlazada desde el Aula de Señas y la página de inicio. Explica en lenguaje sencillo:
+    - qué se guarda y qué no (video, imágenes, audio, correo);
+    - quién lo ve y cuánto tiempo;
+    - el responsable y el contacto de la institución.
+
+    Además, cada estudiante puede **descargar** (JSON) o **borrar** sus datos: los perfiles de ese navegador y la cuenta de Moodle de la pestaña.
+  - **API:** `GET /api/privacy`, `GET /api/learners/{id}/export` y `DELETE /api/learners/{id}`. Usan la misma credencial que el resto de datos del estudiante. El borrado es en cascada: sesiones, intentos, accesos y notas enviadas.
+  - **CLI para la institución:** `python -m app.privacy find | export | delete | purge`. `purge` borra a los estudiantes sin actividad y los pases de lista antiguos; sin `--yes` solo lista lo que se borraría.
+  - **Configuración:** `PRIVACY_CONTROLLER`, `PRIVACY_CONTACT` y `DATA_RETENTION_DAYS`.
+  - **Guía [08 · Privacidad](../onboarding/08-privacidad.md):** atender solicitudes, cierre del piloto, copias de seguridad y una plantilla del aviso para familias.
+- `check-install.py` avisa si falta el responsable o el contacto de privacidad.
+- `scripts/test-deploy.sh` comprueba que las variables `PRIVACY_*` llegan a la app y que la CLI funciona en la imagen.
+
+### Cambiado
+
+- Barra del Aula de Señas: nuevo enlace **🔒 Privacidad**. En pantallas estrechas queda solo el icono y se oculta «← Inicio» (el logo ya lleva al inicio).
+- Deuda técnica: TD-004 (persistencia) figura como resuelta y TD-003 (autenticación) como mitigada.
+
+---
+
 ## [0.19.0] — 2026-11-12
 
 ### Añadido

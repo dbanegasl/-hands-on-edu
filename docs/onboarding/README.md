@@ -16,6 +16,7 @@ Un curso de Lengua de Señas Ecuatoriana (LSEC) que reconoce las señas del estu
 | 4 | Validar el contenido LSEC, grabar plantillas y producir videos | Equipo de contenido + intérprete | [04 · Contenido LSEC](./04-contenido-lsec.md) | Continuo |
 | 5 | Formar a los docentes | Coordinación académica | [05 · Guía para docentes](./05-guia-docente.md) | 1 sesión |
 | 6 | Grabar con varias personas y entrenar el modelo de reconocimiento | Equipo de contenido | [07 · Grabación y entrenamiento del modelo](./07-entrenamiento-modelo.md) | 15 min/persona + 5 min |
+| 7 | Aviso de privacidad, derechos de los estudiantes y plazo de conservación | Protección de datos + TI | [08 · Privacidad](./08-privacidad.md) | 1 h, antes del piloto |
 | — | Cuando algo falla | Todos | [06 · Problemas frecuentes](./06-problemas-frecuentes.md) | — |
 
 Los pasos 1–3 son técnicos y se hacen una vez. El paso 4 es el que más trabajo lleva y **condiciona lo que se puede enseñar**: hoy el catálogo es un borrador sin validar (ver abajo).
