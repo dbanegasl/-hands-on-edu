@@ -91,3 +91,17 @@ def test_purge_old_device_checks(client):
     assert privacy.main(["purge", "--diagnostics-days", "30", "--yes"]) == 0
     with SessionLocal() as db:
         assert [c.station for c in db.query(DeviceCheck)] == ["PC-01"]
+
+
+def test_purge_zero_days_deletes_all_device_checks(client):
+    """«0 = todos»: the pilot report closes with --diagnostics-days 0."""
+    client.post("/api/diagnostics", json=_check())
+    assert privacy.main(["purge", "--diagnostics-days", "0", "--yes"]) == 0
+    with SessionLocal() as db:
+        assert db.query(DeviceCheck).count() == 0
+
+
+def test_purge_rejects_negative_days(client):
+    import pytest
+    with pytest.raises(SystemExit):
+        privacy.main(["purge", "--diagnostics-days", "-1", "--yes"])

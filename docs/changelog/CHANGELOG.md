@@ -15,6 +15,24 @@
 
 ---
 
+## [0.21.1] — 2026-11-12
+
+### Añadido
+
+- **[Kit del piloto](../onboarding/09-kit-piloto/README.md)** (onboarding 09):
+  - calendario de 4 semanas y roles, con un seguimiento semanal de 15 minutos en el panel;
+  - **guion de la clase guiada**: preparación el día anterior con `/diagnostico`, minuto a minuto y plan B;
+  - **registro de incidencias** con categorías, gravedad y responsable, más la plantilla `incidencias.csv` para Excel;
+  - **encuestas**: salida de la semana 1, estudiantes y entrevista a docentes;
+  - **revisión del intérprete**: ¿acepta el sistema señas mal hechas?;
+  - **informe final** con criterios de éxito acordados de antemano, la fuente de cada dato y la decisión.
+
+### Corregido
+
+- `python -m app.privacy purge --attendance-days 0` y `--diagnostics-days 0` no borraban nada (se trataba el 0 como «no indicado»). Ahora borran todos. Los días negativos se rechazan.
+
+---
+
 ## [0.21.0] — 2026-11-12
 
 > **Al actualizar:** trae la migración `0003` (tabla `device_checks`), que se aplica sola al arrancar. Para volver después a 0.20 hay que restaurar la copia anterior a la actualización: `RESTORE_BACKUP=1 ./deploy.sh 0.20.0`.

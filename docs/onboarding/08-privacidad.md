@@ -60,7 +60,7 @@ Para borrar los datos de quienes llevan tiempo sin actividad, ejecuta primero si
 ```bash
 docker compose exec -T hands-on-edu python -m app.privacy purge --days 365                 # estudiantes sin actividad en 365 días
 docker compose exec -T hands-on-edu python -m app.privacy purge --attendance-days 180 --yes # pases de lista de hace más de 180 días
-docker compose exec -T hands-on-edu python -m app.privacy purge --diagnostics-days 90 --yes # diagnósticos de equipos de hace más de 90 días
+docker compose exec -T hands-on-edu python -m app.privacy purge --diagnostics-days 90 --yes # diagnósticos de equipos de hace más de 90 días (0 = todos)
 ```
 
 - Sin `--days`, `purge` usa `DATA_RETENTION_DAYS`. Si anuncias un plazo, prográmalo, por ejemplo con un cron mensual en el servidor.

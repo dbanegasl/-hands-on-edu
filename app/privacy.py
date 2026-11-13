@@ -207,8 +207,8 @@ def cmd_purge(db: Session, args) -> int:
     if not days and args.attendance_days is None and args.diagnostics_days is None:
         raise SystemExit("Indica --days N (o define DATA_RETENTION_DAYS), --attendance-days N y/o --diagnostics-days N.")
     learners = inactive_learners(db, days) if days else []
-    rollcalls = old_attendance(db, args.attendance_days) if args.attendance_days else []
-    checks = old_device_checks(db, args.diagnostics_days) if args.diagnostics_days else []
+    rollcalls = old_attendance(db, args.attendance_days) if args.attendance_days is not None else []
+    checks = old_device_checks(db, args.diagnostics_days) if args.diagnostics_days is not None else []
     if days:
         print(f"Estudiantes sin actividad en {days} días: {len(learners)}")
         for learner in learners[:20]:
@@ -216,9 +216,9 @@ def cmd_purge(db: Session, args) -> int:
                   f"{learner.display_name}")
         if len(learners) > 20:
             print(f"  … y {len(learners) - 20} más")
-    if args.attendance_days:
+    if args.attendance_days is not None:
         print(f"Sesiones de asistencia de hace más de {args.attendance_days} días: {len(rollcalls)}")
-    if args.diagnostics_days:
+    if args.diagnostics_days is not None:
         print(f"Diagnósticos de equipos de hace más de {args.diagnostics_days} días: {len(checks)}")
     if not learners and not rollcalls and not checks:
         return 0
@@ -232,6 +232,13 @@ def cmd_purge(db: Session, args) -> int:
     print(f"Borrados {len(learners)} estudiantes, {len(rollcalls)} sesiones de asistencia "
           f"y {len(checks)} diagnósticos de equipos.")
     return 0
+
+
+def _days(raw: str) -> int:
+    value = int(raw)
+    if value < 0:
+        raise argparse.ArgumentTypeError("no puede ser negativo")
+    return value
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -250,9 +257,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--yes", action="store_true", help="No pedir confirmación")
     p.set_defaults(func=cmd_delete)
     p = sub.add_parser("purge", help="Borrar estudiantes inactivos y asistencias antiguas")
-    p.add_argument("--days", type=int, help="Días sin actividad (por defecto DATA_RETENTION_DAYS)")
-    p.add_argument("--attendance-days", type=int, help="Antigüedad de las sesiones de asistencia a borrar")
-    p.add_argument("--diagnostics-days", type=int, help="Antigüedad de los diagnósticos de equipos a borrar")
+    p.add_argument("--days", type=_days, help="Días sin actividad (por defecto DATA_RETENTION_DAYS)")
+    p.add_argument("--attendance-days", type=_days, help="Antigüedad de las sesiones de asistencia a borrar (0 = todas)")
+    p.add_argument("--diagnostics-days", type=_days, help="Antigüedad de los diagnósticos de equipos a borrar (0 = todos)")
     p.add_argument("--yes", action="store_true", help="Borrar de verdad (sin esto solo se listan)")
     p.set_defaults(func=cmd_purge)
     args = parser.parse_args(argv)

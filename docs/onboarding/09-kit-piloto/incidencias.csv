@@ -1,0 +1,2 @@
+﻿id;fecha_hora;quien_reporta;curso;puesto;usuario_moodle;navegador_sistema;categoria;gravedad;que_paso;que_se_esperaba;sena;afecta_a_otros;captura;responsable;estado;solucion;fecha_cierre
+1;2026-11-20 10:15;Docente;LSEC 1 - ejemplo;PC-07;;Chrome 130 · Windows;camara;bloqueante;La cámara aparece en uso por otro programa;Ver la imagen con los puntos de la mano;;no;;TI;resuelta;Se cerró Teams y se repitió /diagnostico;2026-11-20
