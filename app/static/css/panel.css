@@ -155,3 +155,14 @@
 .pn-module h3 { font-size: 1rem; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .pn-module h3 a { font-size: 0.8rem; font-weight: 400; }
 .pn-module .pn-tile-value { font-size: 1.5rem; }
+
+/* ── Lab computers (/diagnostico) ─────────────────────────────────────────── */
+.pn-dev-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pn-dev-bar .au-btn { text-decoration: none; }
+.pn-dev-table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+.pn-dev-table th { text-align: left; color: var(--au-muted); font-weight: 600; font-size: 0.78rem; padding: 6px; border-bottom: 1px solid var(--au-border); }
+.pn-dev-table td { padding: 7px 6px; border-bottom: 1px solid var(--au-border); vertical-align: top; }
+.pn-dev-verdict { font-weight: 700; white-space: nowrap; }
+.pn-dev-ok .pn-dev-verdict { color: var(--au-ok); }
+.pn-dev-warn .pn-dev-verdict { color: var(--au-accent); }
+.pn-dev-fail .pn-dev-verdict { color: var(--au-bad); }

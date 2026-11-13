@@ -17,6 +17,7 @@ La lista completa y actualizada está en la página **`/privacidad`** de tu inst
 | Con Moodle: curso, actividad, rol y notas enviadas | Servidor (las notas también en Moodle) | Ídem |
 | Pase de lista de AttendEye: nombres que escribe el docente | Servidor | Docente y administración (`ADMIN_TOKEN`) |
 | Grabaciones de referencia: puntos de la mano, sin imágenes, y nombre de quien grabó | Servidor | Equipo de contenido |
+| Diagnóstico de equipos (`/diagnostico`): navegador, sistema, cámara, velocidad, sala y puesto. **Sin datos del estudiante** | Servidor | Docentes (panel) y administración |
 | Perfiles con su clave y la preferencia de sonido | Navegador del estudiante (`localStorage`) | Ese equipo |
 | **Video e imágenes de la cámara** | **En ningún sitio**: se procesan dentro del navegador y no se envían | — |
 
@@ -59,6 +60,7 @@ Para borrar los datos de quienes llevan tiempo sin actividad, ejecuta primero si
 ```bash
 docker compose exec -T hands-on-edu python -m app.privacy purge --days 365                 # estudiantes sin actividad en 365 días
 docker compose exec -T hands-on-edu python -m app.privacy purge --attendance-days 180 --yes # pases de lista de hace más de 180 días
+docker compose exec -T hands-on-edu python -m app.privacy purge --diagnostics-days 90 --yes # diagnósticos de equipos de hace más de 90 días
 ```
 
 - Sin `--days`, `purge` usa `DATA_RETENTION_DAYS`. Si anuncias un plazo, prográmalo, por ejemplo con un cron mensual en el servidor.

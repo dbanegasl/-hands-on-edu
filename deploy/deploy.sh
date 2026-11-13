@@ -3,6 +3,9 @@
 #
 #   ./deploy.sh 0.15.0          # or v0.15.0, or latest
 #   PULL=0 ./deploy.sh 0.15.0   # use an image already present locally
+#   RESTORE_BACKUP=1 ./deploy.sh 0.20.0
+#                               # go back to a version older than the database schema
+#                               # (restores the copy taken before that update; see below)
 #
 # For a restricted CI deploy key (authorized_keys):
 #   command="/opt/handsonedu/deploy.sh --from-ssh",restrict ssh-ed25519 AAAA… handsonedu-deploy
@@ -13,6 +16,12 @@
 # migrations on startup) → wait for /health with the expected version → on
 # failure, return to the previous version, restoring the backup first if the
 # failed version had already changed the schema.
+#
+# Going back to a version that does not know the live schema (a newer version
+# migrated it) is detected before anything changes: it needs the copy taken
+# before that update, so what was recorded since is lost. deploy.sh names the
+# copy and stops; RESTORE_BACKUP=1 does it (keeping a copy of the current
+# database, which is also put back if that version then fails).
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -121,6 +130,75 @@ print(f"schema had changed ({before} → {now}): database restored from data/bac
 PY
 }
 
+# Before changing anything: does the target version know the live schema? If not,
+# find the newest backup it can use. Prints ok | restore:<file>:<live>:<backup> |
+# nobackup:<live>. Runs the target image (older targets without Alembic: ok).
+RESTORE_FROM=""
+schema_preflight() {
+  running || return 0
+  local out
+  out="$(HANDSONEDU_VERSION="$VERSION" compose run --rm --no-deps -T --entrypoint python "$SERVICE" - <<'PY'
+import glob, os, sqlite3, sys
+try:
+    from alembic.script import ScriptDirectory
+    from app.migrate import alembic_config
+except ImportError:
+    print("ok"); sys.exit(0)
+from app.config import settings
+url = settings.database_url
+if not url.startswith("sqlite:///"):
+    print("ok"); sys.exit(0)
+def revision(path):
+    con = sqlite3.connect(path)
+    try:
+        return con.execute("SELECT version_num FROM alembic_version").fetchone()[0]
+    except (sqlite3.Error, TypeError):
+        return None
+    finally:
+        con.close()
+known = {s.revision for s in ScriptDirectory.from_config(alembic_config()).walk_revisions()}
+live = revision(url.removeprefix("sqlite:///"))
+if live is None or live in known:
+    print("ok"); sys.exit(0)
+for path in sorted(glob.glob("/app/data/backups/handsonedu-*.db"), key=os.path.getmtime, reverse=True):
+    rev = revision(path)
+    if rev is None or rev in known:
+        print(f"restore:{os.path.basename(path)}:{live}:{rev}"); sys.exit(0)
+print(f"nobackup:{live}")
+PY
+)" || { log "WARNING: could not check whether $VERSION knows the database schema"; return 0; }
+  out="$(printf '%s\n' "$out" | tail -n1)"
+  case "$out" in
+    restore:*)
+      IFS=: read -r _ RESTORE_FROM live_rev backup_rev <<<"$out"
+      if [ "${RESTORE_BACKUP:-0}" != 1 ]; then
+        log "✗ $VERSION does not know the database schema ($live_rev): a newer version migrated it."
+        log "  Going back means restoring data/backups/$RESTORE_FROM (schema $backup_rev), taken"
+        log "  before that update: what was recorded since then is lost (a copy of the current"
+        log "  database is kept in data/backups/). Nothing has changed. To do it:"
+        log "    RESTORE_BACKUP=1 $0 $VERSION"
+        exit 1
+      fi
+      log "$VERSION needs the schema of data/backups/$RESTORE_FROM ($backup_rev, now $live_rev): restoring it (RESTORE_BACKUP=1)"
+      ;;
+    nobackup:*)
+      die "$VERSION does not know the database schema (${out#nobackup:}) and no backup in data/backups/ has one it knows: cannot go back automatically (nothing changed)" ;;
+  esac
+}
+
+restore_backup() {  # $1 = file in data/backups; service stopped
+  compose run --rm --no-deps -T --entrypoint python "$SERVICE" - "$1" <<'PY'
+import os, shutil, sys
+from app.config import settings
+live = settings.database_url.removeprefix("sqlite:///")
+for suffix in ("-wal", "-shm"):
+    if os.path.exists(live + suffix):
+        os.remove(live + suffix)
+shutil.copyfile("/app/data/backups/" + sys.argv[1], live)
+print("database restored from data/backups/" + sys.argv[1])
+PY
+}
+
 PREVIOUS="$(current_version)"
 PREVIOUS="${PREVIOUS:-latest}"
 log "current: $PREVIOUS → target: $VERSION"
@@ -130,8 +208,17 @@ if [ "$PULL" = 1 ]; then
   HANDSONEDU_VERSION="$VERSION" compose pull "$SERVICE" || die "could not pull version $VERSION (nothing changed)"
 fi
 
+schema_preflight
 backup
 set_version "$VERSION"
+if [ -n "$RESTORE_FROM" ]; then
+  compose stop "$SERVICE"
+  if ! restore_backup "$RESTORE_FROM"; then
+    set_version "$PREVIOUS"
+    compose up -d "$SERVICE"
+    die "could not restore data/backups/$RESTORE_FROM: still on $PREVIOUS"
+  fi
+fi
 log "starting $VERSION"
 if compose up -d --remove-orphans "$SERVICE" && wait_healthy "$VERSION"; then
   log "✔ HandsOnEdu $VERSION deployed"

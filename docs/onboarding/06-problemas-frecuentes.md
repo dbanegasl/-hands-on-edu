@@ -4,6 +4,8 @@
 
 ## Cámara y reconocimiento
 
+**Primero:** abre `/diagnostico` en ese equipo. En 30 segundos revisa el navegador, la cámara, el motor y la velocidad, y explica cómo arreglar lo que encuentre.
+
 | Síntoma | Comprobaciones |
 |---|---|
 | El navegador no pide permiso de cámara | 1) La página debe estar en **HTTPS** (o `localhost`). 2) Si se abrió dentro de Moodle (iframe), configura la herramienta en *Nueva ventana*. 3) En pruebas locales con `http://`, activa la bandera de Chrome ([02 §3](./02-moodle-local.md#3-permitir-la-cámara-en-http-una-sola-vez)) |

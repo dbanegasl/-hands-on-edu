@@ -15,6 +15,43 @@
 
 ---
 
+## [0.21.0] — 2026-11-12
+
+> **Al actualizar:** trae la migración `0003` (tabla `device_checks`), que se aplica sola al arrancar. Para volver después a 0.20 hay que restaurar la copia anterior a la actualización: `RESTORE_BACKUP=1 ./deploy.sh 0.20.0`.
+
+### Añadido
+
+- **Diagnóstico de equipos antes de la clase (REQ-022).**
+  - **Página `/diagnostico`:** en unos 30 segundos comprueba un equipo con el mismo motor que el Aula:
+    - navegador y conexión segura;
+    - servidor;
+    - cámara (permiso, si existe, si está en uso por otro programa, resolución);
+    - motor de manos (en el equipo o en el servidor, tiempo de carga);
+    - velocidad, en cuadros por segundo con tarjeta gráfica o procesador, y si vio una mano.
+
+    Da un veredicto (✔ listo, ⚠ con avisos, ✗ no apto), explica en lenguaje sencillo cómo resolver cada problema y deja una línea de resumen para copiar. La sala y el puesto son opcionales (`?sala=…&puesto=…`) y el equipo los recuerda.
+  - **Panel docente, tarjeta «Equipos del laboratorio»:** resume los últimos 7 días, con filtro por sala:
+    - equipos probados;
+    - listos, con avisos y no aptos;
+    - **cámara a la primera**;
+    - velocidad mediana;
+    - el último resultado de cada puesto, con los problemas primero.
+
+    Incluye un botón para copiar el enlace del diagnóstico con la sala ya puesta.
+  - **Datos:** el resultado técnico se envía sin datos del estudiante ni imágenes (`POST /api/diagnostics`, tabla `device_checks`, migración `0003`). Aparece en `/privacidad`, y `python -m app.privacy purge --diagnostics-days N` borra los antiguos.
+- Guías: la semana 1 del piloto (03), la guía docente (05) y la de problemas frecuentes (06) empiezan por el diagnóstico.
+
+### Corregido
+
+- **`deploy.sh`: volver a una versión anterior a una migración.** Antes, la versión anterior no arrancaba porque no conocía el esquema nuevo, y `deploy.sh` volvía a la actual sin explicar por qué. Ahora lo detecta **antes de cambiar nada**: nombra la copia que habría que restaurar y explica que se pierde lo registrado desde la actualización. Con `RESTORE_BACKUP=1 ./deploy.sh <versión>`:
+  - guarda una copia de la base actual;
+  - restaura la copia anterior a la actualización;
+  - despliega la versión.
+
+  Si esa versión no arrancara, se vuelve atrás con la base actual. Probado en `scripts/test-deploy.sh` y con las imágenes publicadas: 0.20.0 → 0.21.0 → 0.20.0 → 0.21.0.
+
+---
+
 ## [0.20.0] — 2026-11-12
 
 ### Añadido

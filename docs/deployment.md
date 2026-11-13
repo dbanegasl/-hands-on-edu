@@ -159,7 +159,7 @@ Programa esa copia a diario (cron) y lleva los archivos `data/backup-*.db` fuera
 >
 > Para ver la versión del esquema: `docker compose exec hands-on-edu python -m app.migrate current`.
 >
-> Una migración no se deshace sola. Para volver a una versión anterior **después** de que la nueva arrancó bien, restaura la copia `data/backups/handsonedu-…-before-<versión>.db` con el servicio detenido. `deploy.sh` ya lo hace solo cuando la nueva versión falla al desplegar.
+> Una migración no se deshace sola: una versión anterior no conoce el esquema nuevo y no arrancaría. Por eso, para volver a ella **después** de que la nueva arrancó bien, hay que restaurar la copia que se hizo antes de actualizar, y se pierde lo registrado desde entonces. `deploy.sh` lo detecta antes de tocar nada y lo hace con `RESTORE_BACKUP=1` (§4). Cuando la nueva versión falla al desplegar, lo hace solo.
 
 ## 4. Actualizar
 
@@ -171,6 +171,7 @@ Lee antes el CHANGELOG de la versión (en *Releases* de GitHub). Los cambios de 
 cd /opt/handsonedu
 ./deploy.sh 0.16.0        # actualizar
 ./deploy.sh 0.15.0        # volver a la versión anterior
+RESTORE_BACKUP=1 ./deploy.sh 0.15.0   # volver a una versión anterior a una migración (ver abajo)
 ```
 
 `deploy.sh` hace, en orden:
@@ -180,6 +181,17 @@ cd /opt/handsonedu
 3. Cambia `HANDSONEDU_VERSION` en `.env` y reinicia.
 4. Espera a que `/health` responda **con esa versión**. Al arrancar, la app aplica sus migraciones.
 5. Si no responde en 120 s (`HEALTH_TIMEOUT`), **vuelve sola a la versión anterior**. Si la versión fallida ya había cambiado el esquema, antes **restaura la copia del paso 2**. Muestra los registros y termina con error.
+
+**Volver a una versión anterior a una migración.** Antes del paso 2, `deploy.sh` pregunta a la versión de destino si conoce el esquema de la base. Si no lo conoce (por ejemplo, de 0.21 a 0.20, porque 0.21 añadió una tabla):
+
+- **Sin `RESTORE_BACKUP=1`:** no cambia nada. Explica el problema, nombra la copia que habría que restaurar (la más reciente con un esquema que esa versión conoce, normalmente `…-before-<versión nueva>.db`) y termina con error.
+- **Con `RESTORE_BACKUP=1`:**
+  1. copia la base actual (paso 2);
+  2. detiene el servicio y restaura esa copia;
+  3. despliega la versión.
+
+  **Se pierde lo registrado desde la actualización**, aunque queda en la copia del paso 2. Si la versión no arrancara, se vuelve atrás con la base actual.
+- Si ninguna copia sirve, se detiene sin cambiar nada.
 
 Con la opción B: `git pull && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build` (haz antes la copia del §3).
 
@@ -216,7 +228,7 @@ Configuración (una vez):
 3. **Aprobación (recomendado):** en *Settings → Environments → production*, activa *Required reviewers*. Cada despliegue esperará a que una persona lo apruebe.
 4. **Imagen accesible:** tras la primera publicación, en *Packages → handsonedu → Package settings*, cambia la visibilidad a **Public**. Si prefieres mantenerla privada, en el servidor haz `docker login ghcr.io` con un token que tenga `read:packages`.
 
-**Revertir desde GitHub:** *Actions → Release → Run workflow*, con la versión anterior. Despliega esa versión publicada sin construir nada.
+**Revertir desde GitHub:** *Actions → Release → Run workflow*, con la versión anterior. Despliega esa versión publicada sin construir nada. Si entre las dos versiones hubo una migración, el despliegue se detiene sin cambiar nada: volver atrás con pérdida de datos se decide en el servidor, con `RESTORE_BACKUP=1 ./deploy.sh <versión>`.
 
 ### Publicar una versión (equipo de desarrollo)
 

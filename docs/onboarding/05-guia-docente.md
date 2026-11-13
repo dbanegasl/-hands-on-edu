@@ -55,6 +55,7 @@ Para grabar plantillas o probar el reconocimiento de cualquier seña, use el **E
 
 ## Recomendaciones para la clase
 
+- **Antes de la primera sesión:** en el panel, tarjeta *Equipos del laboratorio*, copie el enlace del diagnóstico y ábralo en cada equipo, o pida a TI que lo haga. En 30 segundos dice si la cámara y la velocidad sirven y cómo arreglar lo que falle. La tarjeta muestra qué equipos están listos.
 - **Primera sesión en laboratorio:** que todos abran la actividad y permitan la cámara con usted presente. Es el momento en que más dudas surgen.
 - **Luz y encuadre:** la luz de frente, no detrás (ventanas), y las manos dentro del recuadro. Fondo liso si es posible.
 - **Mano dominante:** el sistema reconoce ambas manos. En la pantalla la imagen se ve como en un espejo.

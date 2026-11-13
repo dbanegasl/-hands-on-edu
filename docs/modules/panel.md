@@ -25,6 +25,7 @@ Un estudiante con token LTI recibe 403. La práctica que hacen los docentes en m
 | Señas con más dificultad | Las 10 señas con menor % de aciertos del grupo (mín. 3 intentos), con nº de intentos y tiempo medio al acertar |
 | Detalle del estudiante | Dominio por seña agrupado por unidad, lista de actividades con resultado y **estado de la nota en la plataforma**; las notas fallidas tienen botón *Reintentar* |
 | Otros módulos (solo vista de instalación) | Acierto medio, partidas y estudiantes de **GestiEdu** y **MotivaSign** (desafíos; la práctica libre no cuenta) y asistencia media, listas, clases y participación de **AttendEye**. Quien solo usó esos juegos aparece en la tabla y su detalle lista esas partidas (REQ-005) |
+| Equipos del laboratorio | Resultado de [`/diagnostico`](../requirements/REQ-022-diagnostico-equipos.md) en los últimos 7 días, con filtro por sala: equipos probados, listos, con avisos y no aptos, **cámara a la primera** y velocidad mediana; tabla con el último resultado de cada puesto (los problemas primero); enlace del diagnóstico con la sala para copiar |
 | Exportar CSV | Una fila por estudiante: última actividad, sesiones, minutos, unidades aprobadas, señas dominadas, dominio medio, notas no enviadas y mejor % por unidad (UTF-8 con BOM para Excel) |
 
 Las métricas reutilizan las del Aula: dominio = media móvil exponencial de aciertos (`compute_mastery`, dominada ≥ 0,8), unidad aprobada = mejor evaluación ≥ 70%, el tiempo de una sesión se limita a 1 h.
@@ -43,6 +44,7 @@ Sin NRPS, o si falla, el panel funciona igual con los estudiantes que ya entraro
 | `GET` | `/api/panel/learners/{id}?language=lsec` | Detalle de un estudiante del alcance (404 si no pertenece al curso) |
 | `POST` | `/api/panel/sessions/{id}/grade/retry` | Reintenta un envío AGS cuyo último estado es `failed` (409 en otro caso) |
 | `GET` | `/api/panel/export.csv?language=lsec&tz=-300` | CSV del curso (`tz`: minutos respecto de UTC para la fecha local) |
+| `GET` | `/api/panel/devices?days=7&room=…` | Equipos probados con `/diagnostico` (`app/api/diagnostics.py`) |
 
 Autorización: `Authorization: Bearer <token de lanzamiento de docente>` o `X-Admin-Token`.
 

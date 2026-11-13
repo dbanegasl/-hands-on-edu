@@ -8,8 +8,8 @@ from /privacidad) and as a CLI for the administrator, inside the container:
   python -m app.privacy find "Ana"                  # learners whose name contains "Ana"
   python -m app.privacy export <learner_id> [-o f]  # everything stored about them (JSON)
   python -m app.privacy delete <learner_id> [--yes] # delete them and all their activity
-  python -m app.privacy purge [--days N] [--attendance-days N] [--yes]
-                                                    # inactive learners / old roll calls;
+  python -m app.privacy purge [--days N] [--attendance-days N] [--diagnostics-days N] [--yes]
+                                                    # inactive learners / old roll calls / device checks;
                                                     # without --yes it only lists them
 """
 from __future__ import annotations
@@ -26,6 +26,7 @@ from app import config
 from app.models import (
     ActivitySession,
     AttendanceSession,
+    DeviceCheck,
     Learner,
     LtiLaunch,
     LtiPlatform,
@@ -139,6 +140,11 @@ def old_attendance(db: Session, days: int, now: datetime | None = None) -> list[
                            .order_by(AttendanceSession.created_at)))
 
 
+def old_device_checks(db: Session, days: int, now: datetime | None = None) -> list[DeviceCheck]:
+    cutoff = (now or datetime.now(timezone.utc)) - timedelta(days=days)
+    return list(db.scalars(select(DeviceCheck).where(DeviceCheck.created_at < cutoff)))
+
+
 def _version() -> str:
     from app.main import APP_VERSION  # late import: app.main imports the API, which imports this module
     return APP_VERSION
@@ -198,10 +204,11 @@ def cmd_delete(db: Session, args) -> int:
 
 def cmd_purge(db: Session, args) -> int:
     days = args.days if args.days is not None else config.settings.data_retention_days
-    if not days and args.attendance_days is None:
-        raise SystemExit("Indica --days N (o define DATA_RETENTION_DAYS) y/o --attendance-days N.")
+    if not days and args.attendance_days is None and args.diagnostics_days is None:
+        raise SystemExit("Indica --days N (o define DATA_RETENTION_DAYS), --attendance-days N y/o --diagnostics-days N.")
     learners = inactive_learners(db, days) if days else []
     rollcalls = old_attendance(db, args.attendance_days) if args.attendance_days else []
+    checks = old_device_checks(db, args.diagnostics_days) if args.diagnostics_days else []
     if days:
         print(f"Estudiantes sin actividad en {days} días: {len(learners)}")
         for learner in learners[:20]:
@@ -211,16 +218,19 @@ def cmd_purge(db: Session, args) -> int:
             print(f"  … y {len(learners) - 20} más")
     if args.attendance_days:
         print(f"Sesiones de asistencia de hace más de {args.attendance_days} días: {len(rollcalls)}")
-    if not learners and not rollcalls:
+    if args.diagnostics_days:
+        print(f"Diagnósticos de equipos de hace más de {args.diagnostics_days} días: {len(checks)}")
+    if not learners and not rollcalls and not checks:
         return 0
     if not _confirm(args, "Se borrará todo lo listado."):
         return 1
     for learner in learners:
         db.delete(learner)
-    for rollcall in rollcalls:
-        db.delete(rollcall)
+    for row in [*rollcalls, *checks]:
+        db.delete(row)
     db.commit()
-    print(f"Borrados {len(learners)} estudiantes y {len(rollcalls)} sesiones de asistencia.")
+    print(f"Borrados {len(learners)} estudiantes, {len(rollcalls)} sesiones de asistencia "
+          f"y {len(checks)} diagnósticos de equipos.")
     return 0
 
 
@@ -242,6 +252,7 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("purge", help="Borrar estudiantes inactivos y asistencias antiguas")
     p.add_argument("--days", type=int, help="Días sin actividad (por defecto DATA_RETENTION_DAYS)")
     p.add_argument("--attendance-days", type=int, help="Antigüedad de las sesiones de asistencia a borrar")
+    p.add_argument("--diagnostics-days", type=int, help="Antigüedad de los diagnósticos de equipos a borrar")
     p.add_argument("--yes", action="store_true", help="Borrar de verdad (sin esto solo se listan)")
     p.set_defaults(func=cmd_purge)
     args = parser.parse_args(argv)

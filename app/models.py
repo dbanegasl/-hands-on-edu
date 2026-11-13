@@ -293,3 +293,30 @@ class AttendanceRecord(Base):
     participations: Mapped[int] = mapped_column(Integer, default=0)
 
     attendance: Mapped[AttendanceSession] = relationship(back_populates="records")
+
+
+# ── Device check (/diagnostico): one equipment test before a class ─────────────
+
+class DeviceCheck(Base):
+    """
+    Result of /diagnostico on one computer: browser, camera, hand engine and
+    speed. No learner identity — only the room and station labels typed there.
+    """
+
+    __tablename__ = "device_checks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    room: Mapped[str | None] = mapped_column(String(60), index=True)
+    station: Mapped[str | None] = mapped_column(String(60))
+    verdict: Mapped[str] = mapped_column(String(8))                # ok | warn | fail
+    browser: Mapped[str | None] = mapped_column(String(60))        # "Chrome 130"
+    os: Mapped[str | None] = mapped_column(String(40))
+    camera: Mapped[str] = mapped_column(String(12))                # ok | denied | missing | busy | insecure | error
+    camera_res: Mapped[str | None] = mapped_column(String(16))     # "640x480"
+    engine: Mapped[str | None] = mapped_column(String(8))          # browser | server | none
+    device: Mapped[str | None] = mapped_column(String(4))          # GPU | CPU
+    load_ms: Mapped[int | None] = mapped_column(Integer)
+    fps: Mapped[float | None] = mapped_column(Float)
+    hand_seen: Mapped[bool | None] = mapped_column(Boolean)
+    issues: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now, index=True)

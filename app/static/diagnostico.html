@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnóstico del equipo | HandsOnEdu</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩺</text></svg>">
+  <link rel="stylesheet" href="/static/css/diagnostico.css">
+</head>
+<body>
+  <nav class="dg-nav">
+    <a href="/" class="dg-logo">🖐️ HandsOnEdu</a>
+    <span class="dg-nav-title">🩺 Diagnóstico del equipo</span>
+    <a href="/aula" class="dg-back">Aula de Señas →</a>
+  </nav>
+
+  <main class="dg-main">
+    <h1>¿Está listo este equipo?</h1>
+    <p class="dg-lead">
+      En unos 30 segundos se comprueban el navegador, la cámara y la velocidad del reconocimiento de manos.
+      Hazlo en cada equipo del laboratorio antes de la clase.
+    </p>
+
+    <section class="dg-card" aria-labelledby="dg-where-title">
+      <h2 id="dg-where-title" class="dg-sr">Equipo</h2>
+      <div class="dg-fields">
+        <label><span>Sala o grupo <span class="dg-muted">(opcional)</span></span>
+          <input id="dg-room" class="dg-input" maxlength="60" placeholder="Laboratorio 2" autocomplete="off">
+        </label>
+        <label><span>Puesto <span class="dg-muted">(opcional)</span></span>
+          <input id="dg-station" class="dg-input" maxlength="60" placeholder="PC-07" autocomplete="off">
+        </label>
+      </div>
+      <button id="dg-start" class="dg-btn dg-btn-primary" type="button">Iniciar diagnóstico</button>
+      <p class="dg-muted dg-small">No escribas aquí el nombre del estudiante: se identifica al equipo, no a la persona.</p>
+    </section>
+
+    <div class="dg-run">
+      <ol id="dg-steps" class="dg-steps" aria-live="polite"></ol>
+      <div id="dg-video-wrap" class="dg-video-wrap" hidden>
+        <video id="dg-video" playsinline muted hidden></video>
+        <canvas id="dg-canvas" class="dg-canvas" aria-label="Vista de la cámara con las manos detectadas"></canvas>
+        <p class="dg-hint">✋ Muestra una mano abierta a la cámara</p>
+      </div>
+    </div>
+
+    <section id="dg-result" class="dg-card dg-result" aria-labelledby="dg-verdict" hidden>
+      <h2 id="dg-verdict" tabindex="-1"></h2>
+      <ul id="dg-issues" class="dg-issues"></ul>
+      <label class="dg-summary-label" for="dg-summary">Resumen para el docente</label>
+      <div class="dg-summary-row">
+        <input id="dg-summary" class="dg-input" readonly>
+        <button id="dg-copy" class="dg-btn" type="button">Copiar</button>
+      </div>
+      <p id="dg-sent" class="dg-muted dg-small" role="status"></p>
+    </section>
+
+    <p class="dg-muted dg-small dg-foot">
+      La imagen de la cámara no sale de este equipo. Al terminar se envía al panel docente solo el resultado técnico:
+      navegador, sistema, estado de la cámara, motor y velocidad, con la sala y el puesto que escribas.
+      <a href="/privacidad">Privacidad</a>
+    </p>
+  </main>
+
+  <script src="/static/js/ho-common.js"></script>
+  <script src="/static/js/ho-hands.js"></script>
+  <script src="/static/js/diagnostico.js"></script>
+</body>
+</html>

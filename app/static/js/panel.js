@@ -463,6 +463,65 @@
     );
   }
 
+  // ── Render: lab computers (/diagnostico) ──────────────────────────────────
+  const VERDICT = { ok: '✔ Listo', warn: '⚠ Con avisos', fail: '✗ No apto' };
+  const CAMERA = { ok: 'Bien', denied: 'Permiso bloqueado', missing: 'No hay cámara', busy: 'En uso por otro programa',
+    insecure: 'Sin https', error: 'Error' };
+
+  function issueTitle(code) {
+    const known = window.HO && window.HO.Diag && window.HO.Diag.ISSUES[code];
+    return known ? known[1] : code;
+  }
+
+  function diagLink() {
+    const room = $('pn-dev-room').value;
+    return location.origin + '/diagnostico' + (room ? '?sala=' + encodeURIComponent(room) : '');
+  }
+
+  function renderDevices(d) {
+    $('pn-devices-card').hidden = false;
+    const sel = $('pn-dev-room');
+    const current = sel.value;
+    sel.replaceChildren(el('option', { value: '', text: 'Todas' }),
+      ...d.rooms.map((r) => el('option', { value: r, text: r, selected: r === current })));
+    $('pn-dev-open').href = diagLink();
+    $('pn-dev-empty').hidden = d.total > 0;
+    $('pn-dev-tiles').hidden = $('pn-dev-table').hidden = !d.total;
+    if (!d.total) return;
+    $('pn-dev-tiles').replaceChildren(
+      tile('Equipos probados', fmtInt.format(d.total), plural(d.checks, 'prueba', 'pruebas')),
+      tile('Listos', '✔ ' + fmtInt.format(d.ok), null),
+      tile('Con avisos', '⚠ ' + fmtInt.format(d.warn), d.warn ? 'funcionan; ver detalle' : null),
+      tile('No aptos', '✗ ' + fmtInt.format(d.fail), d.fail ? 'resolver antes de la clase' : null, d.fail > 0),
+      tile('Cámara a la primera', Math.round(100 * d.camera_first_try / d.total) + '%',
+        fmtInt.format(d.camera_first_try) + ' de ' + fmtInt.format(d.total) + ' equipos'),
+      tile('Velocidad mediana', d.median_fps == null ? '—' : Math.round(d.median_fps) + ' cuadros/s', 'fluido desde 15'),
+    );
+    const head = el('tr', null, ['Sala', 'Puesto', 'Resultado', 'Navegador', 'Cámara', 'Motor', 'Velocidad', 'Avisos', 'Probado']
+      .map((h) => el('th', { scope: 'col', text: h })));
+    const rows = d.stations.map((s) => el('tr', { class: 'pn-dev-' + s.verdict }, [
+      el('td', { text: s.room || '—' }),
+      el('td', { text: s.station || '—' }),
+      el('td', { class: 'pn-dev-verdict', text: VERDICT[s.verdict] }),
+      el('td', { text: [s.browser, s.os].filter(Boolean).join(' · ') || '—' }),
+      el('td', { text: (CAMERA[s.camera] || s.camera) + (s.attempts > 1 && !s.camera_first_try ? ' (no a la primera)' : '') }),
+      el('td', { text: s.engine === 'browser' ? (s.device === 'GPU' ? 'Tarjeta gráfica' : 'Procesador') : s.engine === 'server' ? 'Servidor' : s.engine === 'none' ? 'No cargó' : '—' }),
+      el('td', { text: s.fps == null ? '—' : Math.round(s.fps) + ' c/s' }),
+      el('td', { class: 'pn-small', text: s.issues.map(issueTitle).join('; ') || '—' }),
+      el('td', { text: ago(s.created_at), title: fmtDateTime.format(new Date(s.created_at)) }),
+    ]));
+    $('pn-dev-table').replaceChildren(el('thead', null, head), el('tbody', null, rows));
+  }
+
+  async function loadDevices() {
+    const room = $('pn-dev-room').value;
+    try {
+      renderDevices(await (await api('/api/panel/devices?days=7' + (room ? '&room=' + encodeURIComponent(room) : ''))).json());
+    } catch (_) {
+      $('pn-devices-card').hidden = true;     // an optional card never breaks the panel
+    }
+  }
+
   // ── Boot ───────────────────────────────────────────────────────────────────
   function render() {
     const d = P.data;
@@ -482,6 +541,7 @@
       $('pn-access').hidden = true;
       $('pn-content').hidden = false;
       render();
+      loadDevices();
     } catch (err) {
       $('pn-content').hidden = true;
       if (err.status === 401 && !P.lti) {
@@ -525,6 +585,10 @@
     });
     $('pn-refresh').addEventListener('click', () => load(true).then(() => toast('Datos actualizados')));
     $('pn-export').addEventListener('click', exportCsv);
+    $('pn-dev-room').addEventListener('change', loadDevices);
+    $('pn-dev-copy').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(diagLink()); toast('Enlace copiado: ábrelo en cada equipo'); } catch (_) { toast(diagLink()); }
+    });
     $('pn-search').addEventListener('input', (e) => { P.query = e.target.value; renderGrid(); });
     $('pn-sort').addEventListener('change', (e) => { P.sort = e.target.value; renderGrid(); });
     $('pn-d-close').addEventListener('click', closeDrawer);
