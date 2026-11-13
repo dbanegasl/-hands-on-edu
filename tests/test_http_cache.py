@@ -73,6 +73,10 @@ class TestPrecompressedStatic:
         c, _ = self._client(tmp_path)
         assert c.get("/v/nope.wasm", headers=GZ).status_code == 404
 
+    def test_missing_directory_is_404_not_500(self, tmp_path):
+        app = Starlette(routes=[Mount("/m", CachedStaticFiles(directory=tmp_path / "absent", check_dir=False))])
+        assert TestClient(app).get("/m/hand_landmarker.task").status_code == 404
+
 
 def test_json_response_builds_once_per_version():
     calls = []

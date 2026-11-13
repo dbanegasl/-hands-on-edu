@@ -43,6 +43,10 @@ def test_runs_against_the_app(client):
         server.should_exit = True
         t.join(5)
     text = out.getvalue()
-    assert code == 0, text
+    from app.config import settings
+    if settings.models_dir.is_dir():                 # inside the image: everything is served
+        assert code == 0, text
+    else:                                            # CI without the engine files: only those fail, with a 404
+        assert code == 1 and "/models/hand_landmarker.task: HTTP 404" in text, text
     assert "Primera vez" in text and "Siguiente vez" in text and "100 Mb/s" in text
     assert "/api/signs/lsec/templates" in text and "gzip" in text

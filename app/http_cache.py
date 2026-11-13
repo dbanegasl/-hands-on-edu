@@ -48,6 +48,13 @@ class CachedStaticFiles(StaticFiles):
         self.cache_control = cache_control
         self.precompressed = precompressed
 
+    async def check_config(self) -> None:
+        # The engine and model only exist inside the image: elsewhere answer 404
+        # (the browser then uses the CDN) instead of a 500 from StaticFiles.
+        if self.directory is not None and not os.path.isdir(self.directory):
+            return
+        await super().check_config()
+
     async def get_response(self, path: str, scope: Scope) -> Response:
         request_headers = Headers(scope=scope)
         if (self.precompressed and scope["method"] in ("GET", "HEAD") and not path.endswith(".gz")
