@@ -1,11 +1,21 @@
-"""Sign-language catalogs, teacher-recorded reference templates and trained models (REQ-010)."""
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+"""Sign-language catalogs, teacher-recorded reference templates and trained models (REQ-010).
+
+The three GETs every Aula/Studio page makes are serialized once per content
+version, gzipped and revalidated with an ETag (`app.http_cache`): with several
+recordings per sign the templates are megabytes, and a lab opens them at once.
+"""
+import hashlib
+import json
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import Response
+from pydantic import TypeAdapter
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_admin
 from app.db import get_db
+from app.http_cache import json_response
 from app.models import SignModel, SignTemplate
 from app.schemas import (
     MAX_MODEL_PARAMS,
@@ -53,19 +63,36 @@ def list_languages():
     return available_languages()
 
 
+_TEMPLATES = TypeAdapter(list[TemplateOut])
+
+
+def _json(data) -> bytes:
+    return json.dumps(data, ensure_ascii=False, separators=(",", ":"), default=str).encode()
+
+
 @router.get("/signs/{language}/catalog", summary="Catálogo completo de una lengua de señas")
-def catalog(language: str):
-    return _catalog_or_404(language)
+def catalog(language: str, request: Request):
+    data = _catalog_or_404(language)
+    return json_response(request, ("catalog", language), None, lambda: _json(data))
 
 
 @router.get("/signs/{language}/templates", response_model=list[TemplateOut],
             summary="Plantillas de referencia grabadas (todas o de una seña)")
-def list_templates(language: str, sign_id: str | None = Query(default=None), db: Session = Depends(get_db)):
+def list_templates(request: Request, language: str, sign_id: str | None = Query(default=None),
+                   db: Session = Depends(get_db)):
     _catalog_or_404(language)
-    stmt = select(SignTemplate).where(SignTemplate.language == language)
-    if sign_id:
-        stmt = stmt.where(SignTemplate.sign_id == sign_id)
-    return db.scalars(stmt.order_by(SignTemplate.sign_id, SignTemplate.created_at)).all()
+    where = [SignTemplate.language == language] + ([SignTemplate.sign_id == sign_id] if sign_id else [])
+    # Templates are immutable (create/import/delete), so their ids identify the content.
+    ids = sorted(db.scalars(select(SignTemplate.id).where(*where)).all())
+    version = hashlib.sha1(" ".join(ids).encode()).hexdigest()
+
+    def build() -> bytes:
+        rows = db.scalars(select(SignTemplate).where(*where)
+                          .order_by(SignTemplate.sign_id, SignTemplate.created_at)).all()
+        # Same validation + serialization FastAPI's response_model did, now once per version.
+        return _TEMPLATES.dump_json(_TEMPLATES.validate_python(rows, from_attributes=True))
+
+    return json_response(request, ("templates", language, sign_id), version, build)
 
 
 @router.post("/signs/{language}/templates", response_model=TemplateOut,
@@ -132,13 +159,14 @@ def _model_or_404(db: Session, language: str, model_id: str) -> SignModel:
 
 
 @router.get("/signs/{language}/model", summary="Modelo entrenado activo (pesos); 204 si no hay ninguno")
-def active_model(language: str, db: Session = Depends(get_db)):
+def active_model(language: str, request: Request, db: Session = Depends(get_db)):
     _catalog_or_404(language)
     m = db.scalars(select(SignModel).where(SignModel.language == language, SignModel.active.is_(True))
                    .order_by(SignModel.created_at.desc())).first()
     if m is None:  # the usual case: not an error, the engine works without a model
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
-    return {**m.model, "id": m.id, "created_at": m.created_at}
+        return Response(status_code=status.HTTP_204_NO_CONTENT, headers={"Cache-Control": "no-cache"})
+    return json_response(request, ("model", language), m.id,
+                         lambda: _json({**m.model, "id": m.id, "created_at": m.created_at.isoformat()}))
 
 
 @router.get("/signs/{language}/models", response_model=list[SignModelOut],

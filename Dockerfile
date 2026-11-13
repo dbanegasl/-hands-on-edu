@@ -51,7 +51,11 @@ RUN mkdir -p /app/vendor/mediapipe/wasm && cd /app/vendor/mediapipe && \
     for f in vision_wasm_internal.js vision_wasm_internal.wasm \
              vision_wasm_nosimd_internal.js vision_wasm_nosimd_internal.wasm; do \
         wget -q $base/wasm/$f -O wasm/$f; \
-    done
+    done && \
+    echo "${MP_JS_VERSION}" > VERSION && \
+    gzip -9 -k vision_bundle.mjs wasm/*.js wasm/*.wasm
+# Served as-is to browsers that accept gzip (lab of 30 computers: ~19 MB → ~9 MB each).
+RUN gzip -9 -k /app/models/hand_landmarker.task
 
 COPY . .
 

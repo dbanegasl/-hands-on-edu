@@ -25,7 +25,8 @@ PAGES = {
 
 def _page(filename: str):
     async def handler():
-        return FileResponse(f"{STATIC}/{filename}")
+        # Revalidated on every visit (unchanged → 304), so a new release is never hidden by a cached page.
+        return FileResponse(f"{STATIC}/{filename}", headers={"Cache-Control": "no-cache"})
 
     return handler
 

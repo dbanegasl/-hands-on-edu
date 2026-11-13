@@ -11,6 +11,7 @@
 | El navegador no pide permiso de cámara | 1) La página debe estar en **HTTPS** (o `localhost`). 2) Si se abrió dentro de Moodle (iframe), configura la herramienta en *Nueva ventana*. 3) En pruebas locales con `http://`, activa la bandera de Chrome ([02 §3](./02-moodle-local.md#3-permitir-la-cámara-en-http-una-sola-vez)) |
 | *Permiso denegado* | Candado de la barra de direcciones → Cámara → Permitir, y recargar |
 | *Cámara en uso* / pantalla negra | Cerrar Zoom, Teams, Meet u otras pestañas que usen la cámara |
+| La primera vez tarda mucho en cargar (todo el laboratorio a la vez) | Cada equipo descarga unos 12 MB la primera vez; después queda en el navegador. Con un enlace lento, que entren por grupos, y la víspera pasa `/diagnostico` por los equipos ([Despliegue, «Laboratorio»](../deployment.md#laboratorio-muchos-equipos-a-la-vez)) |
 | Va muy lento | La insignia debe decir *🟢 Detección en tu equipo* (Aula) o *Detección en el navegador* (Estudio). Si dice *en servidor*, el navegador no pudo cargar el motor: probar en Chrome actualizado. En equipos sin GPU, cerrar otras pestañas |
 | No reconoce una seña bien hecha | Luz frontal, mano entera en el cuadro, a 50–80 cm. Si persiste con varias personas: grabar más plantillas en el Estudio. Si tiene descriptor: reportarlo con una captura |
 | Tras publicar el modelo entrenado, una seña empeoró | **Desactivar** en el Estudio (tarjeta 🧠) y revisar sus grabaciones ([07 §12](./07-entrenamiento-modelo.md#12-problemas-frecuentes)) |

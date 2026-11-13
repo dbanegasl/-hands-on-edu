@@ -21,7 +21,7 @@
 - HTTPS y certificado;
 - `PUBLIC_BASE_URL` y `ADMIN_TOKEN`;
 - claves LTI;
-- tipos MIME del motor de manos;
+- tipos MIME, compresión y caché del motor de manos (30 equipos a la vez);
 - límite de subida del proxy y WebSocket;
 - hora de los dos servidores;
 - que Moodle responda y esté registrado.
@@ -37,6 +37,8 @@ docker compose exec -T hands-on-edu python - https://<handsonedu> --moodle https
 ```
 
 Corrige todos los ✗ antes de seguir. Los ⚠ explican qué funcionalidad afectan. La tabla siguiente es la misma comprobación hecha a mano.
+
+**Antes de la primera clase con un laboratorio completo**, mide también la carga desde la red del laboratorio (fuera del horario de clase): `python3 lab-load-test.py https://<handsonedu> --pcs 30`. El resultado se interpreta con [Despliegue, «Laboratorio»](../deployment.md#laboratorio-muchos-equipos-a-la-vez).
 
 La integración necesita tráfico **en los dos sentidos**:
 
