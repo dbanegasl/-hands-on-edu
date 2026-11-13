@@ -716,3 +716,11 @@ body {
 /* Learner picker + saved results (REQ-005) */
 .ms-learner.ho-lp { margin: 22px auto 26px; }
 #ms-save { margin-bottom: 14px; }
+
+/* Visible keyboard focus (WCAG 2.4.7) */
+:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+
+/* Narrow phones / text at 200 %: the nav wraps instead of scrolling sideways (WCAG 1.4.4). */
+@media (max-width: 480px) {
+  .ms-nav { height: auto; min-height: var(--ms-nav-h); flex-wrap: wrap; padding: 8px 12px; gap: 8px; }
+}

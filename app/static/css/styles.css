@@ -8,11 +8,11 @@
   /* Light theme */
   --bg:        #f8fafc;
   --surface:   #ffffff;
-  --primary:   #3b82f6;
+  --primary:   #2563eb;   /* 5.2:1 with white text (WCAG AA) */
   --secondary: #10b981;
   --accent:    #8b5cf6;
   --text:      #1e293b;
-  --muted:     #64748b;
+  --muted:     #475569;
   --border:    #e2e8f0;
 
   /* Dark / lab theme (activated via body.dark) */
@@ -21,7 +21,7 @@
   --dark-surface2: #334155;
   --dark-border:   #475569;
   --dark-text:     #f1f5f9;
-  --dark-muted:    #94a3b8;
+  --dark-muted:    #cbd5e1;
   --neon-green:    #00ff88;
   --neon-blue:     #00cfff;
 }
@@ -122,6 +122,9 @@ nav {
   opacity: 0.8;
   transition: opacity 0.2s;
 }
+
+/* A button inside the nav keeps its own colours (WCAG 1.4.3). */
+.nav-links a.btn-primary { color: #ffffff; opacity: 1; }
 
 .nav-links a:hover {
   opacity: 1;
@@ -301,7 +304,7 @@ section {
 
 .module-badge.badge-gray {
   background-color: #f1f5f9;
-  color: #64748b;
+  color: #475569;
 }
 
 .module-desc {
@@ -959,4 +962,15 @@ body.dark .btn-outline {
   section {
     padding: 60px 20px;
   }
+}
+
+/* Visible keyboard focus (WCAG 2.4.7) */
+:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+
+/* Narrow phones (≈320 px, or text enlarged to 200 %): no horizontal scrolling (WCAG 1.4.4). */
+@media (max-width: 480px) {
+  nav { flex-wrap: wrap; gap: 10px; padding: 12px 16px; }
+  .nav-links { flex-wrap: wrap; gap: 12px; }
+  .hand-svg-wrapper { padding: 16px; max-width: 100%; }
+  .hand-svg-wrapper svg { width: 100%; height: auto; }
 }

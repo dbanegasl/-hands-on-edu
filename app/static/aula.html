@@ -15,16 +15,18 @@
     <span id="au-lang-name" class="au-lang"></span>
     <span id="au-learner" class="au-learner" hidden></span>
     <button id="au-btn-mute" class="au-icon-btn" title="Silenciar / activar sonido" aria-label="Silenciar o activar sonido">🔊</button>
+    <button id="au-btn-time" class="au-icon-btn" aria-pressed="false" title="Sin límite de tiempo: la Evaluación y el Repaso esperan tu seña" aria-label="Sin límite de tiempo por seña">⏱</button>
     <div id="au-connection" class="au-conn" hidden>⚫</div>
     <a href="/privacidad" class="au-back" aria-label="Privacidad y tus datos">🔒 <span class="au-nav-text">Privacidad</span></a>
     <a href="/" class="au-home">← Inicio</a>
   </nav>
+  <main id="main">
 
   <!-- ── Perfil ───────────────────────────────────────────────────────── -->
   <section id="screen-profile" class="au-screen active" aria-labelledby="au-profile-title">
     <div class="au-hero">
       <div class="au-hero-icon">🤟</div>
-      <h1 id="au-profile-title">Aprende lengua de señas con tus manos</h1>
+      <h1 id="au-profile-title" tabindex="-1">Aprende lengua de señas con tus manos</h1>
       <p>Practica frente a la cámara: el sistema te dice si tu seña es correcta y qué corregir. El video nunca sale de tu equipo.</p>
       <form id="au-profile-form" class="au-profile-form">
         <label for="au-name">¿Cómo te llamas?</label>
@@ -45,7 +47,7 @@
   <section id="screen-path" class="au-screen" aria-labelledby="au-path-title">
     <header class="au-path-head">
       <div>
-        <h1 id="au-path-title">Tu ruta de aprendizaje</h1>
+        <h1 id="au-path-title" tabindex="-1">Tu ruta de aprendizaje</h1>
         <p id="au-path-sub" class="au-muted"></p>
       </div>
       <div class="au-stats">
@@ -88,7 +90,7 @@
 
       <aside class="au-prompt">
         <div class="au-act-head">
-          <span id="au-act-title" class="au-act-title"></span>
+          <h1 id="au-act-title" class="au-act-title" tabindex="-1"></h1>
           <button id="au-btn-exit" class="au-btn au-btn-ghost">✕ Salir</button>
         </div>
         <div id="au-dots" class="au-dots" aria-hidden="true"></div>
@@ -96,7 +98,7 @@
         <div id="au-word" class="au-word" hidden></div>
         <div class="au-target">
           <div id="au-gloss" class="au-gloss">—</div>
-          <canvas id="au-ref" class="au-ref" width="160" height="160" hidden title="Referencia grabada"></canvas>
+          <canvas id="au-ref" class="au-ref" width="160" height="160" hidden role="img" aria-label="Forma de la mano grabada como referencia" title="Referencia grabada"></canvas>
         </div>
         <p id="au-desc" class="au-desc"></p>
         <p id="au-hint" class="au-hint"></p>
@@ -120,7 +122,7 @@
   <section id="screen-results" class="au-screen" aria-labelledby="au-res-title">
     <div class="au-results">
       <div id="au-res-grade" class="au-grade">A</div>
-      <h1 id="au-res-title">¡Excelente!</h1>
+      <h1 id="au-res-title" tabindex="-1">¡Excelente!</h1>
       <p id="au-res-sub" class="au-muted"></p>
       <p id="au-res-lms" class="au-res-lms" aria-live="polite" hidden></p>
       <ul id="au-res-items" class="au-res-items"></ul>
@@ -132,6 +134,8 @@
   </section>
 
   <div id="au-toast" class="au-toast" role="status" hidden></div>
+  <p id="au-live" class="au-sr" aria-live="polite"></p>
+  </main>
 
   <script src="/static/js/ho-common.js"></script>
   <script src="/static/js/ho-hands.js"></script>

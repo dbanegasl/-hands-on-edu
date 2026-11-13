@@ -184,6 +184,15 @@ Crear documentación siguiendo el mismo formato que los módulos existentes (pro
 - Variables CSS en `:root` para colores y medidas clave
 - Prefijo BEM-like por módulo (ej: `.ae-` para AttendEye, `.vp-` para VirtualPainter, `.ms-` para MotivaSign, `.ge-` para GestiEdu)
 - Diseño responsive — al menos funcional en tablets (768 px+)
+- **Accesibilidad (NTE INEN-ISO/IEC 40500 ≈ WCAG 2.0 AA; [docs/accessibility.md](./accessibility.md)):**
+  - `<html lang="es">`, `<title>` y un `<main>`;
+  - cada `<canvas>` con `aria-label`, o `aria-hidden="true"` si es decorativo;
+  - botones de icono con `aria-label`;
+  - campos con `<label for>`: el `placeholder` no es etiqueta;
+  - `:focus-visible` en la hoja del módulo;
+  - texto ≥ 4,5:1 sobre su fondo, y no usar `opacity` para atenuar texto;
+  - sin desplazamiento horizontal a 320 px.
+  - Agrega la página nueva a `PAGES` en `scripts/a11y-audit.py`, y su paleta a `tests/test_accessibility.py`. La CI ejecuta las dos.
 
 ### Git
 

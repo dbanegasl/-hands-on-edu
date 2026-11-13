@@ -32,11 +32,12 @@ Al final de la clase guiada, en papel o en un formulario:
 
 9. **¿Dónde practicaste?** (marca todas)  ☐ En el laboratorio  ☐ En casa  ☐ En otro lugar
 10. **¿Cuántas veces practicaste fuera de clase?**  ☐ Ninguna  ☐ 1–2  ☐ 3–5  ☐ Más de 5
+11. **¿Usaste alguna ayuda?** (marca todas)  ☐ ⏱ Sin límite de tiempo  ☐ Letra más grande (zoom)  ☐ Lector de pantalla  ☐ Intérprete o compañero  ☐ Ninguna — *¿Algo te impidió usar la plataforma?* ____________
 
 **Preguntas abiertas:**
 
-11. **Lo que más te gustó:** ______________________________
-12. **Lo que cambiarías:** ______________________________
+12. **Lo que más te gustó:** ______________________________
+13. **Lo que cambiarías:** ______________________________
 
 ## 3. Entrevista a docentes (semana 4, 15 minutos)
 

@@ -24,7 +24,7 @@ from app.config import settings
 from app.db import init_db
 from app.http_cache import IMMUTABLE, LONG, REVALIDATE, CachedStaticFiles, vendored_mediapipe_version
 
-APP_VERSION = "0.23.0"
+APP_VERSION = "0.24.0"
 
 # Python's mimetypes has no entry for .mjs on slim images; ES-module imports
 # are rejected by browsers unless served with a JavaScript MIME type.

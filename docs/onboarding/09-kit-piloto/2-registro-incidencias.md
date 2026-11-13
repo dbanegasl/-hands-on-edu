@@ -36,6 +36,7 @@
 | `notas` | No llegó la nota a Moodle, nota distinta | Admin. de Moodle + TI | Panel → detalle → **↻ Reintentar**; [06 · Notas](../06-problemas-frecuentes.md#notas-que-no-llegan-a-moodle) |
 | `contenido` | Descripción confusa, video incorrecto, falta una seña | Intérprete + contenido | [04](../04-contenido-lsec.md) |
 | `uso` | No entiende qué hacer, botón poco claro | Coordinación | Recoger para el informe (mejoras) |
+| `accesibilidad` | No puede usarlo con teclado, lector de pantalla, zoom o el tiempo no le alcanza | Coordinación + TI | ⏱ *Sin límite de tiempo* en el Aula; [accesibilidad](../../accessibility.md) |
 | `otro` | | Coordinación | |
 
 ## Gravedad
@@ -57,7 +58,7 @@ Imprime esta parte para anotar durante la clase.
 
 **Incidencia n.º ____**   Fecha y hora: ____________   Puesto: ________   Curso: ______________
 
-Categoría (marca una):  ☐ acceso  ☐ cámara  ☐ rendimiento  ☐ reconocimiento  ☐ notas  ☐ contenido  ☐ uso  ☐ otro
+Categoría (marca una):  ☐ acceso  ☐ cámara  ☐ rendimiento  ☐ reconocimiento  ☐ notas  ☐ contenido  ☐ uso  ☐ accesibilidad  ☐ otro
 
 Gravedad:  ☐ bloqueante  ☐ grave  ☐ menor  ☐ sugerencia     ¿Le pasa a otros?  ☐ no  ☐ sí: ______
 

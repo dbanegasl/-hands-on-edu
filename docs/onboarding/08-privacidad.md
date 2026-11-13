@@ -13,13 +13,13 @@ La lista completa y actualizada está en la página **`/privacidad`** de tu inst
 | Dato | Dónde | Quién lo ve |
 |---|---|---|
 | Nombre del estudiante: el que escribe, o el que envía Moodle con un identificador interno de su cuenta. **Sin correo electrónico** | Servidor de HandsOnEdu | El estudiante, sus docentes (panel) y la administración |
-| Resultados: actividad, fecha, puntaje y, por cada seña, acierto, seguridad del reconocimiento y tiempo de respuesta | Servidor | Ídem |
+| Resultados: actividad, fecha, puntaje, si se desactivó el límite de tiempo y, por cada seña, acierto, seguridad del reconocimiento y tiempo de respuesta | Servidor | Ídem |
 | Con Moodle: curso, actividad, rol y notas enviadas | Servidor (las notas también en Moodle) | Ídem |
 | Pase de lista de AttendEye: nombres que escribe el docente | Servidor | Docente y administración (`ADMIN_TOKEN`) |
 | Grabaciones de referencia: puntos de la mano, sin imágenes, y nombre de quien grabó | Servidor | Equipo de contenido |
 | Diagnóstico de equipos (`/diagnostico`): navegador, sistema, cámara, velocidad, sala y puesto. **Sin datos del estudiante** | Servidor | Docentes (panel) y administración |
 | Revisión de señas (`/validacion`): resultado por seña y nombre del intérprete. **Sin datos del estudiante** | Servidor | Docentes y equipo de contenido (`ADMIN_TOKEN`) |
-| Perfiles con su clave y la preferencia de sonido | Navegador del estudiante (`localStorage`) | Ese equipo |
+| Perfiles con su clave y las preferencias (sonido, sin límite de tiempo) | Navegador del estudiante (`localStorage`) | Ese equipo |
 | **Video e imágenes de la cámara** | **En ningún sitio**: se procesan dentro del navegador y no se envían | — |
 
 HandsOnEdu no usa servicios de terceros para estos datos: el motor de manos y el modelo se sirven desde tu propio servidor.

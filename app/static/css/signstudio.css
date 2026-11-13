@@ -283,3 +283,6 @@ body {
 }
 .ss-md-progress .ss-meter-fill { background: var(--ss-accent); }
 .ss-md-table th.num { text-align: right; }
+
+/* Visible keyboard focus (WCAG 2.4.7) */
+:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }

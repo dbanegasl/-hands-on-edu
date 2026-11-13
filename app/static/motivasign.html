@@ -13,10 +13,11 @@
   <nav class="ms-nav">
     <a href="/" class="ms-logo">🖐️ HandsOnEdu</a>
     <span class="ms-module-name">🤟 MotivaSign</span>
-    <button id="btn-mute-audio" class="ms-btn-mute" title="Silenciar / activar audio">🔊</button>
+    <button id="btn-mute-audio" class="ms-btn-mute" title="Silenciar / activar audio" aria-label="Silenciar o activar el audio">🔊</button>
     <div id="ms-connection" class="ms-conn-badge ms-conn-disconnected">⚫ Desconectado</div>
     <a href="/" class="ms-back">← Inicio</a>
   </nav>
+  <main id="main">
 
   <!-- SCREEN: IDLE (shown on load) -->
   <div id="screen-idle" class="ms-screen active">
@@ -48,7 +49,7 @@
       <div class="ms-cam-panel">
         <div class="ms-cam-wrapper">
           <video id="ms-video" autoplay playsinline muted></video>
-          <canvas id="ms-canvas"></canvas>
+          <canvas id="ms-canvas" aria-label="Tu cámara con las manos detectadas"></canvas>
 
           <!-- gesture status badge -->
           <div class="ms-gesture-badge" id="ms-gesture-badge">Sin mano detectada</div>
@@ -122,6 +123,7 @@
       <table id="ms-history" class="ho-history" hidden></table>
     </div>
   </div>
+  </main>
 
   <script src="/static/js/ho-common.js"></script>
   <script src="/static/js/ho-hands.js"></script>

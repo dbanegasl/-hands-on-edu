@@ -75,10 +75,10 @@
         <video id="video" autoplay playsinline style="display:none;"></video>
 
         <!-- Visible canvas: mirrored video feed -->
-        <canvas id="video-canvas"></canvas>
+        <canvas id="video-canvas" aria-label="Cámara con las manos detectadas"></canvas>
 
         <!-- Overlay canvas: landmark drawing (pointer-events:none) -->
-        <canvas id="overlay-canvas"></canvas>
+        <canvas id="overlay-canvas" aria-hidden="true"></canvas>
 
         <!-- Placeholder shown before camera starts -->
         <div class="video-placeholder" id="video-placeholder">

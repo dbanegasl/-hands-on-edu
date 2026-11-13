@@ -24,7 +24,7 @@
 
     <!-- LEFT: sign catalog -->
     <aside class="ss-catalog" aria-label="Catálogo de señas">
-      <input id="ss-search" class="ss-input" type="search" placeholder="Buscar seña…" autocomplete="off">
+      <input id="ss-search" class="ss-input" type="search" placeholder="Buscar seña…" aria-label="Buscar seña" autocomplete="off">
       <div id="ss-categories" class="ss-tabs" role="tablist"></div>
       <ul id="ss-sign-list" class="ss-sign-list"></ul>
       <div class="ss-legend">
@@ -38,7 +38,7 @@
     <section class="ss-stage">
       <div class="ss-cam-wrapper">
         <video id="ss-video" autoplay playsinline muted></video>
-        <canvas id="ss-canvas" width="640" height="480"></canvas>
+        <canvas id="ss-canvas" width="640" height="480" aria-label="Cámara con las manos detectadas"></canvas>
         <div id="ss-countdown" class="ss-countdown" hidden></div>
         <div id="ss-rec-indicator" class="ss-rec-indicator" hidden>● GRABANDO</div>
         <button id="ss-btn-camera" class="ss-btn ss-btn-primary ss-cam-start">📷 Activar cámara</button>

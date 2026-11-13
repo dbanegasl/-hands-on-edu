@@ -15,6 +15,55 @@
 
 ---
 
+## [0.24.0] — 2026-11-13
+
+### Accesibilidad (REQ-024): NTE INEN-ISO/IEC 40500 ≈ WCAG 2.0 AA
+
+Auditoría con axe-core de 84 estados: 21 pantallas × modo claro/oscuro × escritorio/móvil, incluidos Aula con cámara, Validación y Diagnóstico. Antes había 8 tipos de problema en 7 páginas (más de 100 elementos); ahora, **0**. Informe por criterio: [docs/accessibility.md](../accessibility.md).
+
+### Añadido
+
+- **Aula — ⏱ Sin límite de tiempo** (criterio 2.2.1):
+  - la Evaluación y el Repaso esperan la seña, sin temporizador; *Saltar* sigue disponible;
+  - el navegador recuerda la preferencia;
+  - la sesión la registra y el panel la marca junto a la actividad («⏱ sin límite de tiempo»).
+- **Aula — lector de pantalla y teclado:**
+  - el foco pasa al título de cada pantalla;
+  - una región `aria-live` anuncia cada seña («Seña 2 de 5: U») y el resultado.
+- `scripts/a11y-audit.py`: auditoría con axe-core en Chromium. La CI la ejecuta contra la imagen construida. Crea un perfil de prueba y lo borra al terminar.
+- `tests/test_accessibility.py`, sin navegador, comprueba en cada página:
+  - idioma, título y `<main>`;
+  - zoom no bloqueado;
+  - lienzos, botones y campos con nombre;
+  - foco visible;
+  - contraste ≥ 4,5:1 de todas las paletas.
+- Kit piloto:
+  - categoría de incidencia `accesibilidad`;
+  - pregunta 11 de la encuesta a estudiantes (ayudas usadas y barreras).
+
+### Corregido
+
+- **Contraste:**
+  - botón primario y botones de módulos de la portada;
+  - texto atenuado de AttendEye, VirtualPainter, AirPiano, GestiEdu y Testing Lab;
+  - unidades bloqueadas del Aula: antes con `opacity`, el texto bajaba a 3,5:1.
+- **Foco del teclado:**
+  - visible en todas las páginas (AttendEye y VirtualPainter lo quitaban);
+  - el diálogo del estudiante en el panel lo retiene;
+  - las tablas desplazables del panel y de la validación se alcanzan con Tab.
+- **Nombres accesibles:**
+  - región `<main>` en todas las páginas;
+  - lienzos de cámara con nombre;
+  - etiquetas en campos que solo tenían `placeholder` (Estudio, panel, AttendEye).
+- **Pantallas de 320 px o texto al 200 %:** la barra de la portada y la de MotivaSign ya no obligan a desplazarse en horizontal.
+
+### Actualizar
+
+- Sin cambios de base de datos.
+- `/privacidad` menciona la nueva preferencia y el registro de «sin límite de tiempo».
+
+---
+
 ## [0.23.0] — 2026-11-13
 
 ### Rendimiento: un laboratorio completo a la vez

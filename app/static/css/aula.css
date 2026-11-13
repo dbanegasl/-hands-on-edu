@@ -128,7 +128,8 @@ body {
 }
 .au-unit.passed { border-color: var(--au-ok); }
 .au-unit.focus { border-color: var(--au-accent2); box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.35); }
-.au-unit.locked, .au-unit.soon { opacity: 0.6; }
+/* Locked/coming units look quieter without fading their text below 4.5:1 (WCAG 1.4.3). */
+.au-unit.locked, .au-unit.soon { background: var(--au-bg); border-style: dashed; }
 .au-unit-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .au-unit-num { font-size: 0.75rem; color: var(--au-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .au-unit h2 { font-size: 1.2rem; }
@@ -142,7 +143,7 @@ body {
   border-radius: 8px; background: var(--au-surface2); font-size: 0.95rem;
 }
 .au-glosses span.m { background: rgba(34, 197, 94, 0.22); }
-.au-glosses span.pending { opacity: 0.45; text-decoration: line-through; }
+.au-glosses span.pending { color: var(--au-muted); background: transparent; border: 1px dashed var(--au-border); text-decoration: line-through; }
 .au-unit.soon .au-glosses span.pending { text-decoration: none; }
 .au-bar { height: 8px; background: var(--au-surface2); border-radius: 999px; overflow: hidden; }
 .au-bar > div { height: 100%; background: var(--au-accent); }
@@ -185,7 +186,9 @@ body {
   padding: 18px; display: flex; flex-direction: column; gap: 12px;
 }
 .au-act-head { display: flex; justify-content: space-between; align-items: center; }
-.au-act-title { font-weight: 800; color: var(--au-accent2); }
+.au-act-title { font-size: 1rem; font-weight: 800; color: var(--au-accent2); }
+.au-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.au-icon-btn[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--au-accent); }
 .au-dots { display: flex; gap: 6px; flex-wrap: wrap; }
 .au-dots span { width: 14px; height: 14px; border-radius: 50%; background: var(--au-surface2); border: 2px solid var(--au-border); }
 .au-dots span.cur { border-color: var(--au-accent); }
@@ -269,7 +272,8 @@ body {
   background: var(--au-surface2); border-radius: 8px; padding: 6px 10px; font-size: 0.9rem;
   overflow-wrap: anywhere; white-space: pre-wrap;
 }
-.au-platforms { list-style: none; display: grid; gap: 8px; }
+.au-platforms { list-style: none; display: grid; gap: 8px; min-width: 0; }
+.au-platforms li > * { min-width: 0; overflow-wrap: anywhere; }
 .au-platforms li {
   display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
   background: var(--au-surface); border: 1px solid var(--au-border); border-radius: 12px; padding: 10px 14px;
@@ -277,3 +281,7 @@ body {
 
 /* Teacher shortcut to the course panel (REQ-007) inside the LTI banner */
 .au-panel-link { display: inline-block; margin-left: 8px; padding: 4px 12px; font-size: 0.85rem; text-decoration: none; color: var(--au-text); }
+
+/* Screen titles receive focus when a screen opens (for keyboard and screen-reader users);
+   they are not controls, so no focus ring on them. */
+.au-screen h1[tabindex="-1"]:focus { outline: none; }

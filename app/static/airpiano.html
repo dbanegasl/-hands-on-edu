@@ -16,6 +16,7 @@
   <button id="ap-btn-mute" title="Silenciar / activar audio">🔊</button>
   <a href="/" class="ap-back">← Inicio</a>
 </nav>
+  <main id="main">
 
 <!-- TOOLBAR -->
 <div id="ap-toolbar">
@@ -55,9 +56,9 @@
 <!-- CANVAS AREA -->
 <div id="ap-canvas-area">
   <video id="ap-video" autoplay playsinline muted></video>
-  <canvas id="ap-cam-canvas"></canvas>
-  <canvas id="ap-keys-canvas"></canvas>
-  <canvas id="ap-wave-canvas"></canvas>
+  <canvas id="ap-cam-canvas" aria-label="Tu cámara con las manos detectadas"></canvas>
+  <canvas id="ap-keys-canvas" role="img" aria-label="Teclado del piano"></canvas>
+  <canvas id="ap-wave-canvas" aria-hidden="true"></canvas>
 
   <!-- Scale wheel (left) -->
   <div id="ap-wheel-scales" class="ap-wheel ap-wheel-left">
@@ -135,8 +136,9 @@
     </div>
   </div>
 </div>
+  </main>
 
-<script src="/static/js/ho-common.js"></script>
+  <script src="/static/js/ho-common.js"></script>
 <script src="/static/js/ho-hands.js"></script>
 <script src="/static/js/audio.js"></script>
 <script src="/static/js/audio-synth.js"></script>

@@ -9,7 +9,7 @@
   --vp-accent:       #6366f1;
   --vp-accent-hover: #818cf8;
   --vp-text:         #e2e8f0;
-  --vp-muted:        #475569;
+  --vp-muted:        #94a3b8;
   --vp-success:      #22c55e;
   --vp-warning:      #f97316;
   --vp-danger:       #ef4444;
@@ -614,3 +614,6 @@ body {
   z-index: 1;
   filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6));
 }
+
+/* Visible keyboard focus (WCAG 2.4.7) */
+:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
