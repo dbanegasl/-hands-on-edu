@@ -41,6 +41,7 @@ body {
 .ss-module-name { font-weight: 700; color: var(--ss-accent); }
 .ss-back { margin-left: auto; color: var(--ss-muted); text-decoration: none; }
 .ss-back:hover { color: var(--ss-text); }
+.ss-back + .ss-back { margin-left: 0; }
 
 .ss-conn-badge {
   font-size: 0.8rem; padding: 4px 10px; border-radius: 999px;

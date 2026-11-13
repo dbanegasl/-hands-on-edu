@@ -15,6 +15,30 @@
 
 ---
 
+## [0.22.0] — 2026-11-13
+
+### Añadido
+
+- **Validación con intérprete** (`/validacion`, [REQ-023](../requirements/REQ-023-validacion-interprete.md)).
+  - Guía al intérprete de LSEC seña por seña:
+    - ¿el contenido es correcto?
+    - hacerla **bien** 3 veces: debe aceptarla;
+    - hacerla **con errores típicos** 3 veces: debe rechazarla.
+  - Usa **la misma regla, plantillas y modelo que la Evaluación del Aula**.
+  - Sugiere la decisión: correcta, corregir el contenido, retirar de la evaluación o grabar más plantillas.
+  - Guarda cada seña al momento y da un informe con los criterios **R1/R2** del piloto, en CSV, JSON o impreso.
+  - Enlazada desde el Estudio de Señas y el panel.
+- `scripts/apply-sign-reviews.py`: pasa el JSON del informe al catálogo (`validated`, `validated_by`, `validated_at`, `assess`). Sin `--write` solo muestra los cambios.
+- Catálogo: **`assess: false`** deja una seña en la Lección pero fuera de la Evaluación. Es para las que el sistema acepta mal hechas. La tarjeta de la unidad lo indica, y una unidad sin señas evaluables no bloquea la siguiente.
+- El catálogo valida `validated`/`assess` (booleanos) y `validated_by` + `validated_at` (juntos, fecha AAAA-MM-DD).
+- Documentación: 04 §2 reescrita con el nuevo flujo, kit del piloto (3 §4 y criterios R1/R2), `/privacidad` y guía 08 (nombre del intérprete), `docs/modules/validacion.md`.
+
+### Actualizar
+
+- Nueva tabla `sign_reviews` (**migración 0004**), que se aplica sola al arrancar. Para volver a 0.21.x después de actualizar hace falta `RESTORE_BACKUP=1` ([Despliegue](../deployment.md)). Se pierden las revisiones hechas en 0.22.
+
+---
+
 ## [0.21.1] — 2026-11-12
 
 ### Añadido

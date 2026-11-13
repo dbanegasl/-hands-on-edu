@@ -39,6 +39,7 @@ Este documento es el **backlog maestro** del proyecto HandsOnEdu. Registra todos
 | [REQ-020](./REQ-020-videos-ia-validados.md) | Videos de referencia generados con IA y validados por intérprete | Feature | Alta | 🔄 En progreso (falta producir y validar) | Aula / Contenido LSEC |
 | [REQ-021](./REQ-021-privacidad-datos.md) | Privacidad: aviso, descarga y borrado de los datos del estudiante, plazo de conservación | Feature | Alta | ✅ Hecho (v0.20.0) | Global / Aula |
 | [REQ-022](./REQ-022-diagnostico-equipos.md) | Diagnóstico de equipos antes de la clase (`/diagnostico` + resumen en el panel) | Feature | Alta | ✅ Hecho (v0.21.0) | Global / Panel |
+| [REQ-023](./REQ-023-validacion-interprete.md) | Validación de señas con intérprete (`/validacion`: contenido, acepta bien hecha, rechaza mal hecha → catálogo) | Feature | Alta | ✅ Hecho (v0.22.0) | Contenido / Aula |
 
 ---
 
@@ -61,7 +62,8 @@ Dirección de producto (2026-11-11): plataforma de referencia para la **enseñan
     → ✅ REQ-018 (Aula de Señas) → ✅ REQ-019 (LTI 1.3 + notas en Moodle)
     → ✅ REQ-007 (panel docente) → ✅ REQ-005 (persistencia de GestiEdu/MotivaSign/AttendEye)
     → ✅ REQ-010 (clasificador entrenado con las plantillas grabadas) → ✅ REQ-011 (entrega continua)
-    → ✅ REQ-021 (privacidad y derechos sobre los datos) → ✅ REQ-022 (diagnóstico de equipos) → piloto institucional
+    → ✅ REQ-021 (privacidad y derechos sobre los datos) → ✅ REQ-022 (diagnóstico de equipos)
+    → ✅ REQ-023 (validación con intérprete) → piloto institucional
 ```
 
 REQ-008 (autenticación) queda cubierto mayormente por los roles de LTI 1.3. Para el uso sin LMS, `ADMIN_TOKEN` protege provisionalmente la escritura de plantillas.

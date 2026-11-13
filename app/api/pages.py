@@ -19,6 +19,7 @@ PAGES = {
     "/panel": "panel.html",
     "/privacidad": "privacidad.html",
     "/diagnostico": "diagnostico.html",
+    "/validacion": "validacion.html",
 }
 
 

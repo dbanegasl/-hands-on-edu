@@ -55,7 +55,9 @@ Una conversación, no un examen. Anota frases textuales: valen más que los núm
 
 Lo que **solo** un intérprete puede responder: si el sistema enseña bien las señas y si acepta señas mal hechas.
 
-Para cada seña de las unidades usadas en el piloto, y sobre todo para las que salieron en **Señas con más dificultad** del panel y en las incidencias de `reconocimiento`, el intérprete la prueba en el **Aula (modo docente)** o en el **Estudio de Señas**:
+Se hace en **`/validacion`** ([04 §2](../04-contenido-lsec.md#2-validar-las-descripciones-intérprete--editor-del-catálogo)): guía al intérprete seña por seña, mide con la misma regla que la Evaluación y da el informe con R1 y R2 para el [informe final](./4-informe-final.md#2-criterios-de-éxito). Empieza por las señas que salieron en **Señas con más dificultad** del panel y en las incidencias de `reconocimiento`.
+
+Sin la herramienta (por ejemplo, en papel), esta es la hoja equivalente:
 
 | Seña | ¿La descripción, la pista y el video (si hay) son correctos? | Hecha **bien** 3 veces: ¿cuántas acepta? | Hecha con **errores típicos** de estudiante 3 veces: ¿cuántas acepta? | Decisión |
 |---|---|---|---|---|

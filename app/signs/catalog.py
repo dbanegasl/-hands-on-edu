@@ -82,6 +82,29 @@ def validate_handshape(sign_id: str, spec: dict) -> None:
             raise CatalogError(f"{sign_id}: invalid handshape value {key}={value!r}")
 
 
+def _validate_review_fields(code: str, sign: dict) -> None:
+    """Interpreter review (REQ-023): `validated` is a bool; `validated_by` and
+    `validated_at` (YYYY-MM-DD) go together and only on a validated sign;
+    `assess: false` keeps a sign out of unit evaluations."""
+    where = f"{code}: sign {sign['id']!r}"
+    if not isinstance(sign.get("validated", False), bool):
+        raise CatalogError(f"{where}: validated must be true or false")
+    if not isinstance(sign.get("assess", True), bool):
+        raise CatalogError(f"{where}: assess must be true or false")
+    by, at = sign.get("validated_by"), sign.get("validated_at")
+    if (by is None) != (at is None):
+        raise CatalogError(f"{where}: validated_by and validated_at go together")
+    if by is not None:
+        if not sign.get("validated"):
+            raise CatalogError(f"{where}: validated_by on a sign that is not validated")
+        if not isinstance(by, str) or not by.strip():
+            raise CatalogError(f"{where}: validated_by must be a name")
+        try:
+            date.fromisoformat(at)
+        except (TypeError, ValueError) as exc:
+            raise CatalogError(f"{where}: validated_at must be YYYY-MM-DD") from exc
+
+
 def _validate(code: str, data: dict) -> dict:
     meta = data.get("language") or {}
     if meta.get("code") != code:
@@ -102,6 +125,7 @@ def _validate(code: str, data: dict) -> dict:
             if sign["kind"] != "static":
                 raise CatalogError(f"{code}: handshape specs apply to static signs only ({sign['id']!r})")
             validate_handshape(sign["id"], sign["handshape"])
+        _validate_review_fields(code, sign)
         seen.add(sign["id"])
     for sign in data.get("signs", []):
         for other in sign.get("confusable", []):

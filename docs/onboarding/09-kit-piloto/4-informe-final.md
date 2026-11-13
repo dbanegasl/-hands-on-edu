@@ -30,8 +30,8 @@ Los valores son una **propuesta**: ajústalos en la reunión de arranque y no lo
 | T4 | Incidencias **bloqueantes** sin resolver al cierre | 0 | `incidencias.csv` | | |
 | U1 | Estudiantes que practicaron al menos una vez fuera de la clase guiada | ≥ 70 % | Encuesta 3 §2, pregunta 10; Panel → actividad | | |
 | U2 | Estudiantes que aprobaron la Unidad 1 (≥ 70 %) | ≥ 60 % | CSV del panel, columna de la Unidad 1 | | |
-| R1 | Señas aceptadas **bien hechas** por el intérprete (3 de 3) | ≥ 85 % de las señas | Revisión del intérprete (3 §4) | | |
-| R2 | Señas que se aceptan **mal hechas** | 0 en la evaluación | Revisión del intérprete (3 §4) | | |
+| R1 | Señas aceptadas **bien hechas** por el intérprete (3 de 3) | ≥ 85 % de las señas | `/validacion` → informe, tarjeta R1 (3 §4) | | |
+| R2 | Señas que se aceptan **mal hechas** | 0 en la evaluación | `/validacion` → informe, tarjeta R2; las retiradas con `assess: false` ya no cuentan (3 §4) | | |
 | S1 | «La plataforma me ayudó a aprender» (mediana) | ≥ 4 de 5 | Encuesta 3 §2, pregunta 7 | | |
 | S2 | Docentes que lo volverían a usar | ≥ 2 de cada 3 | Entrevistas 3 §3, pregunta 7 | | |
 

@@ -45,7 +45,8 @@ class TestCatalog:
         data = get_catalog("lsec")
         assert data["language"]["status"] == "borrador"
         assert "validation_note" in data["language"]
-        assert all(s["validated"] is False for s in data["signs"])
+        # A sign only counts as validated with the interpreter's name and date (REQ-023).
+        assert all(s["validated"] is False or (s.get("validated_by") and s.get("validated_at")) for s in data["signs"])
 
     def test_dynamic_signs_have_no_handshape_spec(self):
         for s in get_catalog("lsec")["signs"]:

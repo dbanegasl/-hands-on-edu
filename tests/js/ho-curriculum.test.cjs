@@ -178,3 +178,27 @@ test('HoldVerifier exposes didactic feedback for the wrong handshape', () => {
   assert.equal(st.done, false);
   assert.ok(st.feedback.some((m) => /medio/.test(m)), st.feedback.join(' | '));
 });
+
+// ── Interpreter review flags (REQ-023) ───────────────────────────────────────
+
+test('unitStatus: signs marked assess:false stay in lessons but leave the evaluation', () => {
+  const cat = JSON.parse(JSON.stringify(CATALOG));
+  cat.signs.find((s) => s.id === 'e').assess = false;
+  const u1 = C.unitStatus(cat, rec(), {}, new Set())[0];
+  assert.ok(u1.available.includes('e'));
+  assert.ok(!u1.quizSigns.includes('e'));
+  assert.equal(u1.quizSigns.length, u1.available.length - 1);
+});
+
+test('unitStatus: a unit with nothing to evaluate does not block the next one', () => {
+  const cat = JSON.parse(JSON.stringify(CATALOG));
+  for (const id of cat.units[0].signs) cat.signs.find((s) => s.id === id).assess = false;
+  const st = C.unitStatus(cat, rec(), {}, new Set());
+  assert.deepEqual(st[0].quizSigns, []);
+  const nextPlayable = st.slice(1).find((u) => u.playable);
+  assert.equal(nextPlayable.locked, false);
+});
+
+test('QUIZ is the evaluation rule shared by the Aula and /validacion', () => {
+  assert.deepEqual(C.QUIZ, { holdMs: 1200, timeoutMs: 12000 });
+});
