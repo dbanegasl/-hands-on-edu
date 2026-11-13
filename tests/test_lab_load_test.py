@@ -44,7 +44,7 @@ def test_runs_against_the_app(client):
         t.join(5)
     text = out.getvalue()
     from app.config import settings
-    if settings.models_dir.is_dir():                 # inside the image: everything is served
+    if (settings.models_dir / "hand_landmarker.task").is_file():   # inside the image: everything is served
         assert code == 0, text
     else:                                            # CI without the engine files: only those fail, with a 404
         assert code == 1 and "/models/hand_landmarker.task: HTTP 404" in text, text
