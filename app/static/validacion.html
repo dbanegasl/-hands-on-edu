@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Validación con intérprete | HandsOnEdu</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧑‍🏫</text></svg>">
+  <link rel="stylesheet" href="/static/css/validacion.css">
+</head>
+<body>
+  <nav class="vl-nav">
+    <a href="/" class="vl-logo">🖐️ HandsOnEdu</a>
+    <span class="vl-nav-title">🧑‍🏫 Validación con intérprete · <span id="vl-lang">LSEC</span></span>
+    <a href="/signstudio" class="vl-nav-link">Estudio de Señas</a>
+    <a href="/panel" class="vl-nav-link">Panel</a>
+  </nav>
+
+  <main id="vl-app" class="vl-main">
+    <p id="vl-auth" class="vl-banner vl-banner-fail" role="alert" hidden></p>
+
+    <!-- 1 · Setup -->
+    <section id="vl-setup" aria-labelledby="vl-setup-title">
+      <h1 id="vl-setup-title">¿El sistema enseña bien cada seña?</h1>
+      <p class="vl-lead">
+        Para un intérprete de LSEC, con un docente al lado. Por cada seña: revisa el contenido,
+        hazla <strong>bien</strong> 3 veces (debe aceptarla) y luego con <strong>errores típicos</strong> de estudiante
+        3 veces (debe rechazarla). Se usa la misma regla que la Evaluación del Aula.
+      </p>
+
+      <div class="vl-card">
+        <label class="vl-field"><span>Nombre de quien revisa (intérprete)</span>
+          <input id="vl-reviewer" class="vl-input" maxlength="80" autocomplete="name" placeholder="Nombre y apellido">
+        </label>
+        <fieldset class="vl-fieldset">
+          <legend>Unidades a revisar</legend>
+          <div id="vl-units" class="vl-units"></div>
+        </fieldset>
+        <label class="vl-check"><input id="vl-only-new" type="checkbox"> Solo las señas que aún no tienen revisión</label>
+        <p id="vl-estimate" class="vl-muted" aria-live="polite"></p>
+        <div class="vl-actions">
+          <button id="vl-start" class="vl-btn vl-btn-primary" type="button" disabled>Empezar la revisión</button>
+          <button id="vl-open-report" class="vl-btn" type="button">Ver el informe</button>
+        </div>
+        <p id="vl-engine" class="vl-muted vl-small"></p>
+      </div>
+
+      <details class="vl-card vl-help">
+        <summary>Cómo hacer una buena revisión</summary>
+        <ul>
+          <li>Buena luz de frente, la mano entera en la imagen, a 50–80 cm de la cámara.</li>
+          <li><strong>Errores típicos:</strong> los que cometen los estudiantes. Por ejemplo: pulgar en otro sitio, un dedo de más o de menos, palma mal orientada, movimiento incompleto. Escribe cuáles probaste.</li>
+          <li>Si un intento salió mal por algo ajeno (te moviste fuera de la imagen), pulsa <em>Deshacer el último</em> y repítelo.</li>
+          <li>La decisión sugerida se puede cambiar; explica por qué en la nota.</li>
+          <li>Cada seña se guarda al pulsar <em>Guardar y seguir</em>: puedes parar cuando quieras y continuar otro día con «Solo las señas que aún no tienen revisión».</li>
+        </ul>
+      </details>
+    </section>
+
+    <!-- 2 · Reviewing one sign -->
+    <section id="vl-review" hidden aria-labelledby="vl-gloss">
+      <div class="vl-review-head">
+        <p id="vl-progress" class="vl-muted"></p>
+        <button id="vl-stop" class="vl-btn vl-btn-small" type="button">Terminar y ver el informe</button>
+      </div>
+      <div class="vl-grid">
+        <div class="vl-stage">
+          <div class="vl-cam">
+            <video id="vl-video" playsinline muted hidden></video>
+            <canvas id="vl-canvas" width="640" height="480" aria-label="Cámara con las manos detectadas"></canvas>
+            <div id="vl-overlay" class="vl-overlay" hidden></div>
+          </div>
+          <div class="vl-meter" aria-hidden="true"><div id="vl-meter-fill" class="vl-meter-fill"></div></div>
+          <p id="vl-cam-status" class="vl-muted vl-small" role="status"></p>
+          <p id="vl-live" class="vl-sr" aria-live="polite"></p>
+        </div>
+
+        <div class="vl-panel">
+          <div class="vl-card">
+            <h2 id="vl-gloss" class="vl-gloss" tabindex="-1"></h2>
+            <p class="vl-muted vl-small"><span id="vl-kind"></span><span id="vl-prev"></span></p>
+            <dl class="vl-def">
+              <dt>Descripción</dt><dd id="vl-desc"></dd>
+              <dt>Pista para el estudiante</dt><dd id="vl-hint"></dd>
+            </dl>
+            <div id="vl-media-box" hidden>
+              <video id="vl-media" class="vl-media" controls loop muted playsinline></video>
+              <p id="vl-media-note" class="vl-muted vl-small"></p>
+            </div>
+          </div>
+
+          <div class="vl-card">
+            <h3>1 · ¿La descripción, la pista y el video son correctos en LSEC?</h3>
+            <div class="vl-actions">
+              <button id="vl-content-yes" class="vl-btn vl-toggle" type="button" aria-pressed="false">✔ Sí, correctos</button>
+              <button id="vl-content-no" class="vl-btn vl-toggle" type="button" aria-pressed="false">✗ No</button>
+            </div>
+            <label id="vl-content-note-box" class="vl-field" hidden><span>¿Qué hay que corregir?</span>
+              <textarea id="vl-content-note" class="vl-input" rows="2" maxlength="2000"></textarea>
+            </label>
+          </div>
+
+          <p id="vl-not-recognizable" class="vl-banner" hidden>
+            Esta seña aún no tiene plantillas grabadas: el sistema no la puede reconocer. Revisa solo el contenido;
+            la decisión será <strong>Grabar más plantillas</strong> (en el Estudio de Señas).
+          </p>
+
+          <div id="vl-step-good" class="vl-card">
+            <h3>2 · Hazla <strong>bien</strong> 3 veces</h3>
+            <p class="vl-muted vl-small">Debe aceptarla en los 3 intentos (mantenerla 1,2 s dentro de 12 s, como en la Evaluación).</p>
+            <ol id="vl-good-dots" class="vl-dots"></ol>
+            <div class="vl-actions">
+              <button id="vl-good-start" class="vl-btn vl-btn-primary" type="button" disabled>▶ Intento 1 de 3</button>
+              <button id="vl-good-undo" class="vl-btn vl-btn-small" type="button" hidden>Deshacer el último</button>
+            </div>
+          </div>
+
+          <div id="vl-step-bad" class="vl-card">
+            <h3>3 · Hazla <strong>con errores típicos</strong> 3 veces</h3>
+            <p class="vl-muted vl-small">Debe <strong>rechazarla</strong>. Si la acepta, el sistema enseñaría una seña incorrecta.</p>
+            <label class="vl-field"><span>Errores que vas a probar</span>
+              <input id="vl-bad-note" class="vl-input" maxlength="200" placeholder="p. ej. pulgar dentro del puño; palma hacia el cuerpo">
+            </label>
+            <ol id="vl-bad-dots" class="vl-dots"></ol>
+            <div class="vl-actions">
+              <button id="vl-bad-start" class="vl-btn vl-btn-primary" type="button" disabled>▶ Intento 1 de 3</button>
+              <button id="vl-bad-undo" class="vl-btn vl-btn-small" type="button" hidden>Deshacer el último</button>
+            </div>
+          </div>
+
+          <div class="vl-card">
+            <h3>4 · Decisión</h3>
+            <ul id="vl-reasons" class="vl-reasons"></ul>
+            <label class="vl-field"><span>Decisión</span>
+              <select id="vl-decision" class="vl-input">
+                <option value="ok">✔ Correcta</option>
+                <option value="regrabar">🎬 Grabar más plantillas</option>
+                <option value="corregir">✏️ Corregir el contenido</option>
+                <option value="retirar">⛔ Retirar de la evaluación</option>
+              </select>
+            </label>
+            <p id="vl-decision-help" class="vl-muted vl-small"></p>
+            <label class="vl-field"><span>Nota <span class="vl-muted">(opcional)</span></span>
+              <textarea id="vl-note" class="vl-input" rows="2" maxlength="2000"></textarea>
+            </label>
+            <div class="vl-actions">
+              <button id="vl-save" class="vl-btn vl-btn-primary" type="button" disabled>Guardar y seguir</button>
+              <button id="vl-skip" class="vl-btn" type="button">Omitir esta seña</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 · Report -->
+    <section id="vl-report" hidden aria-labelledby="vl-report-title">
+      <h1 id="vl-report-title">Informe de la revisión</h1>
+      <p class="vl-lead">La última revisión de cada seña. R1 y R2 son los criterios del informe del piloto.</p>
+      <div id="vl-tiles" class="vl-tiles"></div>
+      <div class="vl-table-wrap">
+        <table class="vl-table">
+          <thead><tr><th>Seña</th><th>Unidad</th><th>Contenido</th><th>Bien hecha: aceptada</th><th>Con errores: aceptada</th><th>Decisión</th><th>Revisión</th></tr></thead>
+          <tbody id="vl-table-body"></tbody>
+        </table>
+        <p id="vl-table-empty" class="vl-muted" hidden>Aún no hay señas revisadas.</p>
+      </div>
+      <div class="vl-actions vl-no-print">
+        <button id="vl-csv" class="vl-btn" type="button">⬇ Hoja de cálculo (CSV)</button>
+        <button id="vl-json" class="vl-btn" type="button">⬇ Para el catálogo (JSON)</button>
+        <button id="vl-print" class="vl-btn" type="button">🖨 Imprimir</button>
+        <button id="vl-back" class="vl-btn vl-btn-primary" type="button">Revisar más señas</button>
+      </div>
+      <p class="vl-muted vl-small vl-no-print">
+        El JSON es para el equipo de contenido: <code>scripts/apply-sign-reviews.py</code> marca en el catálogo las señas
+        validadas y quita de la evaluación las que el sistema acepta mal hechas.
+      </p>
+    </section>
+
+    <div id="vl-toast" class="vl-toast" role="status" hidden></div>
+  </main>
+
+  <script src="/static/js/ho-common.js"></script>
+  <script src="/static/js/ho-hands.js"></script>
+  <script src="/static/js/ho-signs.js"></script>
+  <script src="/static/js/ho-signs-model.js"></script>
+  <script src="/static/js/ho-curriculum.js"></script>
+  <script src="/static/js/ho-learning.js"></script>
+  <script src="/static/js/validacion.js"></script>
+</body>
+</html>

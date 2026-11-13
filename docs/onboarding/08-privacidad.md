@@ -18,6 +18,7 @@ La lista completa y actualizada está en la página **`/privacidad`** de tu inst
 | Pase de lista de AttendEye: nombres que escribe el docente | Servidor | Docente y administración (`ADMIN_TOKEN`) |
 | Grabaciones de referencia: puntos de la mano, sin imágenes, y nombre de quien grabó | Servidor | Equipo de contenido |
 | Diagnóstico de equipos (`/diagnostico`): navegador, sistema, cámara, velocidad, sala y puesto. **Sin datos del estudiante** | Servidor | Docentes (panel) y administración |
+| Revisión de señas (`/validacion`): resultado por seña y nombre del intérprete. **Sin datos del estudiante** | Servidor | Docentes y equipo de contenido (`ADMIN_TOKEN`) |
 | Perfiles con su clave y la preferencia de sonido | Navegador del estudiante (`localStorage`) | Ese equipo |
 | **Video e imágenes de la cámara** | **En ningún sitio**: se procesan dentro del navegador y no se envían | — |
 

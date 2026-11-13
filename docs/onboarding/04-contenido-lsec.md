@@ -27,12 +27,34 @@ El trabajo se hace en tres capas, en este orden:
 
 ## 2. Validar las descripciones (intérprete + editor del catálogo)
 
-Para cada seña de las unidades que se van a usar:
+Se hace en **`/validacion`** (*Validación con intérprete*, enlazada desde el Estudio y el panel), con el intérprete y un docente juntos, unos **2 minutos por seña**. Por cada seña de las unidades elegidas:
 
-1. El intérprete revisa en el **Estudio de Señas** (`/signstudio`) la descripción y la pista. Todas las señas muestran el chip *Sin validar*.
-2. Si la descripción es correcta, el editor cambia `"validated": false` por `true` en `catalog.json`.
-3. Si no lo es, el intérprete dicta la descripción correcta y el editor la cambia en `description` y `hint` (en lenguaje sencillo, para estudiantes).
-4. Las señas *pendientes de documentar* (vocabulario, algunas letras con movimiento) necesitan que el intérprete describa configuración, ubicación y movimiento.
+| Paso | Qué hace el intérprete | Qué se espera |
+|---|---|---|
+| 1 · Contenido | Lee la descripción y la pista, y mira el video si lo hay (también los pendientes de validación) | Que sean correctos en LSEC. Si no, escribe qué corregir |
+| 2 · Bien hecha | Hace la seña bien 3 veces | Que el sistema la **acepte** las 3 |
+| 3 · Con errores típicos | La hace 3 veces con errores de estudiante (pulgar en otro sitio, palma girada, movimiento incompleto) y anota cuáles | Que el sistema la **rechace** las 3 |
+| 4 · Decisión | Revisa la decisión sugerida y la cambia si hace falta, con una nota | — |
+
+Cada intento usa **la misma regla que la Evaluación del Aula** (mantener la seña 1,2 s dentro de 12 s) con las mismas plantillas y el mismo modelo, así que lo que se mide es lo que viven los estudiantes. Cada seña se guarda al pulsar *Guardar y seguir*: se puede parar y seguir otro día con *Solo las señas que aún no tienen revisión*.
+
+| Decisión | Cuándo | Qué hacer |
+|---|---|---|
+| ✔ Correcta | Todo bien | Nada: se marca validada |
+| ✏️ Corregir el contenido | La descripción, la pista o el video están mal | El intérprete dicta la descripción correcta; el editor cambia `description` y `hint` (lenguaje sencillo) |
+| ⛔ Retirar de la evaluación | **El sistema acepta la seña mal hecha**: enseñaría una seña incorrecta | Sale de la Evaluación (sigue en la Lección) hasta corregir el descriptor ([sign-engine.md](../sign-engine.md)) o grabar más plantillas, y volver a revisarla |
+| 🎬 Grabar más plantillas | No la acepta siempre bien hecha, o no tiene plantillas | §3, con varias personas; luego volver a revisarla |
+
+**Pasar la revisión al catálogo.** En el informe de `/validacion`, *⬇ Para el catálogo (JSON)*, y en el repositorio:
+
+```bash
+python3 scripts/apply-sign-reviews.py revision-senas-lsec-AAAA-MM-DD.json           # muestra qué cambiará
+python3 scripts/apply-sign-reviews.py revision-senas-lsec-AAAA-MM-DD.json --write   # lo aplica
+```
+
+El script marca `validated: true` con `validated_by` y `validated_at` en las señas con el contenido correcto, `validated: false` en las que hay que corregir, y `assess: false` en las que el sistema acepta mal hechas (salvo que el intérprete decidiera *Correcta*). Una revisión posterior que salga bien las devuelve a la evaluación.
+
+Las señas *pendientes de documentar* (vocabulario, algunas letras con movimiento) necesitan además que el intérprete describa configuración, ubicación y movimiento.
 
 Después de editar el catálogo:
 
@@ -89,7 +111,7 @@ Todo el procedimiento, con los prompts listos por seña, está en **[videos-ia-l
 
 ## 5. Registro de validación (recomendado)
 
-Lleva una hoja compartida con una fila por seña:
+El informe de `/validacion` (*⬇ Hoja de cálculo*) ya trae, por seña, el resultado de la revisión, quién la hizo y cuándo, y cuántas plantillas había. Para el resto, lleva una hoja compartida con una fila por seña:
 
 | Seña | Descripción validada (quién, fecha) | Plantillas (n, autores) | Video (avatar, validado por, fecha) | Observaciones |
 |---|---|---|---|---|

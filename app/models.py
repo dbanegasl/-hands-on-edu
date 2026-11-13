@@ -320,3 +320,31 @@ class DeviceCheck(Base):
     hand_seen: Mapped[bool | None] = mapped_column(Boolean)
     issues: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now, index=True)
+
+
+class SignReview(Base):
+    """
+    One interpreter review of a sign (/validacion): is the content right, does
+    the engine accept the sign done well, and does it reject it done wrong?
+    Trials use the Aula's assessment rule. `reviewer` is staff, not a learner.
+    """
+
+    __tablename__ = "sign_reviews"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    language: Mapped[str] = mapped_column(String(16), index=True)
+    sign_id: Mapped[str] = mapped_column(String(40), index=True)
+    reviewer: Mapped[str] = mapped_column(String(80))
+    sitting: Mapped[str | None] = mapped_column(String(40))          # groups one review session
+    content_ok: Mapped[bool | None] = mapped_column(Boolean)
+    content_note: Mapped[str | None] = mapped_column(Text)
+    recognizable: Mapped[bool] = mapped_column(Boolean, default=True)
+    good_ok: Mapped[int] = mapped_column(Integer, default=0)          # well-made trials accepted
+    good_trials: Mapped[int] = mapped_column(Integer, default=0)
+    bad_ok: Mapped[int] = mapped_column(Integer, default=0)           # wrongly-made trials accepted (bad)
+    bad_trials: Mapped[int] = mapped_column(Integer, default=0)
+    bad_note: Mapped[str | None] = mapped_column(String(200))        # which mistakes were tried
+    decision: Mapped[str] = mapped_column(String(12))                # ok | regrabar | corregir | retirar
+    note: Mapped[str | None] = mapped_column(Text)
+    engine: Mapped[dict] = mapped_column(JSON, default=dict)         # templates, model, app version
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=_now, index=True)

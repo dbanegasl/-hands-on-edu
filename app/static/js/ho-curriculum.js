@@ -18,6 +18,9 @@
   const MASTERED = 0.8;            // mastery considered "dominada" (matches backend)
   const REVIEW_AFTER_MS = 3 * 24 * 3600 * 1000;
   const QUIZ_ACTIVITY_PREFIX = 'quiz:';
+  // The unit evaluation's acceptance rule. The interpreter review (/validacion)
+  // uses the same values, so what it measures is what learners get.
+  const QUIZ = { holdMs: 1200, timeoutMs: 12000 };
 
   // ── Fingerspelling ─────────────────────────────────────────────────────────
 
@@ -68,20 +71,26 @@
    * Status of every unit in catalog order.
    * @param masteryById {sign_id: mastery}
    * @param passed      Set of passed unit ids
-   * @returns [{unit, available, pending, mastery, mastered, passed, playable, locked}]
+   * @returns [{unit, available, pending, quizSigns, mastery, mastered, passed, playable, locked}]
    *
    * Units with no recognizable sign are "próximamente" (not playable) and do
    * not block the path. A playable unit unlocks when the previous playable
    * unit has been passed. `opts.open` lists units that are always open (e.g.
    * the unit an LMS activity assigns), and `opts.unlockAll` opens every unit.
+   * `quizSigns` leaves out signs marked `assess: false` (an interpreter found
+   * the engine accepts them done wrong); a unit with none cannot be evaluated
+   * and does not block the next one.
    */
   function unitStatus(catalog, recognizer, masteryById, passed, opts) {
     opts = opts || {};
     const open = new Set(opts.open || []);
     const out = [];
     let prevPassed = true;
+    const assess = {};
+    for (const s of catalog.signs || []) assess[s.id] = s.assess !== false;
     for (const unit of catalog.units || []) {
       const available = unit.signs.filter((id) => recognizer.isRecognizable(id));
+      const quizSigns = available.filter((id) => assess[id] !== false);
       const pending = unit.signs.filter((id) => !recognizer.isRecognizable(id));
       const ms = available.map((id) => (masteryById && masteryById[id]) || 0);
       const mastery = ms.length ? ms.reduce((a, b) => a + b, 0) / ms.length : 0;
@@ -89,11 +98,11 @@
       const isPassed = passed ? passed.has(unit.id) : false;
       const locked = playable && !opts.unlockAll && !open.has(unit.id) && !prevPassed;
       out.push({
-        unit: unit, available: available, pending: pending, mastery: mastery,
+        unit: unit, available: available, pending: pending, quizSigns: quizSigns, mastery: mastery,
         mastered: ms.filter((m) => m >= MASTERED).length,
         passed: isPassed, playable: playable, locked: locked,
       });
-      if (playable) prevPassed = isPassed;
+      if (playable && quizSigns.length) prevPassed = isPassed;
     }
     return out;
   }
@@ -262,6 +271,7 @@
     PASS_RATIO: PASS_RATIO,
     MASTERED: MASTERED,
     QUIZ_ACTIVITY_PREFIX: QUIZ_ACTIVITY_PREFIX,
+    QUIZ: QUIZ,
     tokenizeWord: tokenizeWord,
     spellableWords: spellableWords,
     passedUnits: passedUnits,

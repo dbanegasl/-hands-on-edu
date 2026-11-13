@@ -25,7 +25,7 @@
 
   const MODES = {
     lesson: { title: 'Lección', info: true, timeoutMs: 0, skipAfterMs: 6000, holdMs: 1200, hintAfterMs: 0 },
-    quiz: { title: 'Evaluación', info: false, timeoutMs: 12000, skipAfterMs: 0, holdMs: 1200, hintAfterMs: -1 },
+    quiz: { title: 'Evaluación', info: false, timeoutMs: HO.Curriculum.QUIZ.timeoutMs, skipAfterMs: 0, holdMs: HO.Curriculum.QUIZ.holdMs, hintAfterMs: -1 },
     review: { title: 'Repaso', info: false, timeoutMs: 15000, skipAfterMs: 0, holdMs: 1000, hintAfterMs: 6000 },
     spell: { title: 'Deletreo', info: false, timeoutMs: 0, skipAfterMs: 5000, holdMs: 700, hintAfterMs: 5000 },
   };
@@ -373,6 +373,7 @@
       quiz.className = 'au-btn au-btn-primary';
       quiz.textContent = '📝 Evaluación';
       lesson.disabled = quiz.disabled = st.locked || !st.playable;
+      if (!st.quizSigns.length) quiz.disabled = true;
       lesson.addEventListener('click', () => startActivity('lesson', { unit: st }));
       quiz.addEventListener('click', () => startActivity('quiz', { unit: st }));
       actions.append(lesson, quiz);
@@ -383,7 +384,11 @@
       note.textContent = !st.playable
         ? 'Necesita que un docente grabe estas señas en el Estudio de Señas.'
         : st.locked ? 'Aprueba la evaluación de la unidad anterior para desbloquearla.'
-          : st.pending.length ? st.pending.length + ' seña(s) aún sin grabación se omiten.' : '';
+          : [
+            st.pending.length ? st.pending.length + ' seña(s) aún sin grabación se omiten.' : '',
+            st.available.length > st.quizSigns.length
+              ? (st.available.length - st.quizSigns.length) + ' seña(s) en revisión no entran en la evaluación.' : '',
+          ].filter(Boolean).join(' ');
 
       card.append(head, h, glosses, bar, actions);
       if (note.textContent) card.appendChild(note);
@@ -402,7 +407,7 @@
       items = opts.unit.available.slice();
       activity = 'lesson:' + opts.unit.unit.id;
     } else if (mode === 'quiz') {
-      items = C.buildQuiz(opts.unit.available, 5);
+      items = C.buildQuiz(opts.unit.quizSigns, 5);
       activity = C.QUIZ_ACTIVITY_PREFIX + opts.unit.unit.id;
     } else if (mode === 'review') {
       items = C.pickReview(A.progress.signs, A.recognizer, 8);
