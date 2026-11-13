@@ -6,7 +6,7 @@
 
 /* ── Variables ───────────────────────────────────────────── */
 :root {
-  --ge-primary:   #6366f1;
+  --ge-primary:   #4f46e5;
   --ge-secondary: #ec4899;
   --ge-success:   #10b981;
   --ge-error:     #ef4444;
@@ -826,3 +826,6 @@ h1.welcome-title {
     grid-template-columns: repeat(5, 1fr);
   }
 }
+
+/* Visible keyboard focus (WCAG 2.4.7) */
+:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }

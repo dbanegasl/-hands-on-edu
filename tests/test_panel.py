@@ -133,7 +133,17 @@ class TestAllScope:
         assert "attempts" not in next(s for s in u1["signs"] if s["sign_id"] == "e")  # not practised
         (s,) = d["sessions"]
         assert s["label"] == "Evaluación · Vocales" and s["pct"] == 100.0 and s["grade"] is None
+        assert s["no_time_limit"] is False
         assert client.get("/api/panel/learners/nope").status_code == 404
+
+    def test_learner_detail_shows_time_limit_turned_off(self, client):
+        # The Aula's «Sin límite de tiempo» (WCAG 2.2.1) is recorded in the session details.
+        ana = client.post("/api/learners", json={"display_name": "Ana"}).json()["id"]
+        sid = _session(client, learner_id=ana)
+        client.post(f"/api/sessions/{sid}/finish", json={
+            "score": 1, "max_score": 5, "details": {"mode": "quiz", "no_time_limit": True}})
+        (s,) = client.get(f"/api/panel/learners/{ana}").json()["sessions"]
+        assert s["no_time_limit"] is True
 
     def test_csv(self, client):
         ana = client.post("/api/learners", json={"display_name": "Ana, la del fondo"}).json()["id"]

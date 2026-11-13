@@ -9,7 +9,7 @@
   --ap-accent:       #6366f1;
   --ap-accent-hover: #818cf8;
   --ap-text:         #e2e8f0;
-  --ap-muted:        #475569;
+  --ap-muted:        #94a3b8;
   --ap-success:      #22c55e;
   --ap-warning:      #f97316;
   --ap-danger:       #ef4444;
@@ -260,3 +260,6 @@ body {
   .ap-wheel-item { font-size: 0.75rem; padding: 6px 8px; }
   .ap-module-name { font-size: 0.8rem; }
 }
+
+/* Visible keyboard focus (WCAG 2.4.7) */
+:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }

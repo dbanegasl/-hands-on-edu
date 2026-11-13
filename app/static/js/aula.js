@@ -82,7 +82,23 @@
   function show(screenId) {
     document.querySelectorAll('.au-screen').forEach((s) => s.classList.toggle('active', s.id === screenId));
     window.scrollTo(0, 0);
+    // Keyboard and screen-reader users land on the new screen's title (WCAG 2.4.3).
+    const heading = document.querySelector('#' + screenId + ' h1');
+    if (heading) heading.focus({ preventScroll: true });
   }
+
+  /** Short message for screen readers (new sign, result); invisible on screen. */
+  function announce(text) {
+    const el = $('au-live');
+    el.textContent = '';
+    setTimeout(() => { el.textContent = text; }, 30);
+  }
+
+  // «Sin límite de tiempo» (WCAG 2.2.1, time limits can be turned off): timed activities
+  // (Evaluación, Repaso) wait for the sign; «Saltar» is always available there.
+  const LS_NO_LIMIT = 'ho.aula.noTimeLimit';
+  function noTimeLimit() { return !!lsGet(LS_NO_LIMIT, false); }
+  function timeLimit(cfg) { return noTimeLimit() ? 0 : cfg.timeoutMs; }
 
   // ── LTI (opened from Moodle) ───────────────────────────────────────────────
 
@@ -435,7 +451,8 @@
       results: [], sessionId: session.id, pending: [], verifier: null, itemStart: 0, phase: 'practice',
       replay: () => startActivity(mode, opts),
     };
-    $('au-act-title').textContent = MODES[mode].title + (opts.unit ? ' · ' + opts.unit.unit.title : word ? ' · ' + word : '');
+    $('au-act-title').textContent = MODES[mode].title + (opts.unit ? ' · ' + opts.unit.unit.title : word ? ' · ' + word : '')
+      + (MODES[mode].timeoutMs && noTimeLimit() ? ' · ⏱ sin límite de tiempo' : '');
     renderDots();
     show('screen-activity');
     startCamera();
@@ -475,6 +492,7 @@
     act.phase = 'practice';
     renderPrompt(id);
     renderDots();
+    announce('Seña ' + (act.idx + 1) + ' de ' + act.items.length + ': ' + sign(id).gloss + '.');
   }
 
   function renderPrompt(id) {
@@ -487,7 +505,7 @@
     $('au-meter-fill').style.width = '0%';
     $('au-ring-fill').style.strokeDashoffset = String(RING_CIRC);
     $('au-overlay').hidden = true;
-    $('au-timer').hidden = !act.cfg.timeoutMs;
+    $('au-timer').hidden = !timeLimit(act.cfg);
     $('au-btn-skip').disabled = act.cfg.skipAfterMs > 0;
     const media = $('au-media');
     const info = act.cfg.info ? C.mediaInfo(s, { teacher: A.teacher }) : null;
@@ -560,9 +578,10 @@
       const s = sign(act.items[act.idx]);
       if (s.hint) $('au-hint').textContent = '👉 ' + s.hint;
     }
-    if (act.cfg.timeoutMs) {
-      $('au-timer-fill').style.width = Math.max(0, 100 - (el / act.cfg.timeoutMs) * 100) + '%';
-      if (el >= act.cfg.timeoutMs) completeItem(false);
+    const limit = timeLimit(act.cfg);
+    if (limit) {
+      $('au-timer-fill').style.width = Math.max(0, 100 - (el / limit) * 100) + '%';
+      if (el >= limit) completeItem(false);
     }
   }
 
@@ -580,6 +599,7 @@
     ov.hidden = false;
     ov.className = 'au-overlay ' + (correct ? 'ok' : 'bad');
     ov.textContent = correct ? '✔ ¡Bien!' : '✘ ' + sign(id).gloss;
+    announce(correct ? 'Correcto.' : 'No reconocida: ' + sign(id).gloss + '.');
     renderDots();
     setTimeout(() => { if (A.act === act) { ov.hidden = true; nextItem(); } }, FEEDBACK_MS);
   }
@@ -605,7 +625,8 @@
         body: JSON.stringify({
           score: score,
           max_score: act.items.length,
-          details: { mode: act.mode, unit: act.unit ? act.unit.unit.id : null, word: act.word, items: done, completed: done.length === act.items.length },
+          details: { mode: act.mode, unit: act.unit ? act.unit.unit.id : null, word: act.word, items: done, completed: done.length === act.items.length,
+            no_time_limit: !!(act.cfg.timeoutMs && noTimeLimit()) },
         }),
       });
     } catch (err) {
@@ -742,6 +763,21 @@
     $('au-btn-skip').addEventListener('click', () => completeItem(false));
     $('au-btn-path').addEventListener('click', () => goPath());
     $('au-btn-again').addEventListener('click', () => { if (A.act) A.act.replay(); });
+
+    const timeBtn = $('au-btn-time');
+    const applyTime = (on) => {
+      timeBtn.setAttribute('aria-pressed', String(on));
+      timeBtn.title = on ? 'Sin límite de tiempo (activado): la Evaluación y el Repaso esperan tu seña'
+        : 'Sin límite de tiempo: la Evaluación y el Repaso esperan tu seña';
+    };
+    applyTime(noTimeLimit());
+    timeBtn.addEventListener('click', () => {
+      const on = !noTimeLimit();
+      lsSet(LS_NO_LIMIT, on);
+      applyTime(on);
+      toast(on ? '⏱ Sin límite de tiempo: la Evaluación y el Repaso esperan tu seña (puedes «Saltar»).'
+        : '⏱ Con límite de tiempo por seña.');
+    });
 
     const mute = $('au-btn-mute');
     const applyMute = (m) => { if (audio) { if (m) audio.mute(); else audio.unmute(); } mute.textContent = m ? '🔇' : '🔊'; };

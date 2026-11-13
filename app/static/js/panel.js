@@ -402,7 +402,8 @@
       el('thead', null, el('tr', null, ['Fecha', 'Actividad', 'Resultado', 'Min', 'Nota en la plataforma'].map((h) => el('th', { text: h })))),
       el('tbody', null, d.sessions.map((x) => el('tr', null, [
         el('td', { text: fmtDateTime.format(new Date(x.started_at)) }),
-        el('td', { text: x.label }),
+        el('td', null, x.no_time_limit ? [x.label + ' ', el('span', { class: 'au-muted', text: '⏱ sin límite de tiempo',
+          title: 'El estudiante desactivó el límite de tiempo por seña (opción de accesibilidad del Aula)' })] : x.label),
         el('td', { class: 'num', text: x.ended_at == null ? 'sin terminar' : (x.pct == null ? '—' : x.score + '/' + x.max_score + ' (' + Math.round(x.pct) + '%)') }),
         el('td', { class: 'num', text: x.ended_at == null ? '—' : String(x.minutes).replace('.', ',') }),
         el('td', null, gradeCell(x, r)),
@@ -593,7 +594,19 @@
     $('pn-sort').addEventListener('change', (e) => { P.sort = e.target.value; renderGrid(); });
     $('pn-d-close').addEventListener('click', closeDrawer);
     $('pn-drawer-bg').addEventListener('click', closeDrawer);
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('pn-drawer').hidden) closeDrawer(); });
+    document.addEventListener('keydown', (e) => {
+      const drawer = $('pn-drawer');
+      if (drawer.hidden) return;
+      if (e.key === 'Escape') { closeDrawer(); return; }
+      if (e.key !== 'Tab') return;
+      // Modal dialog: keep Tab inside it (aria-modal; WCAG 2.4.3).
+      const items = Array.from(drawer.querySelectorAll('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+        .filter((x) => !x.disabled && x.offsetParent !== null);
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
     let resizeTimer = null;
     addEventListener('resize', () => {
       clearTimeout(resizeTimer);

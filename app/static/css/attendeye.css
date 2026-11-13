@@ -11,7 +11,7 @@
   --ae-danger:    #ef4444;
   --ae-amber:     #fbbf24;
   --ae-text:      #f0f6ff;
-  --ae-muted:     #64748b;
+  --ae-muted:     #94a3b8;
   --ae-present:   #22c55e;
   --ae-absent:    #ef4444;
   --ae-cam-glow:  #38bdf8;
@@ -934,3 +934,6 @@ html, body {
   .ae-history th:nth-child(3), .ae-history td:nth-child(3) { display: none; }   /* type: icon kept in the result */
   .ae-history td.act .ae-btn { padding: 6px 8px; }
 }
+
+/* Visible keyboard focus (WCAG 2.4.7) */
+:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }

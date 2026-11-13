@@ -438,6 +438,8 @@ def learner_detail(learner_id: str, language: str = Query("lsec"), scope: Scope 
             "id": s.id, "activity": s.activity, "label": _activity_label(s.activity, unit_titles),
             "started_at": s.started_at, "ended_at": s.ended_at, "minutes": round(_duration(s).total_seconds() / 60, 1),
             "score": s.score, "max_score": s.max_score, "pct": _pct(s),
+            # The learner turned the per-sign time limit off (accessibility, WCAG 2.2.1).
+            "no_time_limit": bool(isinstance(s.details, dict) and s.details.get("no_time_limit")),
             "grade": ({"status": latest[s.id].status, "score_given": latest[s.id].score_given,
                        "detail": latest[s.id].detail} if s.id in latest else None),
         } for s in sessions[:200]],

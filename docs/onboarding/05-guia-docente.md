@@ -29,6 +29,8 @@ Al abrir la actividad de una unidad, esa unidad queda **abierta para el estudian
 
 La cámara funciona **en el equipo del estudiante**: el video no se envía a ningún servidor.
 
+**⏱ Sin límite de tiempo:** si un estudiante necesita más tiempo (por ejemplo, por una dificultad motriz), puede pulsar ⏱ en la barra superior del Aula. La Evaluación y el Repaso esperan su seña, y *Saltar* sigue disponible. En el panel, esas sesiones aparecen marcadas con «⏱ sin límite de tiempo». Acuerde con su institución si se permite en evaluaciones con nota.
+
 ## Usted como docente
 
 Al abrir la actividad desde Moodle como docente, entra en **modo docente**:

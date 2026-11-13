@@ -36,6 +36,10 @@ El curso de lengua de señas (hoy LSEC) para estudiantes: aprender cada seña fr
 
 Las señas con movimiento se confirman cuando la verificación DTW acierta, sin necesidad de mantenerlas.
 
+**⏱ Sin límite de tiempo** (botón de la barra superior; WCAG 2.2.1): la Evaluación y el Repaso esperan la seña, sin temporizador. *Saltar* sigue disponible (cuenta como no lograda). La preferencia se guarda en el navegador (`ho.aula.noTimeLimit`). La sesión la registra en `details.no_time_limit` y el panel la muestra junto a la actividad.
+
+**Accesibilidad:** al cambiar de pantalla, el foco pasa al título. Una región `aria-live` anuncia cada seña («Seña 2 de 5: U») y el resultado. Todo se maneja con el teclado. Ver [accesibilidad](../accessibility.md).
+
 4. **Resultados:** nota (A–D en evaluaciones, % en el resto) y detalle por seña.
 
 ## Reglas de progreso
@@ -51,7 +55,7 @@ Las señas con movimiento se confirman cuando la verificación DTW acierta, sin 
 |----------|--------|
 | `POST /api/sessions` | Al empezar una actividad (`module = "aula_senas"`, `activity = lesson:u1 / quiz:u1 / review / spell:OSO`) |
 | `POST /api/sessions/{id}/attempts` | Tras cada seña: `correct`, `confidence` (mejor puntaje), `response_ms` |
-| `POST /api/sessions/{id}/finish` | Al terminar o salir: `score`, `max_score`, `details` (ítems, unidad, palabra, si se completó) |
+| `POST /api/sessions/{id}/finish` | Al terminar o salir: `score`, `max_score`, `details` (ítems, unidad, palabra, si se completó, `no_time_limit`) |
 
 Si un envío de intento falla se reintenta al cerrar la sesión.
 
